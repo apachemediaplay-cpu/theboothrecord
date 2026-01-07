@@ -1,53 +1,38 @@
-import { useState } from "react";
-import EntryScreen from "@/components/screens/EntryScreen";
-import ConfidentialityScreen from "@/components/screens/ConfidentialityScreen";
-import ConfessionInputScreen from "@/components/screens/ConfessionInputScreen";
-import ReceivingScreen from "@/components/screens/ReceivingScreen";
-import VerdictScreen from "@/components/screens/VerdictScreen";
-
-type Screen = "entry" | "confidentiality" | "confession" | "receiving" | "verdict";
+import { useNavigate } from "react-router-dom";
+import BoothHeader from "@/components/BoothHeader";
+import BoothFooter from "@/components/BoothFooter";
 
 const Index = () => {
-  const [currentScreen, setCurrentScreen] = useState<Screen>("entry");
+  const navigate = useNavigate();
 
   const handleEnter = () => {
-    setCurrentScreen("confidentiality");
-  };
-
-  const handleProceed = () => {
-    setCurrentScreen("confession");
-  };
-
-  const handleSubmitConfession = (confession: string) => {
-    console.log("Confession submitted:", confession);
-    setCurrentScreen("receiving");
-  };
-
-  const handleReceivingComplete = () => {
-    setCurrentScreen("verdict");
-  };
-
-  const handleConfessAgain = () => {
-    setCurrentScreen("entry");
+    navigate("/confidentiality");
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {currentScreen === "entry" && (
-        <EntryScreen onEnter={handleEnter} />
-      )}
-      {currentScreen === "confidentiality" && (
-        <ConfidentialityScreen onProceed={handleProceed} />
-      )}
-      {currentScreen === "confession" && (
-        <ConfessionInputScreen onSubmit={handleSubmitConfession} />
-      )}
-      {currentScreen === "receiving" && (
-        <ReceivingScreen onComplete={handleReceivingComplete} />
-      )}
-      {currentScreen === "verdict" && (
-        <VerdictScreen onConfessAgain={handleConfessAgain} />
-      )}
+    <div className="screen-container animate-fade-in">
+      <BoothHeader />
+      
+      <div className="flex-1 flex flex-col justify-center">
+        <h1 className="font-display text-5xl md:text-6xl font-bold leading-tight text-foreground mb-8">
+          Once you begin, you can't take it back."
+        </h1>
+        
+        <p className="text-ritual text-xl font-mono-light tracking-wide">
+          That's the point:
+        </p>
+      </div>
+      
+      <div className="mb-8">
+        <button 
+          onClick={handleEnter}
+          className="btn-booth"
+        >
+          ENTER
+        </button>
+      </div>
+      
+      <BoothFooter />
     </div>
   );
 };

@@ -1,19 +1,18 @@
 import { useEffect } from "react";
-import BoothHeader from "../BoothHeader";
-import BoothFooter from "../BoothFooter";
+import { useNavigate } from "react-router-dom";
+import BoothHeader from "@/components/BoothHeader";
+import BoothFooter from "@/components/BoothFooter";
 
-interface ReceivingScreenProps {
-  onComplete: () => void;
-}
+const Receiving = () => {
+  const navigate = useNavigate();
 
-const ReceivingScreen = ({ onComplete }: ReceivingScreenProps) => {
   useEffect(() => {
     const timer = setTimeout(() => {
-      onComplete();
+      navigate("/verdict");
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, [navigate]);
 
   return (
     <div className="screen-container animate-fade-in">
@@ -30,4 +29,4 @@ const ReceivingScreen = ({ onComplete }: ReceivingScreenProps) => {
   );
 };
 
-export default ReceivingScreen;
+export default Receiving;
