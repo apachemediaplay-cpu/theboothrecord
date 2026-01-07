@@ -53,8 +53,8 @@
     --radius: 0.25rem;
 
     /* Custom tokens for GUILTY */
-    --ritual-green: 152 70% 45%;
-    --ritual-green-dim: 152 50% 35%;
+    --ritual-green: 127 100% 50%;
+    --ritual-green-dim: 127 80% 40%;
     --booth-dark: 20 12% 9%;
     --booth-darker: 20 15% 6%;
     --text-whisper: 40 6% 45%;
