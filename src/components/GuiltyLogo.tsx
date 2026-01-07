@@ -1,8 +1,12 @@
+import guiltyLogo from "@/assets/guilty-logo.svg";
+
 const GuiltyLogo = () => {
   return (
-    <div className="guilty-logo inline-block">
-      GUILTY
-    </div>
+    <img 
+      src={guiltyLogo} 
+      alt="GUILTY" 
+      className="h-6 w-auto"
+    />
   );
 };
 
