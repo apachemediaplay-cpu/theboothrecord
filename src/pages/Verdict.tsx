@@ -1,21 +1,25 @@
-import BoothHeader from "../BoothHeader";
-import BoothFooter from "../BoothFooter";
+import { useNavigate } from "react-router-dom";
+import BoothHeader from "@/components/BoothHeader";
+import BoothFooter from "@/components/BoothFooter";
 
-interface VerdictScreenProps {
-  onConfessAgain: () => void;
-}
+const Verdict = () => {
+  const navigate = useNavigate();
 
-const VerdictScreen = ({ onConfessAgain }: VerdictScreenProps) => {
   const handleGetLink = () => {
     if (navigator.share) {
       navigator.share({
         title: "GUILTY",
         text: "The booth noticed.",
-        url: window.location.href,
+        url: window.location.origin,
       });
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(window.location.origin);
     }
+  };
+
+  const handleConfessAgain = () => {
+    sessionStorage.removeItem("confession");
+    navigate("/");
   };
 
   return (
@@ -34,7 +38,7 @@ const VerdictScreen = ({ onConfessAgain }: VerdictScreenProps) => {
         </p>
         
         <p className="text-sm text-muted-foreground mt-4">
-          The booth doesn't punish necessity.It rewards it.
+          The booth doesn't punish necessity. It rewards it.
         </p>
       </div>
       
@@ -44,7 +48,7 @@ const VerdictScreen = ({ onConfessAgain }: VerdictScreenProps) => {
         </p>
         
         <button 
-          onClick={onConfessAgain}
+          onClick={handleConfessAgain}
           className="btn-booth-outline max-w-xs"
         >
           CONFESS AGAIN GO DEEPER
@@ -63,4 +67,4 @@ const VerdictScreen = ({ onConfessAgain }: VerdictScreenProps) => {
   );
 };
 
-export default VerdictScreen;
+export default Verdict;
