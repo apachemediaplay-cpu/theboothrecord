@@ -60,6 +60,7 @@ export default {
       fontFamily: {
         display: ["Playfair Display", "serif"],
         mono: ["JetBrains Mono", "monospace"],
+        control: ["Control Upright", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

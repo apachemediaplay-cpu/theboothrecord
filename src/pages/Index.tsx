@@ -14,7 +14,7 @@ const Index = () => {
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center">
-        <h1 className="font-display text-5xl md:text-6xl font-bold leading-tight text-foreground mb-8">
+        <h1 className="font-control text-5xl md:text-6xl font-bold leading-tight text-foreground mb-8">
           Once you begin, you can't take it back."
         </h1>
         
