@@ -10,12 +10,34 @@ const Confess = () => {
   const [confession, setConfession] = useState("");
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [placeholderText, setPlaceholderText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const fullPlaceholder = "Add a confession to continue";
 
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
+
+  // Typing animation for placeholder
+  useEffect(() => {
+    if (confession || interimText) return;
+    
+    let index = 0;
+    setPlaceholderText("");
+    
+    const typeInterval = setInterval(() => {
+      if (index < fullPlaceholder.length) {
+        setPlaceholderText(fullPlaceholder.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(typeInterval);
+      }
+    }, 50);
+
+    return () => clearInterval(typeInterval);
+  }, [confession, interimText]);
 
   useEffect(() => {
     // Check for browser support
@@ -110,19 +132,27 @@ const Confess = () => {
           What did you do?
         </p>
         
-        <textarea
-          ref={textareaRef}
-          value={confession + (interimText ? (confession ? ' ' : '') + interimText : '')}
-          onChange={(e) => {
-            if (!isRecording) {
-              setConfession(e.target.value);
-            }
-          }}
-          placeholder="Add a confession to continue"
-          className="confession-input"
-          rows={6}
-          readOnly={isRecording}
-        />
+        <div className="relative">
+          <textarea
+            ref={textareaRef}
+            value={confession + (interimText ? (confession ? ' ' : '') + interimText : '')}
+            onChange={(e) => {
+              if (!isRecording) {
+                setConfession(e.target.value);
+              }
+            }}
+            placeholder=""
+            className="confession-input"
+            rows={6}
+            readOnly={isRecording}
+          />
+          {!confession && !interimText && (
+            <div className="absolute top-0 left-0 pointer-events-none text-muted-foreground confession-input border-transparent">
+              {placeholderText}
+              <span className="animate-pulse">|</span>
+            </div>
+          )}
+        </div>
         
         <div className="flex items-center justify-between mt-4">
           <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
