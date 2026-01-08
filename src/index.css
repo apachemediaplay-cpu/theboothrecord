@@ -154,7 +154,7 @@
   }
 
   .screen-container {
-    @apply min-h-screen flex flex-col px-6 py-8;
+    @apply min-h-[100dvh] flex flex-col px-6 py-8 pb-32;
     @apply max-w-md mx-auto;
   }
 
