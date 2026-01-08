@@ -1,9 +1,29 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 
 const Confidentiality = () => {
   const navigate = useNavigate();
+  const [typedText, setTypedText] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+  
+  const fullText = '"This stays between us…"';
+
+  useEffect(() => {
+    let index = 0;
+    const typeInterval = setInterval(() => {
+      if (index < fullText.length) {
+        setTypedText(fullText.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(typeInterval);
+        setShowCursor(false);
+      }
+    }, 60);
+
+    return () => clearInterval(typeInterval);
+  }, []);
 
   const handleProceed = () => {
     navigate("/confess");
@@ -22,8 +42,9 @@ const Confidentiality = () => {
           Confessions. Anonymous. Unfiltered. No judgement.
         </p>
         
-        <p className="text-ritual text-xl font-mono-light tracking-wide">
-          "This stays between us…"
+        <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem]">
+          {typedText}
+          {showCursor && <span className="animate-pulse">|</span>}
         </p>
       </div>
       
