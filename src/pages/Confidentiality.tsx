@@ -8,7 +8,7 @@ const Confidentiality = () => {
   const [typedText, setTypedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   
-  const fullText = '"This stays between us…"';
+  const fullText = 'This stays between us…';
 
   useEffect(() => {
     let index = 0;
