@@ -47,20 +47,12 @@ const Verdict = () => {
           The booth noticed.
         </p>
         
-        <div className="flex w-full gap-3 max-w-sm">
-          <button 
-            onClick={handleConfessAgain}
-            className="flex-1 py-4 text-xs tracking-[0.15em] bg-transparent text-foreground border border-foreground transition-all hover:bg-foreground hover:text-background"
-          >
-            CONFESS AGAIN
-          </button>
-          <button 
-            onClick={handleConfessAgain}
-            className="flex-1 py-4 text-xs tracking-[0.15em] bg-transparent text-foreground border border-foreground transition-all hover:bg-foreground hover:text-background"
-          >
-            GO DEEPER
-          </button>
-        </div>
+        <button 
+          onClick={handleConfessAgain}
+          className="w-full max-w-xs py-4 text-xs tracking-[0.15em] bg-transparent text-foreground border border-foreground transition-all hover:bg-foreground hover:text-background"
+        >
+          CONFESS AGAIN GO DEEPER
+        </button>
         
         <button 
           onClick={handleGetLink}
