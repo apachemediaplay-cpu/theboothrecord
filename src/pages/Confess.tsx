@@ -2,19 +2,90 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
 import { Camera, Mic, ArrowRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Confess = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [confession, setConfession] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    // Check for browser support
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognitionAPI) {
+      const recognition = new SpeechRecognitionAPI() as SpeechRecognition;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setConfession(prev => prev + (prev ? ' ' : '') + finalTranscript);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsRecording(false);
+        toast({
+          title: "Voice recognition error",
+          description: "Please try again or type your confession.",
+          variant: "destructive",
+        });
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [toast]);
+
+  const toggleRecording = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Not supported",
+        description: "Voice recognition is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      recognitionRef.current.start();
+      setIsRecording(true);
+    }
+  };
+
   const handleSubmit = () => {
     if (confession.trim()) {
-      // Store confession in sessionStorage for potential future use
       sessionStorage.setItem("confession", confession);
       navigate("/receiving");
     }
@@ -52,7 +123,12 @@ const Confess = () => {
             </button>
           ) : (
             <button 
-              className="p-3 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={toggleRecording}
+              className={`p-3 transition-colors ${
+                isRecording 
+                  ? 'text-red-500 animate-pulse' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               <Mic className="w-6 h-6" />
             </button>
