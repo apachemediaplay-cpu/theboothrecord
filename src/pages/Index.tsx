@@ -63,7 +63,7 @@ const Index = () => {
         </p>
       </div>
       
-      <div className="mb-8">
+      <div className="fixed bottom-32 left-0 right-0 flex justify-center">
         <button 
           onClick={handleEnter}
           className="btn-booth"
