@@ -72,7 +72,7 @@ const Index = () => {
         </button>
       </div>
       
-      <BoothFooter />
+      <BoothFooter showConsent />
     </div>
   );
 };
