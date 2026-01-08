@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
+import BoothFooter from "@/components/BoothFooter";
 import { Camera, Mic, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -127,11 +128,32 @@ const Confess = () => {
     <div className="screen-container animate-fade-in">
       <BoothHeader />
       
-      <div className="mt-8">
-        <p className="text-muted-foreground text-sm mb-4 tracking-wide">
+      <div className="flex-1 flex flex-col justify-center">
+        <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
+          Confess
+        </h2>
+        
+        <p className="text-muted-foreground text-lg mb-8">
           What did you do?
         </p>
         
+        <div className="relative min-h-[1.75rem]">
+          {!confession && !interimText && (
+            <p className="text-ritual text-xl font-mono-light tracking-wide">
+              {placeholderText}
+              <span className="animate-pulse">|</span>
+            </p>
+          )}
+          {(confession || interimText) && (
+            <p className="text-ritual text-xl font-mono-light tracking-wide">
+              {confession}{interimText ? (confession ? ' ' : '') + interimText : ''}
+              <span className="animate-pulse">|</span>
+            </p>
+          )}
+        </div>
+      </div>
+      
+      <div className="fixed bottom-32 left-0 right-0 px-6">
         <div className="relative">
           <textarea
             ref={textareaRef}
@@ -141,20 +163,11 @@ const Confess = () => {
                 setConfession(e.target.value);
               }
             }}
-            placeholder=""
+            placeholder="Type your confession..."
             className="confession-input"
-            rows={6}
+            rows={3}
             readOnly={isRecording}
           />
-          {!confession && !interimText && (
-            <div 
-              className="absolute top-0 left-0 pointer-events-none confession-input border-transparent"
-              style={{ color: 'rgba(0, 255, 30, 0.3)' }}
-            >
-              {placeholderText}
-              <span className="animate-pulse">|</span>
-            </div>
-          )}
         </div>
         
         <div className="flex items-center justify-between mt-4">
@@ -183,6 +196,8 @@ const Confess = () => {
           )}
         </div>
       </div>
+      
+      <BoothFooter />
     </div>
   );
 };
