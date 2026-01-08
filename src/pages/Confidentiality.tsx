@@ -43,7 +43,7 @@ const Confidentiality = () => {
           The Booth
         </h2>
         
-        <p className="text-muted-foreground text-lg mb-8">
+        <p className="text-muted-foreground text-lg mb-4">
           Confessions. Anonymous. Unfiltered. No judgement.
         </p>
         
