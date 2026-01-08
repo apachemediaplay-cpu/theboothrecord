@@ -39,7 +39,7 @@ const Confidentiality = () => {
         </div>
       </div>
       
-      <div className="flex flex-col items-center gap-4 mb-8">
+      <div className="fixed bottom-32 left-0 right-0 flex flex-col items-center gap-2">
         <button 
           onClick={handleProceed}
           className="btn-booth"
@@ -48,7 +48,7 @@ const Confidentiality = () => {
         </button>
         
         <p className="text-xs text-muted-foreground tracking-wide">
-          Not all sinners are equal.
+          " Not all sinners are equal."
         </p>
       </div>
       
