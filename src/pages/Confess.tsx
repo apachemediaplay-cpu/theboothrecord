@@ -118,7 +118,7 @@ const Confess = () => {
               setConfession(e.target.value);
             }
           }}
-          placeholder="Begin."
+          placeholder="|Add a confession to continue..."
           className="confession-input"
           rows={6}
           readOnly={isRecording}
