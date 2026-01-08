@@ -52,7 +52,7 @@ const Index = () => {
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center">
-        <h1 className="font-control text-5xl md:text-6xl font-bold leading-tight text-foreground mb-8">
+        <h1 className="font-control text-3xl md:text-6xl font-bold leading-tight text-foreground mb-8">
           {text1}
           {showCursor1 && <span className="animate-pulse">|</span>}
         </h1>
@@ -63,7 +63,7 @@ const Index = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-32 left-0 right-0 flex justify-center">
+      <div className="fixed bottom-36 left-0 right-0 flex justify-center px-6">
         <button 
           onClick={handleEnter}
           className="btn-booth"

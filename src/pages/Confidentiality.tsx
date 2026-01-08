@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
-import { Camera, Mic } from "lucide-react";
 
 const Confidentiality = () => {
   const navigate = useNavigate();
@@ -23,20 +22,9 @@ const Confidentiality = () => {
           Confessions. Anonymous. Unfiltered. No judgement.
         </p>
         
-        <p className="text-ritual text-xl font-mono-light tracking-wide mb-12">
+        <p className="text-ritual text-xl font-mono-light tracking-wide">
           "This stays between us…"
         </p>
-        
-        <div className="flex items-center gap-6 mb-8">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Camera className="w-5 h-5" />
-            <span className="text-sm">Off</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Mic className="w-5 h-5" />
-            <span className="text-sm">Off</span>
-          </div>
-        </div>
       </div>
       
       <div className="fixed bottom-32 left-0 right-0 flex flex-col items-center gap-2">
