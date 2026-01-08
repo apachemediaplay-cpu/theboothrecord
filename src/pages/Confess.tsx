@@ -163,7 +163,7 @@ const Confess = () => {
                 setConfession(e.target.value);
               }
             }}
-            placeholder="Type your confession..."
+            placeholder=""
             className="confession-input"
             rows={3}
             readOnly={isRecording}
