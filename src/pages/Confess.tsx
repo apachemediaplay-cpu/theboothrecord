@@ -133,28 +133,11 @@ const Confess = () => {
           Confess
         </h2>
         
-        <p className="text-muted-foreground text-lg mb-8">
+        <p className="text-muted-foreground text-lg mb-4">
           What did you do?
         </p>
         
-        <div className="relative min-h-[1.75rem]">
-          {!confession && !interimText && (
-            <p className="text-ritual text-xl font-mono-light tracking-wide">
-              {placeholderText}
-              <span className="animate-pulse">|</span>
-            </p>
-          )}
-          {(confession || interimText) && (
-            <p className="text-ritual text-xl font-mono-light tracking-wide">
-              {confession}{interimText ? (confession ? ' ' : '') + interimText : ''}
-              <span className="animate-pulse">|</span>
-            </p>
-          )}
-        </div>
-      </div>
-      
-      <div className="fixed bottom-32 left-0 right-0 px-6">
-        <div className="relative">
+        <div className="relative min-h-[120px]">
           <textarea
             ref={textareaRef}
             value={confession + (interimText ? (confession ? ' ' : '') + interimText : '')}
@@ -164,13 +147,21 @@ const Confess = () => {
               }
             }}
             placeholder=""
-            className="confession-input"
-            rows={3}
+            className="w-full bg-transparent text-ritual text-xl font-mono-light tracking-wide resize-none outline-none border-none min-h-[120px]"
+            rows={4}
             readOnly={isRecording}
           />
+          {!confession && !interimText && (
+            <div className="absolute top-0 left-0 pointer-events-none text-ritual text-xl font-mono-light tracking-wide opacity-50">
+              {placeholderText}
+              <span className="animate-pulse">|</span>
+            </div>
+          )}
         </div>
-        
-        <div className="flex items-center justify-between mt-4">
+      </div>
+      
+      <div className="fixed bottom-32 left-0 right-0 px-6">
+        <div className="flex items-center justify-between">
           <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
             <Camera className="w-6 h-6" />
           </button>
