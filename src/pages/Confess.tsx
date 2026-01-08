@@ -147,7 +147,10 @@ const Confess = () => {
             readOnly={isRecording}
           />
           {!confession && !interimText && (
-            <div className="absolute top-0 left-0 pointer-events-none text-muted-foreground confession-input border-transparent">
+            <div 
+              className="absolute top-0 left-0 pointer-events-none confession-input border-transparent"
+              style={{ color: 'rgba(0, 255, 30, 0.3)' }}
+            >
               {placeholderText}
               <span className="animate-pulse">|</span>
             </div>
