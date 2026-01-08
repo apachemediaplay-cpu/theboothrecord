@@ -24,7 +24,7 @@ const Confess = () => {
     <div className="screen-container animate-fade-in">
       <BoothHeader />
       
-      <div className="flex-1 flex flex-col justify-center">
+      <div className="mt-8">
         <p className="text-muted-foreground text-sm mb-4 tracking-wide">
           What did you do?
         </p>
@@ -37,27 +37,27 @@ const Confess = () => {
           className="confession-input"
           rows={6}
         />
-      </div>
-      
-      <div className="flex items-center justify-between mb-8">
-        <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
-          <Camera className="w-6 h-6" />
-        </button>
         
-        {confession.trim() ? (
-          <button 
-            onClick={handleSubmit}
-            className="p-3 text-foreground hover:text-primary transition-colors"
-          >
-            <ArrowRight className="w-6 h-6" />
+        <div className="flex items-center justify-between mt-4">
+          <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
+            <Camera className="w-6 h-6" />
           </button>
-        ) : (
-          <button 
-            className="p-3 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Mic className="w-6 h-6" />
-          </button>
-        )}
+          
+          {confession.trim() ? (
+            <button 
+              onClick={handleSubmit}
+              className="p-3 text-foreground hover:text-primary transition-colors"
+            >
+              <ArrowRight className="w-6 h-6" />
+            </button>
+          ) : (
+            <button 
+              className="p-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Mic className="w-6 h-6" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
