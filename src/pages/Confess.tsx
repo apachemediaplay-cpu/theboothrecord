@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
-import { Camera, Mic } from "lucide-react";
+import { Camera, Mic, ArrowRight } from "lucide-react";
 
 const Confess = () => {
   const navigate = useNavigate();
@@ -44,11 +44,20 @@ const Confess = () => {
           <Camera className="w-6 h-6" />
         </button>
         
-        <button 
-          className="p-3 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Mic className="w-6 h-6" />
-        </button>
+        {confession.trim() ? (
+          <button 
+            onClick={handleSubmit}
+            className="p-3 text-foreground hover:text-primary transition-colors"
+          >
+            <ArrowRight className="w-6 h-6" />
+          </button>
+        ) : (
+          <button 
+            className="p-3 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Mic className="w-6 h-6" />
+          </button>
+        )}
       </div>
     </div>
   );
