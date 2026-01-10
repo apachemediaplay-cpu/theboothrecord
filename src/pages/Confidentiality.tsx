@@ -39,13 +39,9 @@ const Confidentiality = () => {
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center">
-        <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
-          The Booth
-        </h2>
-        
-        <p className="text-muted-foreground text-lg mb-4">
-          Confessions. Anonymous. Unfiltered. No judgement.
-        </p>
+        <h1 className="font-control text-3xl md:text-6xl font-bold leading-tight text-foreground mb-8">
+          Confessions. Anonymous. Unfiltered.
+        </h1>
         
         <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem]">
           {typedText}
@@ -53,20 +49,16 @@ const Confidentiality = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-32 left-0 right-0 flex flex-col items-center gap-2">
+      <div className="fixed bottom-36 left-0 right-0 flex justify-center px-6">
         <button 
           onClick={handleProceed}
           className="btn-booth"
         >
           PROCEED
         </button>
-        
-        <p className="text-xs text-muted-foreground tracking-wide">
-          " Not all sinners are equal."
-        </p>
       </div>
       
-      <BoothFooter />
+      <BoothFooter showConsent />
     </div>
   );
 };
