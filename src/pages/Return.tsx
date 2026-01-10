@@ -54,7 +54,7 @@ const Return = () => {
           onClick={handleProceed}
           className="btn-booth"
         >
-          PROCEED
+          GO DEEPER
         </button>
       </div>
       
