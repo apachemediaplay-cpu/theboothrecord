@@ -1,9 +1,29 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 
 const Verdict = () => {
   const navigate = useNavigate();
+  const [typedText, setTypedText] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+  
+  const fullText = "The booth noticed.";
+
+  useEffect(() => {
+    let index = 0;
+    const typeInterval = setInterval(() => {
+      if (index < fullText.length) {
+        setTypedText(fullText.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(typeInterval);
+        setShowCursor(false);
+      }
+    }, 60);
+
+    return () => clearInterval(typeInterval);
+  }, []);
 
   const handleGetLink = () => {
     if (navigator.share) {
@@ -27,8 +47,9 @@ const Verdict = () => {
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center items-start text-left pb-48">
-        <p className="text-ritual text-xl font-mono-light tracking-wide mb-6">
-          The booth noticed.
+        <p className="text-ritual text-xl font-mono-light tracking-wide mb-6 min-h-[1.75rem]">
+          {typedText}
+          {showCursor && <span className="animate-pulse">|</span>}
         </p>
         
         <h1 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
