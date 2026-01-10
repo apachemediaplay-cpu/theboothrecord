@@ -157,7 +157,6 @@ const Confess = () => {
               style={{ color: 'rgba(0, 255, 30, 0.3)' }}
             >
               {placeholderText}
-              <span className="animate-[pulse_1s_ease-in-out_infinite]">|</span>
             </div>
           )}
         </div>
