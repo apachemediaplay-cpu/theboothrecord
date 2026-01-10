@@ -47,7 +47,7 @@ const Verdict = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-36 left-0 right-0 px-6 flex flex-col items-center gap-6">
+      <div className="fixed bottom-20 left-0 right-0 px-6 flex flex-col items-center gap-6">
         <button 
           onClick={handleConfessAgain}
           className="btn-booth"
