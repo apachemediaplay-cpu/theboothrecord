@@ -8,7 +8,7 @@ const Return = () => {
   const [typedText, setTypedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   
-  const fullText = 'This stays between us…';
+  const fullText = 'The booth is listening…';
 
   useEffect(() => {
     let index = 0;
@@ -40,7 +40,7 @@ const Return = () => {
       
       <div className="flex-1 flex flex-col justify-center">
         <h1 className="font-control text-3xl md:text-6xl font-bold leading-tight text-foreground mb-8">
-          Confessions. Anonymous. Unfiltered. No judgement.
+          Couldn't stay away?
         </h1>
         
         <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem]">
