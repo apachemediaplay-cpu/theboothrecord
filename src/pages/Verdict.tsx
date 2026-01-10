@@ -26,18 +26,19 @@ const Verdict = () => {
     <div className="screen-container animate-fade-in">
       <BoothHeader />
       
-      <div className="flex-1 flex flex-col justify-center items-center text-center">
+      <div className="flex-1 flex flex-col justify-center items-start text-left px-6">
         <h1 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
           Petty crime. Elegant restraint.
         </h1>
         
-        <p className="font-control text-3xl md:text-4xl font-bold text-foreground mb-4">
+        <p className="font-control text-xl md:text-2xl text-foreground mb-2">
           The system forgot to feed you.
-          <br />
+        </p>
+        <p className="font-control text-xl md:text-2xl text-foreground mb-6">
           You improvised.
         </p>
         
-        <p className="text-sm text-muted-foreground mt-4">
+        <p className="text-sm text-muted-foreground">
           The booth doesn't punish necessity. It rewards it.
         </p>
       </div>
