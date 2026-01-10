@@ -19,7 +19,7 @@ const Verdict = () => {
 
   const handleConfessAgain = () => {
     sessionStorage.removeItem("confession");
-    navigate("/");
+    navigate("/return");
   };
 
   return (
