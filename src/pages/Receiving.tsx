@@ -7,6 +7,7 @@ const Receiving = () => {
   const navigate = useNavigate();
   const [typedText, setTypedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
+  const [isThinking, setIsThinking] = useState(false);
   
   const fullText = "Your sin is being received.";
 
@@ -18,8 +19,9 @@ const Receiving = () => {
         index++;
       } else {
         clearInterval(typeInterval);
+        setIsThinking(true);
         
-        // Keep cursor pulsing while "thinking", then navigate
+        // Keep text pulsing while "thinking", then navigate
         setTimeout(() => {
           setShowCursor(false);
           navigate("/verdict");
@@ -35,7 +37,7 @@ const Receiving = () => {
       <BoothHeader />
       
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem]">
+        <p className={`text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem] ${isThinking ? 'animate-[pulse_2s_ease-in-out_infinite]' : ''}`}>
           {typedText}
           {showCursor && <span className="animate-pulse">|</span>}
         </p>
