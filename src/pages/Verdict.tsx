@@ -26,7 +26,7 @@ const Verdict = () => {
     <div className="screen-container animate-fade-in">
       <BoothHeader />
       
-      <div className="flex-1 flex flex-col justify-center items-start text-left px-6">
+      <div className="flex-1 flex flex-col justify-center items-start text-left">
         <h1 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
           Petty crime. Elegant restraint.
         </h1>
