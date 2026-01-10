@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
-import { Camera, Mic, ArrowRight } from "lucide-react";
+import { Camera, ArrowRight } from "lucide-react";
+import micButtonSvg from "@/assets/mic-button.svg";
 import { useToast } from "@/hooks/use-toast";
 
 const Confess = () => {
@@ -182,13 +183,13 @@ const Confess = () => {
           ) : (
             <button 
               onClick={toggleRecording}
-              className={`p-3 transition-colors ${
+              className={`transition-colors ${
                 isRecording 
-                  ? 'text-red-500 animate-pulse' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'animate-pulse opacity-80' 
+                  : 'opacity-70 hover:opacity-100'
               }`}
             >
-              <Mic className="w-6 h-6" />
+              <img src={micButtonSvg} alt="Microphone" className="w-[34px] h-[34px]" />
             </button>
           )}
         </div>
