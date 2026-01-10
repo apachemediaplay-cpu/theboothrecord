@@ -27,6 +27,10 @@ const Verdict = () => {
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center items-start text-left">
+        <p className="text-ritual text-xl font-mono-light tracking-wide mb-6">
+          The booth noticed.
+        </p>
+        
         <h1 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
           Petty crime. Elegant restraint.
         </h1>
@@ -43,11 +47,7 @@ const Verdict = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-24 left-0 right-0 px-6 flex flex-col items-center gap-6">
-        <p className="text-sm text-muted-foreground">
-          The booth noticed.
-        </p>
-        
+      <div className="fixed bottom-36 left-0 right-0 px-6 flex flex-col items-center gap-6">
         <button 
           onClick={handleConfessAgain}
           className="btn-booth"
