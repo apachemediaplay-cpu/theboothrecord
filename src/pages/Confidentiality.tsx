@@ -23,7 +23,7 @@ const Confidentiality = () => {
         // Auto-navigate after 2 seconds
         setTimeout(() => {
           navigate("/confess");
-        }, 2000);
+        }, 3500);
       }
     }, 60);
 
