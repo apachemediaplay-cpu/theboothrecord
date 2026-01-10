@@ -50,9 +50,9 @@ const Verdict = () => {
         
         <button 
           onClick={handleConfessAgain}
-          className="w-full max-w-xs py-4 text-xs tracking-[0.15em] bg-transparent text-foreground border border-foreground transition-all hover:bg-foreground hover:text-background"
+          className="btn-booth"
         >
-          CONFESS AGAIN GO DEEPER
+          CONFESS AGAIN
         </button>
         
         <button 
