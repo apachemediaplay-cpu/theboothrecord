@@ -31,7 +31,7 @@ const Verdict = () => {
           Petty crime. Elegant restraint.
         </h1>
         
-        <p className="font-control text-2xl md:text-3xl font-bold text-foreground mb-4">
+        <p className="font-control text-3xl md:text-4xl font-bold text-foreground mb-4">
           The system forgot to feed you.
           <br />
           You improvised.
