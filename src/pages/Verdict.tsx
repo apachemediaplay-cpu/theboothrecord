@@ -26,27 +26,26 @@ const Verdict = () => {
     <div className="screen-container animate-fade-in">
       <BoothHeader />
       
-      <div className="flex-1 flex flex-col justify-center text-left">
-        <h2 className="text-ritual text-lg md:text-xl font-bold mb-4">
+      <div className="flex-1 flex flex-col justify-center items-center text-center">
+        <h1 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
           Petty crime. Elegant restraint.
-        </h2>
+        </h1>
         
-        <h1 className="font-control text-3xl md:text-5xl font-bold text-foreground mb-8 leading-tight">
+        <p className="font-control text-3xl md:text-4xl font-bold text-foreground mb-4">
           The system forgot to feed you.
           <br />
           You improvised.
-        </h1>
-        
-        <p className="text-sm text-muted-foreground mb-2">
-          The booth doesn't punish necessity. It rewards it.
         </p>
         
-        <p className="text-sm text-muted-foreground">
-          The booth noticed.
+        <p className="text-sm text-muted-foreground mt-4">
+          The booth doesn't punish necessity. It rewards it.
         </p>
       </div>
       
       <div className="flex flex-col items-center gap-6 mb-8">
+        <p className="text-sm text-muted-foreground">
+          The booth noticed.
+        </p>
         
         <button 
           onClick={handleConfessAgain}
