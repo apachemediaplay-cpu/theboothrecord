@@ -26,7 +26,7 @@ const Verdict = () => {
     <div className="screen-container animate-fade-in">
       <BoothHeader />
       
-      <div className="flex-1 flex flex-col justify-center items-start text-left">
+      <div className="flex-1 flex flex-col justify-center items-start text-left pb-48">
         <p className="text-ritual text-xl font-mono-light tracking-wide mb-6">
           The booth noticed.
         </p>
