@@ -12,6 +12,7 @@ const Confess = () => {
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [placeholderText, setPlaceholderText] = useState("");
+  const [typingComplete, setTypingComplete] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
@@ -27,6 +28,7 @@ const Confess = () => {
     
     let index = 0;
     setPlaceholderText("");
+    setTypingComplete(false);
     
     const typeInterval = setInterval(() => {
       if (index < fullPlaceholder.length) {
@@ -34,6 +36,7 @@ const Confess = () => {
         index++;
       } else {
         clearInterval(typeInterval);
+        setTypingComplete(true);
       }
     }, 50);
 
@@ -153,10 +156,11 @@ const Confess = () => {
           />
           {!confession && !interimText && (
             <div 
-              className="absolute top-0 left-0 pointer-events-none text-xl font-mono-light tracking-wide"
+              className={`absolute top-0 left-0 pointer-events-none text-xl font-mono-light tracking-wide ${typingComplete ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''}`}
               style={{ color: 'rgba(0, 255, 30, 0.3)' }}
             >
               {placeholderText}
+              <span className="animate-[pulse_1.2s_ease-in-out_infinite]">|</span>
             </div>
           )}
         </div>
