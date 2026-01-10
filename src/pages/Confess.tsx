@@ -16,7 +16,7 @@ const Confess = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const fullPlaceholder = "Add a confession to continue";
+  const fullPlaceholder = "Begin your confession...";
 
   useEffect(() => {
     textareaRef.current?.focus();
