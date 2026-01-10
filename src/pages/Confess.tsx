@@ -152,9 +152,12 @@ const Confess = () => {
             readOnly={isRecording}
           />
           {!confession && !interimText && (
-            <div className="absolute top-0 left-0 pointer-events-none text-ritual text-xl font-mono-light tracking-wide">
+            <div 
+              className="absolute top-0 left-0 pointer-events-none text-xl font-mono-light tracking-wide"
+              style={{ color: 'rgba(0, 255, 30, 0.3)' }}
+            >
               {placeholderText}
-              <span className="animate-[pulse_1s_ease-in-out_infinite] text-ritual">|</span>
+              <span className="animate-[pulse_1s_ease-in-out_infinite]">|</span>
             </div>
           )}
         </div>
