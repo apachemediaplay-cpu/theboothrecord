@@ -27,11 +27,17 @@ const Verdict = () => {
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center items-center text-center">
-        <h1 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
+        <h1 
+          className="text-3xl md:text-4xl font-bold text-foreground mb-6"
+          style={{ fontFamily: "'Control Upright', sans-serif" }}
+        >
           Petty crime. Elegant restraint.
         </h1>
         
-        <p className="font-control text-2xl md:text-3xl text-foreground mb-4">
+        <p 
+          className="text-2xl md:text-3xl text-foreground mb-4"
+          style={{ fontFamily: "'Control Upright', sans-serif" }}
+        >
           The system forgot to feed you.
           <br />
           You improvised.
