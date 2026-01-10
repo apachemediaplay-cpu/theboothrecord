@@ -18,12 +18,12 @@ const Receiving = () => {
         index++;
       } else {
         clearInterval(typeInterval);
-        setShowCursor(false);
         
-        // Navigate after typing completes
+        // Keep cursor pulsing while "thinking", then navigate
         setTimeout(() => {
+          setShowCursor(false);
           navigate("/verdict");
-        }, 1500);
+        }, 3500);
       }
     }, 60);
 
