@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
-import { Camera, ArrowRight } from "lucide-react";
+import { Camera } from "lucide-react";
 import micButtonSvg from "@/assets/mic-button.svg";
+import enterArrowSvg from "@/assets/enter-arrow.svg";
 import { useToast } from "@/hooks/use-toast";
 
 const Confess = () => {
@@ -176,9 +177,9 @@ const Confess = () => {
           {confession.trim() ? (
             <button 
               onClick={handleSubmit}
-              className="p-3 text-foreground hover:text-primary transition-colors"
+              className="transition-colors opacity-90 hover:opacity-100"
             >
-              <ArrowRight className="w-6 h-6" />
+              <img src={enterArrowSvg} alt="Submit" className="w-[34px] h-[34px]" />
             </button>
           ) : (
             <button 
