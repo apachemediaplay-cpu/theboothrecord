@@ -31,10 +31,10 @@ const Verdict = () => {
           Petty crime. Elegant restraint.
         </h1>
         
-        <p className="font-control text-xl md:text-2xl text-foreground mb-2">
+        <p className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
           The system forgot to feed you.
         </p>
-        <p className="font-control text-xl md:text-2xl text-foreground mb-6">
+        <p className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
           You improvised.
         </p>
         
