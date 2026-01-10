@@ -1,4 +1,4 @@
-import guiltyLogo from "@/assets/guilty-logo.png";
+import guiltyLogo from "@/assets/guilty-logo.svg";
 
 const GuiltyLogo = () => {
   return (
