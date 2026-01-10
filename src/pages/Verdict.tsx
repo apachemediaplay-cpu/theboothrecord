@@ -43,7 +43,7 @@ const Verdict = () => {
         </p>
       </div>
       
-      <div className="flex flex-col items-center gap-6 mb-8">
+      <div className="fixed bottom-24 left-0 right-0 px-6 flex flex-col items-center gap-6">
         <p className="text-sm text-muted-foreground">
           The booth noticed.
         </p>
