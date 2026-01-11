@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 
@@ -9,6 +9,10 @@ const Index = () => {
   const [text2, setText2] = useState("");
   const [showCursor1, setShowCursor1] = useState(true);
   const [showCursor2, setShowCursor2] = useState(false);
+  const [isGlitching, setIsGlitching] = useState(false);
+  const [glitchOffset, setGlitchOffset] = useState(0);
+  const [glitchTop, setGlitchTop] = useState(30);
+  const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fullText1 = "Once you begin, you can't take it back.";
   const fullText2 = "That's the point.";
@@ -35,6 +39,11 @@ const Index = () => {
               clearInterval(typeText2);
               setShowCursor2(false);
               
+              // Trigger one final glitch near transition
+              setTimeout(() => {
+                triggerGlitch();
+              }, 1200);
+              
               // Auto-navigate after 2 seconds
               setTimeout(() => {
                 navigate("/confidentiality");
@@ -47,6 +56,39 @@ const Index = () => {
 
     return () => clearInterval(typeText1);
   }, []);
+
+  const triggerGlitch = () => {
+    const offset = (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4);
+    const top = 20 + Math.random() * 15; // 20-35% from top
+    setGlitchOffset(offset);
+    setGlitchTop(top);
+    setIsGlitching(true);
+    
+    const duration = 80 + Math.random() * 60; // 80-140ms
+    setTimeout(() => {
+      setIsGlitching(false);
+    }, duration);
+  };
+
+  // Random glitch interval (3-8 seconds)
+  useEffect(() => {
+    if (text2.length === fullText2.length) {
+      const scheduleGlitch = () => {
+        const delay = 3000 + Math.random() * 5000; // 3-8 seconds
+        glitchIntervalRef.current = setTimeout(() => {
+          triggerGlitch();
+          scheduleGlitch();
+        }, delay);
+      };
+      scheduleGlitch();
+    }
+    
+    return () => {
+      if (glitchIntervalRef.current) {
+        clearTimeout(glitchIntervalRef.current);
+      }
+    };
+  }, [text2]);
 
   const handleEnter = () => {
     navigate("/confidentiality");
@@ -62,9 +104,25 @@ const Index = () => {
           {showCursor1 && <span className="animate-pulse">|</span>}
         </h1>
         
-        <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem]">
-          {text2}
-          {showCursor2 && <span className="animate-pulse">|</span>}
+        <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem] relative">
+          <span className="relative inline-block">
+            {text2}
+            {showCursor2 && <span className="animate-pulse">|</span>}
+            {/* Glitch slice overlay */}
+            {isGlitching && text2 && (
+              <span
+                aria-hidden="true"
+                className="absolute left-0 text-ritual"
+                style={{
+                  top: 0,
+                  transform: `translateX(${glitchOffset}px)`,
+                  clipPath: `inset(${glitchTop}% 0 ${100 - glitchTop - 15}% 0)`,
+                }}
+              >
+                {text2}
+              </span>
+            )}
+          </span>
         </p>
       </div>
       
