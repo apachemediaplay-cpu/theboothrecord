@@ -11,7 +11,9 @@ const Index = () => {
   const [showCursor2, setShowCursor2] = useState(false);
   const [isGlitching, setIsGlitching] = useState(false);
   const [glitchOffset, setGlitchOffset] = useState(0);
+  const [glitchOffset2, setGlitchOffset2] = useState(0);
   const [glitchTop, setGlitchTop] = useState(30);
+  const [glitchTop2, setGlitchTop2] = useState(60);
   const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fullText1 = "Once you begin, you can't take it back.";
@@ -58,13 +60,21 @@ const Index = () => {
   }, []);
 
   const triggerGlitch = () => {
-    const offset = (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4);
-    const top = 20 + Math.random() * 15; // 20-35% from top
+    // First slice - more aggressive offset
+    const offset = (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 8); // 6-14px
+    const top = 15 + Math.random() * 20; // 15-35% from top
+    
+    // Second slice - opposite direction
+    const offset2 = -offset * (0.5 + Math.random() * 0.5); // Counter-direction
+    const top2 = 55 + Math.random() * 25; // 55-80% from top
+    
     setGlitchOffset(offset);
     setGlitchTop(top);
+    setGlitchOffset2(offset2);
+    setGlitchTop2(top2);
     setIsGlitching(true);
     
-    const duration = 80 + Math.random() * 60; // 80-140ms
+    const duration = 100 + Math.random() * 80; // 100-180ms
     setTimeout(() => {
       setIsGlitching(false);
     }, duration);
@@ -74,7 +84,7 @@ const Index = () => {
   useEffect(() => {
     if (text2.length === fullText2.length) {
       const scheduleGlitch = () => {
-        const delay = 3000 + Math.random() * 5000; // 3-8 seconds
+        const delay = 2000 + Math.random() * 3000; // 2-5 seconds (more frequent)
         glitchIntervalRef.current = setTimeout(() => {
           triggerGlitch();
           scheduleGlitch();
@@ -108,19 +118,36 @@ const Index = () => {
           <span className="relative inline-block">
             {text2}
             {showCursor2 && <span className="animate-pulse">|</span>}
-            {/* Glitch slice overlay */}
+            {/* Glitch slice overlays */}
             {isGlitching && text2 && (
-              <span
-                aria-hidden="true"
-                className="absolute left-0 text-ritual"
-                style={{
-                  top: 0,
-                  transform: `translateX(${glitchOffset}px)`,
-                  clipPath: `inset(${glitchTop}% 0 ${100 - glitchTop - 15}% 0)`,
-                }}
-              >
-                {text2}
-              </span>
+              <>
+                {/* First slice */}
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 text-ritual"
+                  style={{
+                    top: 0,
+                    transform: `translateX(${glitchOffset}px)`,
+                    clipPath: `inset(${glitchTop}% 0 ${100 - glitchTop - 20}% 0)`,
+                    textShadow: '2px 0 #ff0000, -2px 0 #00ffff',
+                  }}
+                >
+                  {text2}
+                </span>
+                {/* Second slice */}
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 text-ritual"
+                  style={{
+                    top: 0,
+                    transform: `translateX(${glitchOffset2}px)`,
+                    clipPath: `inset(${glitchTop2}% 0 ${100 - glitchTop2 - 15}% 0)`,
+                    textShadow: '-2px 0 #ff0000, 2px 0 #00ffff',
+                  }}
+                >
+                  {text2}
+                </span>
+              </>
             )}
           </span>
         </p>
