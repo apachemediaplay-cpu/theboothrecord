@@ -229,6 +229,13 @@ const Verdict = () => {
         >
           GET LINK
         </button>
+        
+        <button 
+          onClick={handleGetLink}
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
+        >
+          SUMMON SOMEONE
+        </button>
       </div>
       
       <BoothFooter />
