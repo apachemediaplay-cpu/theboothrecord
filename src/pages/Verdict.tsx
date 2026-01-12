@@ -231,7 +231,7 @@ const Verdict = () => {
         </button>
         
         <button 
-          onClick={handleGetLink}
+          onClick={() => navigate("/summon")}
           className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
         >
           SUMMON SOMEONE
