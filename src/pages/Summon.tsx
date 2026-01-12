@@ -17,7 +17,7 @@ const Summon = () => {
   const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fullText1 = "Summon others.";
-  const fullText2 = "That's the point.";
+  const fullText2 = "Only given by those who've already been seen.";
 
   useEffect(() => {
     let index = 0;
