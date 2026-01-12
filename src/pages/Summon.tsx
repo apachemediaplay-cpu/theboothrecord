@@ -157,7 +157,7 @@ const Summon = () => {
         </button>
       </div>
       
-      <BoothFooter showConsent />
+      <BoothFooter />
     </div>
   );
 };
