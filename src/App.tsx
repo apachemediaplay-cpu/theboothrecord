@@ -9,6 +9,7 @@ import Confess from "./pages/Confess";
 import Receiving from "./pages/Receiving";
 import Verdict from "./pages/Verdict";
 import Return from "./pages/Return";
+import Summon from "./pages/Summon";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/receiving" element={<Receiving />} />
           <Route path="/verdict" element={<Verdict />} />
           <Route path="/return" element={<Return />} />
+          <Route path="/summon" element={<Summon />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
