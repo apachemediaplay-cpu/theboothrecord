@@ -16,7 +16,7 @@ const Summon = () => {
   const [glitchTop2, setGlitchTop2] = useState(60);
   const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fullText1 = "Once you begin, you can't take it back.";
+  const fullText1 = "Summon other.";
   const fullText2 = "That's the point.";
 
   useEffect(() => {
