@@ -124,42 +124,9 @@ const Summon = () => {
           {showCursor1 && <span className="animate-pulse">|</span>}
         </h1>
         
-        <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem] relative">
-          <span className="relative inline-block">
-            {text2}
-            {showCursor2 && <span className="animate-pulse">|</span>}
-            {/* Glitch slice overlays */}
-            {isGlitching && text2 && (
-              <>
-                {/* First slice */}
-                <span
-                  aria-hidden="true"
-                  className="absolute left-0 text-ritual"
-                  style={{
-                    top: 0,
-                    transform: `translateX(${glitchOffset}px)`,
-                    clipPath: `inset(${glitchTop}% 0 ${100 - glitchTop - 20}% 0)`,
-                    textShadow: '2px 0 #ff0000, -2px 0 #00ffff',
-                  }}
-                >
-                  {text2}
-                </span>
-                {/* Second slice */}
-                <span
-                  aria-hidden="true"
-                  className="absolute left-0 text-ritual"
-                  style={{
-                    top: 0,
-                    transform: `translateX(${glitchOffset2}px)`,
-                    clipPath: `inset(${glitchTop2}% 0 ${100 - glitchTop2 - 15}% 0)`,
-                    textShadow: '-2px 0 #ff0000, 2px 0 #00ffff',
-                  }}
-                >
-                  {text2}
-                </span>
-              </>
-            )}
-          </span>
+        <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem]">
+          {text2}
+          {showCursor2 && <span className="animate-pulse">|</span>}
         </p>
       </div>
       
