@@ -158,7 +158,7 @@ const Answer = () => {
           onClick={handleEnter}
           className="btn-booth"
         >
-          ENTER
+          ANSWER SUMMONS
         </button>
       </div>
       
