@@ -46,10 +46,10 @@ const Answer = () => {
                 triggerGlitch();
               }, 1200);
               
-              // Auto-navigate after 2 seconds
+              // Auto-navigate after 5 seconds
               setTimeout(() => {
                 navigate("/confidentiality");
-              }, 2000);
+              }, 5000);
             }
           }, 60);
         }, 400);
