@@ -96,10 +96,11 @@ const Summon = () => {
   }, [text2]);
 
   const handleEnter = async () => {
+    const answerUrl = `${window.location.origin}/answer`;
     const shareData = {
       title: "You've been summoned",
       text: "Someone wants you to confess.",
-      url: window.location.origin,
+      url: answerUrl,
     };
 
     if (navigator.share) {
@@ -110,7 +111,7 @@ const Summon = () => {
       }
     } else {
       // Fallback: copy link to clipboard
-      await navigator.clipboard.writeText(window.location.origin);
+      await navigator.clipboard.writeText(answerUrl);
     }
   };
 
