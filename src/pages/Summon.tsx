@@ -153,7 +153,7 @@ const Summon = () => {
           onClick={handleEnter}
           className="btn-booth"
         >
-          ENTER
+          ISSUE THE SUMMONS
         </button>
       </div>
       
