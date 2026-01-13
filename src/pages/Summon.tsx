@@ -95,8 +95,23 @@ const Summon = () => {
     };
   }, [text2]);
 
-  const handleEnter = () => {
-    navigate("/confidentiality");
+  const handleEnter = async () => {
+    const shareData = {
+      title: "You've been summoned",
+      text: "Someone wants you to confess.",
+      url: window.location.origin,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled or share failed silently
+      }
+    } else {
+      // Fallback: copy link to clipboard
+      await navigator.clipboard.writeText(window.location.origin);
+    }
   };
 
   return (
