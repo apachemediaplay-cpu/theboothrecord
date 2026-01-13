@@ -136,7 +136,7 @@ const Summon = () => {
           className="btn-booth relative overflow-hidden"
         >
           <span className="relative inline-block">
-            ISSUE THE SUMMONS
+            ISSUE SUMMONS
             {isGlitching && (
               <>
                 <span
@@ -148,7 +148,7 @@ const Summon = () => {
                     textShadow: '2px 0 #ff0000, -2px 0 #00ffff',
                   }}
                 >
-                  ISSUE THE SUMMONS
+                  ISSUE SUMMONS
                 </span>
                 <span
                   aria-hidden="true"
@@ -159,7 +159,7 @@ const Summon = () => {
                     textShadow: '-2px 0 #ff0000, 2px 0 #00ffff',
                   }}
                 >
-                  ISSUE THE SUMMONS
+                  ISSUE SUMMONS
                 </span>
               </>
             )}
