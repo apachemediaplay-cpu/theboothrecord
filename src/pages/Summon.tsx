@@ -166,9 +166,37 @@ const Summon = () => {
       <div className="fixed bottom-36 left-0 right-0 flex justify-center px-6">
         <button 
           onClick={handleEnter}
-          className="btn-booth"
+          className="btn-booth relative overflow-hidden"
         >
-          ISSUE THE SUMMONS
+          <span className="relative inline-block">
+            ISSUE THE SUMMONS
+            {isGlitching && (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-0 w-full"
+                  style={{
+                    transform: `translateX(${glitchOffset}px)`,
+                    clipPath: `inset(${glitchTop}% 0 ${100 - glitchTop - 20}% 0)`,
+                    textShadow: '2px 0 #ff0000, -2px 0 #00ffff',
+                  }}
+                >
+                  ISSUE THE SUMMONS
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-0 w-full"
+                  style={{
+                    transform: `translateX(${glitchOffset2}px)`,
+                    clipPath: `inset(${glitchTop2}% 0 ${100 - glitchTop2 - 15}% 0)`,
+                    textShadow: '-2px 0 #ff0000, 2px 0 #00ffff',
+                  }}
+                >
+                  ISSUE THE SUMMONS
+                </span>
+              </>
+            )}
+          </span>
         </button>
       </div>
       
