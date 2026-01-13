@@ -223,12 +223,6 @@ const Verdict = () => {
           </span>
         </button>
         
-        <button 
-          onClick={handleGetLink}
-          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
-        >
-          GET LINK
-        </button>
         
         <button 
           onClick={() => navigate("/summon")}
