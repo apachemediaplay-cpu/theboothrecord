@@ -16,8 +16,8 @@ const Answer = () => {
   const [glitchTop2, setGlitchTop2] = useState(60);
   const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fullText1 = "Once you begin, you can't take it back.";
-  const fullText2 = "That's the point.";
+  const fullText1 = "Someone named you.";
+  const fullText2 = "The booth heard it.";
 
   useEffect(() => {
     let index = 0;
