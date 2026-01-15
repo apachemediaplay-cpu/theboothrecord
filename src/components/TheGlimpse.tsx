@@ -25,8 +25,8 @@ const TheGlimpse = () => {
       if (hasTriggered.current) return;
       hasTriggered.current = true;
 
-      // Random delay: 300-1200ms
-      const initialDelay = 300 + Math.random() * 900;
+      // Random delay: 200-600ms (reduced to ensure it triggers before navigation)
+      const initialDelay = 200 + Math.random() * 400;
 
       setTimeout(() => {
         // Flash duration: 60-80ms
