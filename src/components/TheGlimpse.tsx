@@ -29,8 +29,8 @@ const TheGlimpse = () => {
       const initialDelay = 200 + Math.random() * 400;
 
       setTimeout(() => {
-        // Flash duration: 60-80ms
-        const flashDuration = 60 + Math.random() * 20;
+        // Flash duration: 2000ms for testing (change back to 60-80ms for production)
+        const flashDuration = 2000;
 
         setIsVisible(true);
         setTimeout(() => {
