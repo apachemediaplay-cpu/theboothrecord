@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
+import TheGlimpse from "@/components/TheGlimpse";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -106,6 +107,7 @@ const Index = () => {
 
   return (
     <div className="screen-container animate-fade-in">
+      <TheGlimpse />
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center">
