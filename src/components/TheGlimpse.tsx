@@ -8,20 +8,34 @@ const TheGlimpse = () => {
   const hasTriggered = useRef(false);
 
   useEffect(() => {
+    console.log("[Glimpse] Component mounted");
+    console.log("[Glimpse] Image path:", glimpseImage);
+    
     // Skip if reduced motion is enabled
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion) {
+      console.log("[Glimpse] Skipped: reduced motion enabled");
+      return;
+    }
 
     // Skip if already shown this session
-    if (sessionStorage.getItem(SESSION_KEY)) return;
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      console.log("[Glimpse] Skipped: already shown this session");
+      return;
+    }
 
     // Preload the image
     const img = new Image();
     img.src = glimpseImage;
+    
+    img.onerror = (e) => {
+      console.error("[Glimpse] Image failed to load:", e);
+    };
 
     img.onload = () => {
+      console.log("[Glimpse] Image loaded successfully");
       if (hasTriggered.current) return;
       hasTriggered.current = true;
 
