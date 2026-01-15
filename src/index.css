@@ -161,34 +161,6 @@
   .guilty-logo {
     @apply px-4 py-1 rounded-full border border-foreground text-foreground text-xs tracking-[0.15em];
   }
-
-  /* The Glimpse - Subliminal flash effect */
-  .glimpse-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-  }
-
-  .glimpse-image {
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    object-position: center;
-  }
-
-  .glimpse-noise {
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    opacity: 0.08;
-    mix-blend-mode: overlay;
-    pointer-events: none;
-  }
 }
 
 @layer utilities {

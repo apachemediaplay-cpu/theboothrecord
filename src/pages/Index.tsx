@@ -2,9 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
-import TheGlimpse from "@/components/TheGlimpse";
-
-const SESSION_KEY = "guilty_glimpse_shown";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -18,8 +15,6 @@ const Index = () => {
   const [glitchTop, setGlitchTop] = useState(30);
   const [glitchTop2, setGlitchTop2] = useState(60);
   const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [triggerGlimpse, setTriggerGlimpse] = useState(false);
-  const [textComplete, setTextComplete] = useState(false);
 
   const fullText1 = "Once you begin, you can't take it back.";
   const fullText2 = "That's the point.";
@@ -45,22 +40,16 @@ const Index = () => {
             } else {
               clearInterval(typeText2);
               setShowCursor2(false);
-              setTextComplete(true);
               
               // Trigger one final glitch near transition
               setTimeout(() => {
                 triggerGlitch();
-              }, 800);
-              
-              // Trigger The Glimpse after text is done (if not shown this session)
-              setTimeout(() => {
-                if (!sessionStorage.getItem(SESSION_KEY)) {
-                  setTriggerGlimpse(true);
-                } else {
-                  // If already shown, just navigate
-                  setTimeout(() => navigate("/confidentiality"), 1000);
-                }
               }, 1200);
+              
+              // Auto-navigate after 2 seconds
+              setTimeout(() => {
+                navigate("/confidentiality");
+              }, 2000);
             }
           }, 60);
         }, 400);
@@ -115,16 +104,8 @@ const Index = () => {
     navigate("/confidentiality");
   };
 
-  const handleGlimpseComplete = () => {
-    // Mark as shown for this session
-    sessionStorage.setItem(SESSION_KEY, "true");
-    // Navigate after glimpse completes
-    setTimeout(() => navigate("/confidentiality"), 500);
-  };
-
   return (
     <div className="screen-container animate-fade-in">
-      <TheGlimpse trigger={triggerGlimpse} onComplete={handleGlimpseComplete} />
       <BoothHeader />
       
       <div className="flex-1 flex flex-col justify-center">
