@@ -21,11 +21,26 @@ const Receiving = () => {
         clearInterval(typeInterval);
         setIsThinking(true);
         
-        // Keep text pulsing while "thinking", then navigate
-        setTimeout(() => {
-          setShowCursor(false);
-          navigate("/verdict");
-        }, 3500);
+        // Call the confession API
+        const confession = sessionStorage.getItem("confession") || "";
+        const baseUrl = import.meta.env.VITE_BASE_URL;
+        
+        fetch(`${baseUrl}/v1/confessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confession }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            sessionStorage.setItem("verdictResponse", data.data.response);
+            setShowCursor(false);
+            navigate("/verdict");
+          })
+          .catch(() => {
+            sessionStorage.setItem("verdictResponse", "The booth could not process your confession. Try again.");
+            setShowCursor(false);
+            navigate("/verdict");
+          });
       }
     }, 60);
 
