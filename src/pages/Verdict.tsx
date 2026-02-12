@@ -20,6 +20,7 @@ const Verdict = () => {
   const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const btnGlitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  const verdictResponse = sessionStorage.getItem("verdictResponse") || "";
   const fullText = "The booth noticed.";
 
   const triggerGlitch = () => {
@@ -169,20 +170,9 @@ const Verdict = () => {
           </span>
         </p>
         
-        <h1 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
-          Petty crime. Elegant restraint.
-        </h1>
-        
-        <p className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
-          The system forgot to feed you.
-        </p>
-        <p className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6">
-          You improvised.
-        </p>
-        
-        <p className="text-sm text-muted-foreground">
-          The booth doesn't punish necessity. It rewards it.
-        </p>
+        <div className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6 whitespace-pre-line">
+          {verdictResponse}
+        </div>
       </div>
       
       <div className="fixed bottom-20 left-0 right-0 px-6 flex flex-col items-center gap-6">
