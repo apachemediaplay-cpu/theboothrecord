@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:prod": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:dev": "vite build --mode development && firebase deploy --project guilty-dev-829ae",
+    "deploy:prod": "vite build --mode production && firebase deploy --project guilty-prod"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

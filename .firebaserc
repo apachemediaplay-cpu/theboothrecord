@@ -1,0 +1,20 @@
+{
+  "projects": {},
+  "targets": {
+    "guilty-dev-829ae": {
+      "hosting": {
+        "frontend": [
+          "guilty-dev-829ae"
+        ]
+      }
+    },
+    "guilty-prod": {
+      "hosting": {
+        "frontend": [
+          "guilty-prod"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

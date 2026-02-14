@@ -1,0 +1,16 @@
+steps:
+  - name: "node:22-alpine"
+    id: Install packages
+    entrypoint: "npm"
+    args: ["install"]
+
+  - name: "node:22-alpine"
+    id: Build app
+    entrypoint: "npm"
+    args: ["run", "build:${_ENV}"]
+
+  - name: "us-docker.pkg.dev/firebase-cli/us/firebase"
+    args: ["deploy", "--project=$PROJECT_ID"]
+timeout: "1600s"
+options:
+  logging: CLOUD_LOGGING_ONLY
