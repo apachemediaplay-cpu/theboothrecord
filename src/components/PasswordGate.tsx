@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import GuiltyLogo from "@/components/GuiltyLogo";
 
-const SITE_PASSWORD = "guilty2025";
+const SITE_PASSWORD = "Guilty2026";
 
 const PasswordGate = ({ children }: { children: React.ReactNode }) => {
   const [authenticated, setAuthenticated] = useState(false);
