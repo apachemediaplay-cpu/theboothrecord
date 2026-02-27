@@ -76,7 +76,7 @@ const Landing = () => {
               style={{
                 opacity: currentIcon === index ? 1 : 0,
                 filter: currentIcon === index && isGlitching
-                  ? `drop-shadow(2px 0 0 rgba(237,71,35,0.8)) drop-shadow(-2px 0 0 rgba(0,200,255,0.6))`
+                  ? `drop-shadow(2px 0 0 rgba(237,71,35,0.8)) drop-shadow(-2px 0 0 rgba(0,200,255,0.6)) drop-shadow(0 2px 0 rgba(0,255,80,0.6))`
                   : 'none',
                 transform: currentIcon === index && isGlitching
                   ? `translate(${Math.random() * 4 - 2}px, ${Math.random() * 4 - 2}px)`
