@@ -50,7 +50,7 @@ const Landing = () => {
   }, [triggerTransition]);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background px-6">
+    <div className="min-h-[100dvh] flex flex-col bg-black px-6">
       <div className="flex-1 flex items-center pt-16">
         <h1 className="font-control text-4xl md:text-6xl font-bold leading-[1.1] text-foreground">
           If you know,
