@@ -14,20 +14,47 @@ const Landing = () => {
   const [isGlitching, setIsGlitching] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
-  const fullText = "If you know,\nyou know.";
+  const [messageIndex, setMessageIndex] = useState(0);
+
+  const messages = [
+    "If you know,\nyou know.",
+    "Built on\nindulgence.",
+    "Nothing more.",
+  ];
 
   useEffect(() => {
+    let cancelled = false;
     let i = 0;
+    const currentMessage = messages[messageIndex];
+
     const type = () => {
-      if (i <= fullText.length) {
-        setDisplayedText(fullText.slice(0, i));
+      if (cancelled) return;
+      if (i <= currentMessage.length) {
+        setDisplayedText(currentMessage.slice(0, i));
         i++;
         setTimeout(type, 60 + Math.random() * 80);
+      } else {
+        // Hold the message, then erase
+        setTimeout(() => {
+          if (cancelled) return;
+          const erase = () => {
+            if (cancelled) return;
+            if (i >= 0) {
+              setDisplayedText(currentMessage.slice(0, i));
+              i--;
+              setTimeout(erase, 30 + Math.random() * 40);
+            } else {
+              setMessageIndex((prev) => (prev + 1) % messages.length);
+            }
+          };
+          erase();
+        }, 2500);
       }
     };
-    const startDelay = setTimeout(type, 500);
-    return () => clearTimeout(startDelay);
-  }, []);
+
+    const startDelay = setTimeout(type, 400);
+    return () => { cancelled = true; clearTimeout(startDelay); };
+  }, [messageIndex]);
 
   useEffect(() => {
     const blink = setInterval(() => setShowCursor((prev) => !prev), 530);
