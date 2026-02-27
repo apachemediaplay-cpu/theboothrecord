@@ -1,0 +1,12 @@
+<svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Veil/hood -->
+  <path d="M20 2C12 2 6 8 6 16V24C6 24 8 22 20 22C32 22 34 24 34 24V16C34 8 28 2 20 2Z" stroke="white" stroke-width="1.5" fill="none"/>
+  <!-- Face circle -->
+  <circle cx="20" cy="16" r="6" stroke="white" stroke-width="1.5" fill="none"/>
+  <!-- Praying hands -->
+  <path d="M16 28L20 38L24 28" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 32L20 42L26 32" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Veil sides -->
+  <path d="M6 24C6 24 4 34 8 40" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M34 24C34 24 36 34 32 40" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>
