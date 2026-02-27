@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import potionIcon from "@/assets/potion-icon.png";
 import iconNun from "@/assets/icon-nun.png";
@@ -12,6 +12,27 @@ const icons = [potionIcon, iconNun, iconPrayer, iconChicken, iconGun, iconSkiMas
 const Landing = () => {
   const [currentIcon, setCurrentIcon] = useState(0);
   const [isGlitching, setIsGlitching] = useState(false);
+  const [displayedText, setDisplayedText] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+  const fullText = "If you know,\nyou know.";
+
+  useEffect(() => {
+    let i = 0;
+    const type = () => {
+      if (i <= fullText.length) {
+        setDisplayedText(fullText.slice(0, i));
+        i++;
+        setTimeout(type, 60 + Math.random() * 80);
+      }
+    };
+    const startDelay = setTimeout(type, 500);
+    return () => clearTimeout(startDelay);
+  }, []);
+
+  useEffect(() => {
+    const blink = setInterval(() => setShowCursor((prev) => !prev), 530);
+    return () => clearInterval(blink);
+  }, []);
 
   const getRandomDelay = () => 1200 + Math.random() * 3000;
 
@@ -52,10 +73,9 @@ const Landing = () => {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-black px-6">
       <div className="flex-1 flex items-center justify-center pt-16">
-        <h1 className="font-control text-4xl md:text-6xl font-bold leading-[1.1] text-foreground">
-          If you know,
-          <br />
-          you know.
+        <h1 className="font-control text-4xl md:text-6xl font-bold leading-[1.1] text-foreground whitespace-pre-wrap">
+          {displayedText}
+          <span className={`inline-block w-[3px] h-[1em] bg-foreground ml-1 align-baseline ${showCursor ? 'opacity-100' : 'opacity-0'}`} />
         </h1>
       </div>
 
