@@ -1,4 +1,4 @@
-import guiltyOvalLogo from "@/assets/guilty-oval-logo.svg";
+import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import prayerIcon from "@/assets/prayer-icon.svg";
 
 const Landing = () => {
@@ -16,7 +16,7 @@ const Landing = () => {
       {/* Bottom section with logo and icon */}
       <div className="flex flex-col items-center gap-6 pb-20">
         <img
-          src={guiltyOvalLogo}
+          src={guiltyLogoRed}
           alt="GUILTY"
           className="w-48 md:w-56 h-auto"
         />
