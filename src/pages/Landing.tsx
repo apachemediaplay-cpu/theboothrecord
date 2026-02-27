@@ -15,6 +15,8 @@ const Landing = () => {
   const [displayedText, setDisplayedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const [messageIndex, setMessageIndex] = useState(0);
+  const [pageGlitch, setPageGlitch] = useState(true);
+  const [typingStarted, setTypingStarted] = useState(false);
 
   const messages = [
     "If you know,\nyou know.",
@@ -22,7 +24,19 @@ const Landing = () => {
     "Nothing more.",
   ];
 
+  // Page glitch on load, then show cursor, then start typing
   useEffect(() => {
+    const glitchDuration = setTimeout(() => {
+      setPageGlitch(false);
+    }, 800);
+    const cursorDelay = setTimeout(() => {
+      setTypingStarted(true);
+    }, 2200);
+    return () => { clearTimeout(glitchDuration); clearTimeout(cursorDelay); };
+  }, []);
+
+  useEffect(() => {
+    if (!typingStarted) return;
     let cancelled = false;
     let i = 0;
     const currentMessage = messages[messageIndex];
@@ -34,7 +48,6 @@ const Landing = () => {
         i++;
         setTimeout(type, 60 + Math.random() * 80);
       } else {
-        // Hold the message, then erase
         setTimeout(() => {
           if (cancelled) return;
           const erase = () => {
@@ -54,7 +67,7 @@ const Landing = () => {
 
     const startDelay = setTimeout(type, 400);
     return () => { cancelled = true; clearTimeout(startDelay); };
-  }, [messageIndex]);
+  }, [messageIndex, typingStarted]);
 
   useEffect(() => {
     const blink = setInterval(() => setShowCursor((prev) => !prev), 530);
@@ -98,7 +111,17 @@ const Landing = () => {
   }, [triggerTransition]);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-black px-6">
+    <div className={`min-h-[100dvh] flex flex-col bg-black px-6 ${pageGlitch ? 'animate-page-glitch' : ''}`}>
+      {pageGlitch && (
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          <div className="absolute inset-0 bg-black" style={{
+            animation: 'pageFlicker 100ms infinite',
+          }} />
+          <div className="absolute inset-0" style={{
+            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
+          }} />
+        </div>
+      )}
       <div className="flex-1 flex items-center justify-center pt-16">
         <h1 className="font-control text-4xl md:text-6xl font-bold leading-[1.1] text-foreground whitespace-pre-wrap">
           {displayedText}
