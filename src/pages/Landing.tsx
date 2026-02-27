@@ -122,14 +122,12 @@ const Landing = () => {
           }} />
         </div>
       )}
-      <div className="pt-24 md:pt-32 px-2">
-        <h1 className="font-control text-4xl md:text-6xl font-bold leading-[1.1] text-foreground whitespace-pre-wrap min-h-[2.4em]">
+      <div className="flex-1 flex items-center justify-center pt-16">
+        <h1 className="font-control text-4xl md:text-6xl font-bold leading-[1.1] text-foreground whitespace-pre-wrap">
           {displayedText}
           <span className={`inline-block w-[3px] h-[1em] bg-foreground ml-1 align-baseline ${showCursor ? 'opacity-100' : 'opacity-0'}`} />
         </h1>
       </div>
-
-      <div className="flex-1" />
 
       <div className="flex flex-col items-center gap-6 pb-20">
         <img
