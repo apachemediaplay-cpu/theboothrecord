@@ -1,5 +1,5 @@
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
-import prayerIcon from "@/assets/prayer-icon.svg";
+import potionIcon from "@/assets/potion-icon.png";
 
 const Landing = () => {
   return (
@@ -22,9 +22,9 @@ const Landing = () => {
         />
         <div className="w-12 border-t border-muted-foreground" />
         <img
-          src={prayerIcon}
+          src={potionIcon}
           alt=""
-          className="w-8 h-auto opacity-80"
+          className="w-10 h-auto"
         />
       </div>
     </div>
