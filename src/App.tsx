@@ -13,6 +13,7 @@ import Return from "./pages/Return";
 import Summon from "./pages/Summon";
 import Answer from "./pages/Answer";
 import Landing from "./pages/Landing";
+import Retail from "./pages/Retail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/summon" element={<Summon />} />
           <Route path="/answer" element={<Answer />} />
           <Route path="/landing" element={<Landing />} />
+          <Route path="/retail" element={<Retail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
