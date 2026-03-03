@@ -44,21 +44,21 @@ const contextImages = [
   { src: contextStudio, alt: "GUILTY Soda in minimal studio lighting" },
 ];
 
+const productPoints = [
+  "Premium craft soda",
+  "Three signature flavours",
+  "Designed for modern hospitality",
+  "Limited production runs",
+  "Strong shelf presence",
+  "Brand-led consumer demand",
+];
+
 const retailPoints = [
   "High-impact shelf presence",
   "Designed for modern hospitality venues",
   "Cultural brand positioning",
   "Limited distribution model",
   "Built-in digital brand ecosystem",
-];
-
-const productPoints = [
-  "Premium craft soda",
-  "Three signature flavours",
-  "Designed for hospitality and boutique retail",
-  "Limited production runs",
-  "Strong shelf presence",
-  "Brand-led consumer demand",
 ];
 
 const Retail = () => {
@@ -85,40 +85,40 @@ const Retail = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-background to-background" />
-        <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto">
-          <img src={guiltyLogoRed} alt="GUILTY" className="h-8 mb-12 opacity-80" />
+      <section className="relative min-h-[110vh] flex flex-col items-center justify-center px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-background" />
+        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
+          <img src={guiltyLogoRed} alt="GUILTY" className="h-6 mb-16 opacity-60" />
           <img
             src={heroCan}
             alt="GUILTY Soda"
-            className="w-56 md:w-72 lg:w-80 mb-12 drop-shadow-2xl"
+            className="w-72 md:w-96 lg:w-[28rem] mb-16 drop-shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
           />
-          <h1 className="font-control text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4">
+          <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
             GUILTY Soda
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base max-w-md mb-10 font-mono-light">
+          <p className="text-muted-foreground text-sm md:text-base max-w-md mb-14 font-mono-light tracking-wide">
             A premium craft soda built for modern venues and boutique retail.
           </p>
           <a
             href="#enquiry"
-            className="inline-block px-8 py-4 bg-foreground text-background font-bold text-sm tracking-[0.2em] uppercase transition-opacity hover:opacity-90 mb-4"
+            className="inline-block px-10 py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90 mb-5"
           >
             Retailer Enquiries
           </a>
-          <p className="text-muted-foreground text-xs font-mono-light">
+          <p className="text-muted-foreground text-[11px] font-mono-light tracking-wider">
             Wholesale access and early retail allocations.
           </p>
         </div>
       </section>
 
       {/* Product Statement */}
-      <section className="px-6 py-24 md:py-32">
+      <section className="px-6 py-32 md:py-44">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-control text-3xl md:text-4xl font-bold mb-8">
+          <h2 className="font-control text-4xl md:text-5xl lg:text-6xl font-bold mb-10">
             A Different Kind of Soda
           </h2>
-          <p className="text-muted-foreground text-sm md:text-base leading-relaxed font-mono-light">
+          <p className="text-muted-foreground text-sm md:text-base leading-[1.9] font-mono-light max-w-xl mx-auto">
             GUILTY Soda sits somewhere between premium soft drink and cultural product.
             Created for bars, restaurants and boutique retailers that care about brand,
             design and flavour, the product is built to stand apart on the shelf and behind the bar.
@@ -131,62 +131,70 @@ const Retail = () => {
         <img
           src={productLineup}
           alt="GUILTY Soda product lineup on marble bar"
-          className="w-full h-64 md:h-96 lg:h-[500px] object-cover"
+          className="w-full h-80 md:h-[500px] lg:h-[600px] object-cover"
         />
       </section>
 
       {/* Product Overview — image left, text right */}
-      <section className="px-6 py-24 md:py-32">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+      <section className="px-6 py-32 md:py-44">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
           <img
             src={heroCan}
             alt="GUILTY Soda can"
-            className="w-full max-w-xs mx-auto md:max-w-none"
+            className="w-full max-w-sm mx-auto md:max-w-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
           />
           <div>
-            <h2 className="font-control text-3xl md:text-4xl font-bold mb-8">
+            <h2 className="font-control text-4xl md:text-5xl font-bold mb-12">
               Product Overview
             </h2>
-            <ul className="space-y-4">
+            <div className="space-y-5">
               {productPoints.map((point) => (
-                <li key={point} className="flex items-start gap-3 text-muted-foreground text-sm font-mono-light">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-foreground shrink-0" />
+                <p key={point} className="text-muted-foreground text-sm font-mono-light tracking-wide border-b border-muted/30 pb-5">
                   {point}
-                </li>
+                </p>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Flavour Block */}
-      <section className="px-6 py-24 md:py-32 bg-secondary/30">
+      <section className="px-6 py-32 md:py-44 bg-secondary/30">
         <div className="max-w-6xl mx-auto">
-          <h2 className="font-control text-3xl md:text-4xl font-bold text-center mb-16">
+          <h2 className="font-control text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-24 md:mb-32">
             Three Signature Flavours
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
-            {flavours.map((f) => (
-              <div key={f.name} className="flex flex-col items-center text-center">
-                <img
-                  src={f.image}
-                  alt={f.name}
-                  className="w-44 md:w-52 mb-8 drop-shadow-lg"
-                />
-                <h3 className="font-control text-2xl font-bold mb-2">{f.name}</h3>
-                <p className="text-foreground/70 text-sm italic mb-4 font-mono-light">{f.tagline}</p>
-                <p className="text-muted-foreground text-xs leading-relaxed mb-6 max-w-xs font-mono-light">
-                  {f.description}
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {f.notes.map((note) => (
-                    <span
-                      key={note}
-                      className="px-3 py-1 border border-muted text-[10px] tracking-[0.15em] uppercase text-muted-foreground"
-                    >
-                      {note}
-                    </span>
-                  ))}
+          <div className="space-y-32 md:space-y-44">
+            {flavours.map((f, i) => (
+              <div
+                key={f.name}
+                className={`grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center ${
+                  i % 2 !== 0 ? "md:[direction:rtl]" : ""
+                }`}
+              >
+                <div className="flex justify-center">
+                  <img
+                    src={f.image}
+                    alt={f.name}
+                    className="w-56 md:w-72 lg:w-80 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                  />
+                </div>
+                <div className={i % 2 !== 0 ? "md:[direction:ltr]" : ""}>
+                  <h3 className="font-control text-3xl md:text-4xl font-bold mb-3">{f.name}</h3>
+                  <p className="text-foreground/60 text-sm italic mb-6 font-mono-light">{f.tagline}</p>
+                  <p className="text-muted-foreground text-xs leading-[1.9] mb-8 max-w-sm font-mono-light">
+                    {f.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {f.notes.map((note) => (
+                      <span
+                        key={note}
+                        className="px-4 py-1.5 border border-muted/50 text-[10px] tracking-[0.2em] uppercase text-muted-foreground"
+                      >
+                        {note}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -195,20 +203,20 @@ const Retail = () => {
       </section>
 
       {/* Product Origin — text left, image right */}
-      <section className="px-6 py-24 md:py-32">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+      <section className="px-6 py-32 md:py-44">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
           <div>
-            <h2 className="font-control text-3xl md:text-4xl font-bold mb-8">
+            <h2 className="font-control text-4xl md:text-5xl font-bold mb-10">
               Where It Started
             </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed font-mono-light mb-4">
+            <p className="text-muted-foreground text-sm leading-[1.9] font-mono-light mb-5">
               GUILTY began as a cultural brand exploring indulgence and behaviour.
             </p>
-            <p className="text-muted-foreground text-sm leading-relaxed font-mono-light mb-4">
+            <p className="text-muted-foreground text-sm leading-[1.9] font-mono-light mb-5">
               The soda followed naturally — a physical product designed for real-world
               environments where brand, flavour and experience matter equally.
             </p>
-            <p className="text-muted-foreground text-sm leading-relaxed font-mono-light">
+            <p className="text-muted-foreground text-sm leading-[1.9] font-mono-light">
               Rather than compete with traditional soft drinks, GUILTY occupies a different
               space: a premium cultural beverage.
             </p>
@@ -216,66 +224,63 @@ const Retail = () => {
           <img
             src={contextSpirits}
             alt="GUILTY beside premium spirits"
-            className="w-full max-w-xs mx-auto md:max-w-none"
+            className="w-full max-w-sm mx-auto md:max-w-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
           />
         </div>
       </section>
 
       {/* Retail Positioning */}
-      <section className="px-6 py-24 md:py-32 bg-secondary/30">
+      <section className="px-6 py-32 md:py-44 bg-secondary/30">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-control text-3xl md:text-4xl font-bold mb-10">
+          <h2 className="font-control text-4xl md:text-5xl font-bold mb-14">
             Built for Premium Retail
           </h2>
-          <ul className="space-y-4 inline-block text-left">
+          <div className="space-y-5 inline-block text-left">
             {retailPoints.map((point) => (
-              <li key={point} className="flex items-start gap-3 text-muted-foreground text-sm font-mono-light">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-foreground shrink-0" />
+              <p key={point} className="text-muted-foreground text-sm font-mono-light tracking-wide border-b border-muted/30 pb-5">
                 {point}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* Product In Context Gallery */}
-      <section className="px-6 py-24 md:py-32">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-muted-foreground text-[10px] tracking-[0.3em] uppercase text-center mb-12 font-mono-light">
-            Product In Context
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {contextImages.map((img) => (
-              <img
-                key={img.alt}
-                src={img.src}
-                alt={img.alt}
-                className="w-full aspect-square object-cover"
-              />
+              </p>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Product In Context Gallery — edge to edge */}
+      <section className="py-32 md:py-44">
+        <p className="text-muted-foreground text-[10px] tracking-[0.35em] uppercase text-center mb-14 font-mono-light">
+          Product In Context
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+          {contextImages.map((img) => (
+            <img
+              key={img.alt}
+              src={img.src}
+              alt={img.alt}
+              className="w-full aspect-[3/4] object-cover"
+            />
+          ))}
+        </div>
+      </section>
+
       {/* Retail Enquiry Block */}
-      <section id="enquiry" className="px-6 py-24 md:py-32 bg-secondary/30">
+      <section id="enquiry" className="px-6 py-32 md:py-44 bg-secondary/30">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-control text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="font-control text-4xl md:text-5xl font-bold mb-8">
             Retail & Distribution Enquiries
           </h2>
-          <p className="text-muted-foreground text-sm leading-relaxed font-mono-light mb-10">
+          <p className="text-muted-foreground text-sm leading-[1.9] font-mono-light mb-14 max-w-lg mx-auto">
             For wholesale access, venue partnerships or distribution discussions
             please contact the founders directly.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="mailto:founders@guiltyconfess.com"
-              className="px-8 py-4 bg-foreground text-background font-bold text-sm tracking-[0.2em] uppercase transition-opacity hover:opacity-90"
+              className="px-10 py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90"
             >
               Email Founders
             </a>
             <button
-              className="px-8 py-4 border border-foreground text-foreground font-bold text-sm tracking-[0.2em] uppercase transition-opacity hover:opacity-80"
+              className="px-10 py-5 border border-foreground text-foreground font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-80"
             >
               Download Retail Pack
             </button>
@@ -284,20 +289,20 @@ const Retail = () => {
       </section>
 
       {/* Expression of Interest Form */}
-      <section className="px-6 py-24 md:py-32">
+      <section className="px-6 py-32 md:py-44">
         <div className="max-w-lg mx-auto">
-          <h2 className="font-control text-3xl md:text-4xl font-bold text-center mb-4">
+          <h2 className="font-control text-4xl md:text-5xl font-bold text-center mb-6">
             Pre-Order Expression of Interest
           </h2>
           {submitted ? (
-            <div className="text-center py-16">
-              <p className="font-control text-2xl font-bold mb-4">Thank you.</p>
+            <div className="text-center py-20">
+              <p className="font-control text-3xl font-bold mb-5">Thank you.</p>
               <p className="text-muted-foreground text-sm font-mono-light">
                 We'll be in touch regarding your allocation.
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mt-10 space-y-5">
+            <form onSubmit={handleSubmit} className="mt-14 space-y-8">
               {[
                 { name: "businessName", label: "Business Name", type: "text" },
                 { name: "contactName", label: "Contact Name", type: "text" },
@@ -308,7 +313,7 @@ const Retail = () => {
                 { name: "location", label: "Location", type: "text" },
               ].map((field) => (
                 <div key={field.name}>
-                  <label className="block text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-2 font-mono-light">
+                  <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">
                     {field.label}
                   </label>
                   <input
@@ -317,18 +322,18 @@ const Retail = () => {
                     value={form[field.name as keyof typeof form]}
                     onChange={handleChange}
                     required
-                    className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light"
+                    className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light"
                   />
                 </div>
               ))}
-              <div className="pt-6">
+              <div className="pt-10">
                 <button
                   type="submit"
-                  className="w-full py-4 bg-foreground text-background font-bold text-sm tracking-[0.2em] uppercase transition-opacity hover:opacity-90"
+                  className="w-full py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90"
                 >
                   Request Allocation
                 </button>
-                <p className="text-muted-foreground text-[10px] text-center mt-4 font-mono-light">
+                <p className="text-muted-foreground text-[10px] text-center mt-5 font-mono-light tracking-wider">
                   Early allocations are limited.
                 </p>
               </div>
@@ -338,10 +343,10 @@ const Retail = () => {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 py-12 border-t border-muted">
-        <div className="max-w-5xl mx-auto flex flex-col items-center gap-4">
-          <img src={guiltyLogoRed} alt="GUILTY" className="h-5 opacity-60" />
-          <p className="text-muted-foreground text-[10px] font-mono-light tracking-wide">
+      <footer className="px-6 py-16 border-t border-muted/30">
+        <div className="max-w-5xl mx-auto flex flex-col items-center gap-5">
+          <img src={guiltyLogoRed} alt="GUILTY" className="h-5 opacity-50" />
+          <p className="text-muted-foreground text-[10px] font-mono-light tracking-widest">
             © {new Date().getFullYear()} GUILTY. All rights reserved.
           </p>
         </div>
