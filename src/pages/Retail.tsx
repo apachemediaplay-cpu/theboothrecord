@@ -94,7 +94,7 @@ const Retail = () => {
             alt="GUILTY Soda"
             className="w-56 md:w-72 lg:w-80 mb-12 drop-shadow-2xl"
           />
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4">
+          <h1 className="font-control text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4">
             GUILTY Soda
           </h1>
           <p className="text-muted-foreground text-sm md:text-base max-w-md mb-10 font-mono-light">
@@ -115,7 +115,7 @@ const Retail = () => {
       {/* Product Statement */}
       <section className="px-6 py-24 md:py-32">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-8">
+          <h2 className="font-control text-3xl md:text-4xl font-bold mb-8">
             A Different Kind of Soda
           </h2>
           <p className="text-muted-foreground text-sm md:text-base leading-relaxed font-mono-light">
@@ -144,7 +144,7 @@ const Retail = () => {
             className="w-full max-w-xs mx-auto md:max-w-none"
           />
           <div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-8">
+            <h2 className="font-control text-3xl md:text-4xl font-bold mb-8">
               Product Overview
             </h2>
             <ul className="space-y-4">
@@ -162,7 +162,7 @@ const Retail = () => {
       {/* Flavour Block */}
       <section className="px-6 py-24 md:py-32 bg-secondary/30">
         <div className="max-w-6xl mx-auto">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-16">
+          <h2 className="font-control text-3xl md:text-4xl font-bold text-center mb-16">
             Three Signature Flavours
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
@@ -173,7 +173,7 @@ const Retail = () => {
                   alt={f.name}
                   className="w-44 md:w-52 mb-8 drop-shadow-lg"
                 />
-                <h3 className="font-display text-2xl font-bold mb-2">{f.name}</h3>
+                <h3 className="font-control text-2xl font-bold mb-2">{f.name}</h3>
                 <p className="text-foreground/70 text-sm italic mb-4 font-mono-light">{f.tagline}</p>
                 <p className="text-muted-foreground text-xs leading-relaxed mb-6 max-w-xs font-mono-light">
                   {f.description}
@@ -198,7 +198,7 @@ const Retail = () => {
       <section className="px-6 py-24 md:py-32">
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
           <div>
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-8">
+            <h2 className="font-control text-3xl md:text-4xl font-bold mb-8">
               Where It Started
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed font-mono-light mb-4">
@@ -224,7 +224,7 @@ const Retail = () => {
       {/* Retail Positioning */}
       <section className="px-6 py-24 md:py-32 bg-secondary/30">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-10">
+          <h2 className="font-control text-3xl md:text-4xl font-bold mb-10">
             Built for Premium Retail
           </h2>
           <ul className="space-y-4 inline-block text-left">
@@ -260,7 +260,7 @@ const Retail = () => {
       {/* Retail Enquiry Block */}
       <section id="enquiry" className="px-6 py-24 md:py-32 bg-secondary/30">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="font-control text-3xl md:text-4xl font-bold mb-6">
             Retail & Distribution Enquiries
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed font-mono-light mb-10">
@@ -286,12 +286,12 @@ const Retail = () => {
       {/* Expression of Interest Form */}
       <section className="px-6 py-24 md:py-32">
         <div className="max-w-lg mx-auto">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-4">
+          <h2 className="font-control text-3xl md:text-4xl font-bold text-center mb-4">
             Pre-Order Expression of Interest
           </h2>
           {submitted ? (
             <div className="text-center py-16">
-              <p className="font-display text-2xl font-bold mb-4">Thank you.</p>
+              <p className="font-control text-2xl font-bold mb-4">Thank you.</p>
               <p className="text-muted-foreground text-sm font-mono-light">
                 We'll be in touch regarding your allocation.
               </p>
