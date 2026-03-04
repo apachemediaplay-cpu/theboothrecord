@@ -123,6 +123,14 @@ const Retail = () => {
         </div>
       </section>
 
+      {/* Full Width Lineup Image */}
+      <section className="w-full">
+        <img
+          src={productLineup}
+          alt="GUILTY Soda product lineup on marble bar"
+          className="w-full h-80 md:h-[500px] lg:h-[600px] object-cover" />
+        
+      </section>
 
       {/* Product Overview — image left, text right */}
       <section className="px-6 py-32 md:py-44">
