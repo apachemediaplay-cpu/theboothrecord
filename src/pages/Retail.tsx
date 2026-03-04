@@ -85,15 +85,15 @@ const Retail = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero */}
-      <section className="relative min-h-[110vh] flex flex-col items-center justify-center px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-background" />
-        <div className="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto">
-          <img src={guiltyLogoRed} alt="GUILTY" className="h-6 mb-16 opacity-60" />
-          <img
-            src={heroCan}
-            alt="GUILTY Soda"
-            className="w-72 md:w-96 lg:w-[28rem] mb-16 drop-shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
-          />
+      <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
+        <img
+          src={heroCan}
+          alt="GUILTY Soda"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+        <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
+          <img src={guiltyLogoRed} alt="GUILTY" className="h-6 mb-10 opacity-60" />
           <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
             GUILTY Soda
           </h1>
