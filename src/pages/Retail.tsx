@@ -176,7 +176,7 @@ const Retail = () => {
                   <img
                     src={f.image}
                     alt={f.name}
-                    className="w-56 md:w-72 lg:w-80 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                    className="w-56 md:w-72 lg:w-80"
                   />
                 </div>
                 <div className={i % 2 !== 0 ? "md:[direction:ltr]" : ""}>
