@@ -159,7 +159,7 @@ const Retail = () => {
       </section>
 
       {/* Flavour Block */}
-      <section className="px-6 py-32 md:py-44 bg-secondary/30">
+      <section className="px-6 py-32 md:py-44 bg-white text-black">
         <div className="max-w-6xl mx-auto">
           <h2 className="font-control text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-24 md:mb-32">
             Three Signature Flavours
@@ -181,15 +181,15 @@ const Retail = () => {
                 </div>
                 <div className={i % 2 !== 0 ? "md:[direction:ltr]" : ""}>
                   <h3 className="font-control text-3xl md:text-4xl font-bold mb-3">{f.name}</h3>
-                  <p className="text-foreground/60 text-sm italic mb-6 font-mono-light">{f.tagline}</p>
-                  <p className="text-muted-foreground text-xs leading-[1.9] mb-8 max-w-sm font-mono-light">
+                  <p className="text-black/60 text-sm italic mb-6 font-mono-light">{f.tagline}</p>
+                  <p className="text-black/50 text-xs leading-[1.9] mb-8 max-w-sm font-mono-light">
                     {f.description}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {f.notes.map((note) => (
                       <span
                         key={note}
-                        className="px-4 py-1.5 border border-muted/50 text-[10px] tracking-[0.2em] uppercase text-muted-foreground"
+                        className="px-4 py-1.5 border border-black/20 text-[10px] tracking-[0.2em] uppercase text-black/50"
                       >
                         {note}
                       </span>
