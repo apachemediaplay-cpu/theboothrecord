@@ -135,11 +135,6 @@ const Retail = () => {
       {/* Product Overview — image left, text right */}
       <section className="px-6 py-32 md:py-44">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
-          <img
-            src={heroCan}
-            alt="GUILTY Soda can"
-            className="w-full max-w-sm mx-auto md:max-w-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]" />
-          
           <div>
             <h2 className="font-control text-4xl md:text-5xl font-bold mb-12">
               Product Overview
