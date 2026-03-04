@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import RetailPopup from "@/components/RetailPopup";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroCan from "@/assets/retail/hero-can.png";
@@ -87,6 +88,7 @@ const Retail = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <RetailPopup />
       {/* Hero */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
         <img
