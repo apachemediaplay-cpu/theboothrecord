@@ -1,5 +1,6 @@
 import { useState } from "react";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
+import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroCan from "@/assets/retail/hero-can.png";
 import colaVice from "@/assets/retail/cola-vice.png";
 import citrusConfessional from "@/assets/retail/citrus-confessional.png";
@@ -93,7 +94,7 @@ const Retail = () => {
         
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
-          <img src={guiltyLogoRed} alt="GUILTY" className="h-6 mb-10 opacity-60" />
+          <img src={guiltyLogoWhite} alt="GUILTY" className="h-10 mb-10 opacity-80" />
           <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
             Soda
           </h1>
