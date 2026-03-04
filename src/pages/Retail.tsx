@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroCan from "@/assets/retail/hero-can.png";
@@ -73,6 +74,7 @@ const Retail = () => {
     location: ""
   });
   const [submitted, setSubmitted] = useState(false);
+  const [ctaDismissed, setCtaDismissed] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -352,6 +354,26 @@ const Retail = () => {
           </p>
         </div>
       </footer>
+      {/* Sticky CTA Banner */}
+      {!ctaDismissed && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:pb-6">
+          <div className="relative max-w-xl mx-auto bg-foreground text-background px-6 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_30px_rgba(0,0,0,0.3)]">
+            <a
+              href="#enquiry"
+              className="flex-1 text-center font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-80"
+            >
+              Retailer Enquiries
+            </a>
+            <button
+              onClick={() => setCtaDismissed(true)}
+              className="absolute -top-3 -right-3 w-7 h-7 bg-foreground text-background border border-muted/30 flex items-center justify-center transition-opacity hover:opacity-80"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>);
 
 };
