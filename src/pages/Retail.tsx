@@ -103,12 +103,6 @@ const Retail = () => {
           <p className="text-muted-foreground text-sm md:text-base max-w-md mb-14 font-mono-light tracking-wide">
             A premium craft soda built for modern venues and boutique retail.
           </p>
-          <a
-            href="#enquiry"
-            className="inline-block px-10 py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90 mb-5">
-            
-            Retailer Enquiries
-          </a>
           <p className="text-muted-foreground text-[11px] font-mono-light tracking-wider">
             Wholesale access and early retail allocations.
           </p>
