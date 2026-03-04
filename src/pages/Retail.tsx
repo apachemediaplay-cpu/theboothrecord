@@ -11,55 +11,55 @@ import contextSpirits from "@/assets/retail/context-spirits.png";
 import contextStudio from "@/assets/retail/context-studio.png";
 
 const flavours = [
-  {
-    name: "Cola Vice",
-    tagline: "Cola with a past.",
-    description:
-      "Dark spice. Real citrus. A smooth hit of vanilla. Every sip reveals something new — warmth, depth, a little trouble. Classic cola rewritten with better ingredients and fewer apologies.",
-    notes: ["Dark spice", "Citrus", "Vanilla"],
-    image: colaVice,
-  },
-  {
-    name: "Citrus Confessional",
-    tagline: "What happens when lemon tells the truth.",
-    description:
-      "Sharp. Bright. Unapologetically fresh. Yuzu slips in quietly — floral, mysterious, slightly wild — turning a familiar citrus soda into something far more interesting. Clean, crisp, and dangerously drinkable.",
-    notes: ["Lemon", "Yuzu", "Fresh citrus"],
-    image: citrusConfessional,
-  },
-  {
-    name: "Bitter Justice",
-    tagline: "This isn't sweet revenge. It's better.",
-    description:
-      "Blood orange brings the depth. Ginger delivers the bite. A quiet bitterness lingers just long enough to remind you why you came back for another sip. Sharp. Bold. Unapologetically guilty.",
-    notes: ["Blood orange", "Ginger", "Bitters"],
-    image: bitterJustice,
-  },
-];
+{
+  name: "Cola Vice",
+  tagline: "Cola with a past.",
+  description:
+  "Dark spice. Real citrus. A smooth hit of vanilla. Every sip reveals something new — warmth, depth, a little trouble. Classic cola rewritten with better ingredients and fewer apologies.",
+  notes: ["Dark spice", "Citrus", "Vanilla"],
+  image: colaVice
+},
+{
+  name: "Citrus Confessional",
+  tagline: "What happens when lemon tells the truth.",
+  description:
+  "Sharp. Bright. Unapologetically fresh. Yuzu slips in quietly — floral, mysterious, slightly wild — turning a familiar citrus soda into something far more interesting. Clean, crisp, and dangerously drinkable.",
+  notes: ["Lemon", "Yuzu", "Fresh citrus"],
+  image: citrusConfessional
+},
+{
+  name: "Bitter Justice",
+  tagline: "This isn't sweet revenge. It's better.",
+  description:
+  "Blood orange brings the depth. Ginger delivers the bite. A quiet bitterness lingers just long enough to remind you why you came back for another sip. Sharp. Bold. Unapologetically guilty.",
+  notes: ["Blood orange", "Ginger", "Bitters"],
+  image: bitterJustice
+}];
+
 
 const contextImages = [
-  { src: contextBar, alt: "GUILTY Soda on marble bar beside cocktail" },
-  { src: contextRetail, alt: "GUILTY Soda in boutique retail fridge" },
-  { src: contextSpirits, alt: "GUILTY Soda beside premium spirits" },
-  { src: contextStudio, alt: "GUILTY Soda in minimal studio lighting" },
-];
+{ src: contextBar, alt: "GUILTY Soda on marble bar beside cocktail" },
+{ src: contextRetail, alt: "GUILTY Soda in boutique retail fridge" },
+{ src: contextSpirits, alt: "GUILTY Soda beside premium spirits" },
+{ src: contextStudio, alt: "GUILTY Soda in minimal studio lighting" }];
+
 
 const productPoints = [
-  "Premium craft soda",
-  "Three signature flavours",
-  "Designed for modern hospitality",
-  "Limited production runs",
-  "Strong shelf presence",
-  "Brand-led consumer demand",
-];
+"Premium craft soda",
+"Three signature flavours",
+"Designed for modern hospitality",
+"Limited production runs",
+"Strong shelf presence",
+"Brand-led consumer demand"];
+
 
 const retailPoints = [
-  "High-impact shelf presence",
-  "Designed for modern hospitality venues",
-  "Cultural brand positioning",
-  "Limited distribution model",
-  "Built-in digital brand ecosystem",
-];
+"High-impact shelf presence",
+"Designed for modern hospitality venues",
+"Cultural brand positioning",
+"Limited distribution model",
+"Built-in digital brand ecosystem"];
+
 
 const Retail = () => {
   const [form, setForm] = useState({
@@ -69,7 +69,7 @@ const Retail = () => {
     phone: "",
     venueType: "",
     monthlyVolume: "",
-    location: "",
+    location: ""
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -89,21 +89,21 @@ const Retail = () => {
         <img
           src={heroCan}
           alt="GUILTY Soda"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+          className="absolute inset-0 w-full h-full object-cover" />
+        
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
           <img src={guiltyLogoRed} alt="GUILTY" className="h-6 mb-10 opacity-60" />
           <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
-            GUILTY Soda
+            Soda
           </h1>
           <p className="text-muted-foreground text-sm md:text-base max-w-md mb-14 font-mono-light tracking-wide">
             A premium craft soda built for modern venues and boutique retail.
           </p>
           <a
             href="#enquiry"
-            className="inline-block px-10 py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90 mb-5"
-          >
+            className="inline-block px-10 py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90 mb-5">
+            
             Retailer Enquiries
           </a>
           <p className="text-muted-foreground text-[11px] font-mono-light tracking-wider">
@@ -131,22 +131,29 @@ const Retail = () => {
         <img
           src={productLineup}
           alt="GUILTY Soda product lineup on marble bar"
-          className="w-full h-80 md:h-[500px] lg:h-[600px] object-cover"
-        />
+          className="w-full h-80 md:h-[500px] lg:h-[600px] object-cover" />
+        
       </section>
 
-      {/* Product Overview */}
+      {/* Product Overview — image left, text right */}
       <section className="px-6 py-32 md:py-44">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="font-control text-4xl md:text-5xl font-bold mb-12 text-center">
-            Product Overview
-          </h2>
-          <div className="space-y-5">
-            {productPoints.map((point) => (
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
+          <img
+            src={heroCan}
+            alt="GUILTY Soda can"
+            className="w-full max-w-sm mx-auto md:max-w-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]" />
+          
+          <div>
+            <h2 className="font-control text-4xl md:text-5xl font-bold mb-12">
+              Product Overview
+            </h2>
+            <div className="space-y-5">
+              {productPoints.map((point) =>
               <p key={point} className="text-muted-foreground text-sm font-mono-light tracking-wide border-b border-muted/30 pb-5">
-                {point}
-              </p>
-            ))}
+                  {point}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -158,19 +165,19 @@ const Retail = () => {
             Three Signature Flavours
           </h2>
           <div className="space-y-32 md:space-y-44">
-            {flavours.map((f, i) => (
-              <div
-                key={f.name}
-                className={`grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center ${
-                  i % 2 !== 0 ? "md:[direction:rtl]" : ""
-                }`}
-              >
+            {flavours.map((f, i) =>
+            <div
+              key={f.name}
+              className={`grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center ${
+              i % 2 !== 0 ? "md:[direction:rtl]" : ""}`
+              }>
+              
                 <div className="flex justify-center">
                   <img
-                    src={f.image}
-                    alt={f.name}
-                    className="w-56 md:w-72 lg:w-80"
-                  />
+                  src={f.image}
+                  alt={f.name}
+                  className="w-56 md:w-72 lg:w-80 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]" />
+                
                 </div>
                 <div className={i % 2 !== 0 ? "md:[direction:ltr]" : ""}>
                   <h3 className="font-control text-3xl md:text-4xl font-bold mb-3">{f.name}</h3>
@@ -179,18 +186,18 @@ const Retail = () => {
                     {f.description}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {f.notes.map((note) => (
-                      <span
-                        key={note}
-                        className="px-4 py-1.5 border border-black/20 text-[10px] tracking-[0.2em] uppercase text-black/50"
-                      >
+                    {f.notes.map((note) =>
+                  <span
+                    key={note}
+                    className="px-4 py-1.5 border border-black/20 text-[10px] tracking-[0.2em] uppercase text-black/50">
+                    
                         {note}
                       </span>
-                    ))}
+                  )}
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -217,8 +224,8 @@ const Retail = () => {
           <img
             src={contextSpirits}
             alt="GUILTY beside premium spirits"
-            className="w-full max-w-sm mx-auto md:max-w-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
-          />
+            className="w-full max-w-sm mx-auto md:max-w-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]" />
+          
         </div>
       </section>
 
@@ -229,11 +236,11 @@ const Retail = () => {
             Built for Premium Retail
           </h2>
           <div className="space-y-5 inline-block text-left">
-            {retailPoints.map((point) => (
-              <p key={point} className="text-muted-foreground text-sm font-mono-light tracking-wide border-b border-muted/30 pb-5">
+            {retailPoints.map((point) =>
+            <p key={point} className="text-muted-foreground text-sm font-mono-light tracking-wide border-b border-muted/30 pb-5">
                 {point}
               </p>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -244,14 +251,14 @@ const Retail = () => {
           Product In Context
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-          {contextImages.map((img) => (
-            <img
-              key={img.alt}
-              src={img.src}
-              alt={img.alt}
-              className="w-full aspect-[3/4] object-cover"
-            />
-          ))}
+          {contextImages.map((img) =>
+          <img
+            key={img.alt}
+            src={img.src}
+            alt={img.alt}
+            className="w-full aspect-[3/4] object-cover" />
+
+          )}
         </div>
       </section>
 
@@ -268,13 +275,13 @@ const Retail = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="mailto:founders@guiltyconfess.com"
-              className="px-10 py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90"
-            >
+              className="px-10 py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90">
+              
               Email Founders
             </a>
             <button
-              className="px-10 py-5 border border-foreground text-foreground font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-80"
-            >
+              className="px-10 py-5 border border-foreground text-foreground font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-80">
+              
               Download Retail Pack
             </button>
           </div>
@@ -287,43 +294,43 @@ const Retail = () => {
           <h2 className="font-control text-4xl md:text-5xl font-bold text-center mb-6">
             Pre-Order Expression of Interest
           </h2>
-          {submitted ? (
-            <div className="text-center py-20">
+          {submitted ?
+          <div className="text-center py-20">
               <p className="font-control text-3xl font-bold mb-5">Thank you.</p>
               <p className="text-muted-foreground text-sm font-mono-light">
                 We'll be in touch regarding your allocation.
               </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="mt-14 space-y-8">
+            </div> :
+
+          <form onSubmit={handleSubmit} className="mt-14 space-y-8">
               {[
-                { name: "businessName", label: "Business Name", type: "text" },
-                { name: "contactName", label: "Contact Name", type: "text" },
-                { name: "email", label: "Email", type: "email" },
-                { name: "phone", label: "Phone", type: "tel" },
-                { name: "venueType", label: "Venue / Retail Type", type: "text" },
-                { name: "monthlyVolume", label: "Estimated Monthly Volume", type: "text" },
-                { name: "location", label: "Location", type: "text" },
-              ].map((field) => (
-                <div key={field.name}>
+            { name: "businessName", label: "Business Name", type: "text" },
+            { name: "contactName", label: "Contact Name", type: "text" },
+            { name: "email", label: "Email", type: "email" },
+            { name: "phone", label: "Phone", type: "tel" },
+            { name: "venueType", label: "Venue / Retail Type", type: "text" },
+            { name: "monthlyVolume", label: "Estimated Monthly Volume", type: "text" },
+            { name: "location", label: "Location", type: "text" }].
+            map((field) =>
+            <div key={field.name}>
                   <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">
                     {field.label}
                   </label>
                   <input
-                    type={field.type}
-                    name={field.name}
-                    value={form[field.name as keyof typeof form]}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light"
-                  />
+                type={field.type}
+                name={field.name}
+                value={form[field.name as keyof typeof form]}
+                onChange={handleChange}
+                required
+                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+              
                 </div>
-              ))}
+            )}
               <div className="pt-10">
                 <button
-                  type="submit"
-                  className="w-full py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90"
-                >
+                type="submit"
+                className="w-full py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90">
+                
                   Request Allocation
                 </button>
                 <p className="text-muted-foreground text-[10px] text-center mt-5 font-mono-light tracking-wider">
@@ -331,7 +338,7 @@ const Retail = () => {
                 </p>
               </div>
             </form>
-          )}
+          }
         </div>
       </section>
 
@@ -344,8 +351,8 @@ const Retail = () => {
           </p>
         </div>
       </footer>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Retail;
