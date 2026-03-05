@@ -57,7 +57,7 @@ const RetailEarlyAccessModal = () => {
       />
 
       <div
-        className={`relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-secondary p-10 md:p-14 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+        className={`relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-secondary p-6 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ${
           closing
             ? "opacity-0 scale-95"
             : "opacity-100 scale-100 animate-[scaleModalIn_0.4s_ease-out]"
@@ -84,13 +84,13 @@ const RetailEarlyAccessModal = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="text-center">
-            <p className="text-muted-foreground text-[10px] tracking-[0.35em] uppercase font-mono-light mb-6">
+            <p className="text-muted-foreground text-[10px] tracking-[0.35em] uppercase font-mono-light mb-4">
               Limited Early Access
             </p>
-            <h3 className="font-control text-3xl md:text-4xl font-bold mb-6 text-foreground">
+            <h3 className="font-control text-2xl md:text-3xl font-bold mb-4 text-foreground">
               Request the First Pour
             </h3>
-            <p className="text-muted-foreground text-sm leading-[1.9] font-mono-light mb-10 max-w-sm mx-auto">
+            <p className="text-muted-foreground text-xs leading-[1.8] font-mono-light mb-6 max-w-sm mx-auto">
               Before GUILTY hits shelves, we're opening access to a small number
               of venues, retailers, and partners who want to pour first.
               <br /><br />
@@ -100,37 +100,37 @@ const RetailEarlyAccessModal = () => {
               <span className="italic">Limited placements. No mass rollout.</span>
             </p>
 
-            <div className="space-y-8 mb-8 text-left">
+            <div className="space-y-5 mb-6 text-left">
               <div>
-                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Full Name</label>
-                <input type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Your name" required className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2 font-mono-light">Full Name</label>
+                <input type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Your name" required className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
               </div>
               <div>
-                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Business Name</label>
-                <input type="text" name="businessName" value={form.businessName} onChange={handleChange} placeholder="Venue / Store / Business name" required className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2 font-mono-light">Business Name</label>
+                <input type="text" name="businessName" value={form.businessName} onChange={handleChange} placeholder="Venue / Store / Business name" required className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
               </div>
               <div>
-                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Email Address</label>
-                <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Email address" required className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2 font-mono-light">Email Address</label>
+                <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Email address" required className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
               </div>
               <div>
-                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Mobile Number</label>
-                <input type="tel" name="mobile" value={form.mobile} onChange={handleChange} placeholder="Mobile number" className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2 font-mono-light">Mobile Number</label>
+                <input type="tel" name="mobile" value={form.mobile} onChange={handleChange} placeholder="Mobile number" className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
               </div>
               <div>
-                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Short Message</label>
-                <textarea name="message" value={form.message} onChange={handleChange} placeholder="Tell us about your venue or why GUILTY belongs there" rows={3} className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light resize-none" />
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2 font-mono-light">Short Message</label>
+                <textarea name="message" value={form.message} onChange={handleChange} placeholder="Tell us about your venue or why GUILTY belongs there" rows={2} className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light resize-none" />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90 rounded-full"
+              className="w-full py-4 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90 rounded-full"
             >
               Submit Request
             </button>
 
-            <p className="text-muted-foreground text-[10px] mt-6 font-mono-light tracking-wider leading-relaxed">
+            <p className="text-muted-foreground text-[10px] mt-4 font-mono-light tracking-wider leading-relaxed">
               We review every request.
               <br />
               If it feels like a fit, we'll reach out.
