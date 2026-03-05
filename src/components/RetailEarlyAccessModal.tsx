@@ -57,7 +57,7 @@ const RetailEarlyAccessModal = () => {
       />
 
       <div
-        className={`relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-secondary p-6 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+        className={`relative w-full max-w-md max-h-[92vh] overflow-y-auto bg-secondary p-5 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ${
           closing
             ? "opacity-0 scale-95"
             : "opacity-100 scale-100 animate-[scaleModalIn_0.4s_ease-out]"
@@ -84,23 +84,18 @@ const RetailEarlyAccessModal = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="text-center">
-            <p className="text-muted-foreground text-[10px] tracking-[0.35em] uppercase font-mono-light mb-4">
+            <p className="text-muted-foreground text-[10px] tracking-[0.35em] uppercase font-mono-light mb-2">
               Limited Early Access
             </p>
-            <h3 className="font-control text-2xl md:text-3xl font-bold mb-4 text-foreground">
+            <h3 className="font-control text-xl md:text-3xl font-bold mb-2 text-foreground">
               Request the First Pour
             </h3>
-            <p className="text-muted-foreground text-xs leading-[1.8] font-mono-light mb-6 max-w-sm mx-auto">
-              Before GUILTY hits shelves, we're opening access to a small number
-              of venues, retailers, and partners who want to pour first.
-              <br /><br />
-              If you're interested in stocking GUILTY, leave your details and
-              our team will be in touch.
-              <br /><br />
-              <span className="italic">Limited placements. No mass rollout.</span>
+            <p className="text-muted-foreground text-[11px] md:text-xs leading-[1.6] font-mono-light mb-4 max-w-sm mx-auto">
+              We're opening access to a small number of venues and partners who want to pour first. Leave your details and we'll be in touch.
+              <span className="italic block mt-1">Limited placements. No mass rollout.</span>
             </p>
 
-            <div className="space-y-5 mb-6 text-left">
+            <div className="space-y-4 mb-5 text-left">
               <div>
                 <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2 font-mono-light">Full Name</label>
                 <input type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Your name" required className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
