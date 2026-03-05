@@ -3,8 +3,13 @@ import { X } from "lucide-react";
 
 const SESSION_KEY = "guilty_retail_modal_shown";
 
-const RetailEarlyAccessModal = () => {
-  const [visible, setVisible] = useState(false);
+interface Props {
+  open?: boolean;
+  onClose?: () => void;
+}
+
+const RetailEarlyAccessModal = ({ open, onClose }: Props) => {
+  const [autoVisible, setAutoVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
@@ -15,10 +20,12 @@ const RetailEarlyAccessModal = () => {
     message: "",
   });
 
+  const visible = open ?? autoVisible;
+
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY)) return;
     const timer = setTimeout(() => {
-      setVisible(true);
+      setAutoVisible(true);
       sessionStorage.setItem(SESSION_KEY, "1");
     }, 4000);
     return () => clearTimeout(timer);
@@ -26,7 +33,11 @@ const RetailEarlyAccessModal = () => {
 
   const handleClose = () => {
     setClosing(true);
-    setTimeout(() => setVisible(false), 300);
+    setTimeout(() => {
+      setAutoVisible(false);
+      onClose?.();
+      setClosing(false);
+    }, 300);
   };
 
   const handleChange = (
