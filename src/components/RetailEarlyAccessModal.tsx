@@ -6,8 +6,14 @@ const SESSION_KEY = "guilty_retail_modal_shown";
 const RetailEarlyAccessModal = () => {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({
+    fullName: "",
+    businessName: "",
+    email: "",
+    mobile: "",
+    message: "",
+  });
 
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY)) return;
@@ -21,6 +27,12 @@ const RetailEarlyAccessModal = () => {
   const handleClose = () => {
     setClosing(true);
     setTimeout(() => setVisible(false), 300);
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -37,23 +49,20 @@ const RetailEarlyAccessModal = () => {
       }`}
       role="dialog"
       aria-modal="true"
-      aria-label="Early access offer"
+      aria-label="Retail enquiry"
     >
-      {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal */}
       <div
-        className={`relative w-full max-w-md bg-secondary p-10 md:p-14 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+        className={`relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-secondary p-10 md:p-14 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 ${
           closing
             ? "opacity-0 scale-95"
             : "opacity-100 scale-100 animate-[scaleModalIn_0.4s_ease-out]"
         }`}
       >
-        {/* Close */}
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 text-muted-foreground transition-opacity hover:opacity-100 opacity-60"
@@ -63,52 +72,91 @@ const RetailEarlyAccessModal = () => {
         </button>
 
         {submitted ? (
-          /* Confirmation State */
           <div className="text-center py-6">
             <h3 className="font-control text-3xl md:text-4xl font-bold mb-6 text-foreground">
-              You're In
+              Request Received
             </h3>
             <p className="text-muted-foreground text-sm leading-[1.9] font-mono-light">
-              Check your inbox.
+              We review every submission personally.
               <br />
-              Your exclusive launch offer is waiting.
+              If it feels like a fit, we'll be in touch.
             </p>
           </div>
         ) : (
-          /* Form State */
           <form onSubmit={handleSubmit} className="text-center">
             <p className="text-muted-foreground text-[10px] tracking-[0.35em] uppercase font-mono-light mb-6">
               Limited Early Access
             </p>
             <h3 className="font-control text-3xl md:text-4xl font-bold mb-6 text-foreground">
-              Unlock the First Pour
+              Request the First Pour
             </h3>
             <p className="text-muted-foreground text-sm leading-[1.9] font-mono-light mb-10 max-w-sm mx-auto">
-              Before GUILTY hits shelves, a limited number of early offers are
-              being released. Join the list to unlock an exclusive launch deal
-              and early access to our first retail drop.
+              Before GUILTY hits shelves, we're opening access to a small number
+              of venues, retailers, and partners who want to pour first.
+              <br /><br />
+              If you're interested in stocking GUILTY, leave your details and
+              our team will be in touch.
+              <br /><br />
+              <span className="italic">Limited placements. No mass rollout.</span>
             </p>
 
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              required
-              className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light mb-8 text-center placeholder:text-muted-foreground"
-            />
+            <div className="space-y-6 mb-8 text-left">
+              <input
+                type="text"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                placeholder="Your name"
+                required
+                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
+              />
+              <input
+                type="text"
+                name="businessName"
+                value={form.businessName}
+                onChange={handleChange}
+                placeholder="Venue / Store / Business name"
+                required
+                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
+              />
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="Email address"
+                required
+                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
+              />
+              <input
+                type="tel"
+                name="mobile"
+                value={form.mobile}
+                onChange={handleChange}
+                placeholder="Mobile number"
+                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
+              />
+              <textarea
+                name="message"
+                value={form.message}
+                onChange={handleChange}
+                placeholder="Tell us about your venue or why GUILTY belongs there"
+                rows={3}
+                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground resize-none"
+              />
+            </div>
 
             <button
               type="submit"
               className="w-full py-5 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90 rounded-full"
             >
-              Unlock the Offer
+              Submit Request
             </button>
 
             <p className="text-muted-foreground text-[10px] mt-6 font-mono-light tracking-wider leading-relaxed">
-              We respect your privacy.
+              We review every request.
               <br />
-              Unsubscribe at any time.
+              If it feels like a fit, we'll reach out.
             </p>
           </form>
         )}
