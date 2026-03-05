@@ -357,10 +357,10 @@ const Retail = () => {
             </a>
             <button
               onClick={() => setCtaDismissed(true)}
-              className="absolute -top-3 -right-3 w-7 h-7 bg-foreground text-background border border-muted/30 flex items-center justify-center transition-opacity hover:opacity-80"
+              className="absolute -top-2.5 -right-2.5 w-6 h-6 bg-muted text-muted-foreground rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
               aria-label="Dismiss"
             >
-              <X size={14} />
+              <X size={12} />
             </button>
           </div>
         </div>
