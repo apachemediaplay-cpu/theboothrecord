@@ -76,7 +76,7 @@ const Retail = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [ctaDismissed, setCtaDismissed] = useState(false);
-
+  const [modalOpen, setModalOpen] = useState(false);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -88,7 +88,7 @@ const Retail = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <RetailEarlyAccessModal />
+      <RetailEarlyAccessModal open={modalOpen} onClose={() => setModalOpen(false)} />
       {/* Hero */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
         <img
@@ -349,12 +349,12 @@ const Retail = () => {
       {!ctaDismissed && (
         <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:pb-6">
           <div className="relative max-w-xl mx-auto bg-foreground text-background px-6 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_30px_rgba(0,0,0,0.3)]">
-            <a
-              href="#enquiry"
+            <button
+              onClick={() => setModalOpen(true)}
               className="flex-1 text-center font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-80"
             >
               Retailer Enquiries
-            </a>
+            </button>
             <button
               onClick={() => setCtaDismissed(true)}
               className="absolute -top-2.5 -right-2.5 w-6 h-6 bg-muted text-muted-foreground rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
