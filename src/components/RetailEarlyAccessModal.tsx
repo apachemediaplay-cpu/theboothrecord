@@ -100,50 +100,27 @@ const RetailEarlyAccessModal = () => {
               <span className="italic">Limited placements. No mass rollout.</span>
             </p>
 
-            <div className="space-y-6 mb-8 text-left">
-              <input
-                type="text"
-                name="fullName"
-                value={form.fullName}
-                onChange={handleChange}
-                placeholder="Your name"
-                required
-                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
-              />
-              <input
-                type="text"
-                name="businessName"
-                value={form.businessName}
-                onChange={handleChange}
-                placeholder="Venue / Store / Business name"
-                required
-                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
-              />
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Email address"
-                required
-                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
-              />
-              <input
-                type="tel"
-                name="mobile"
-                value={form.mobile}
-                onChange={handleChange}
-                placeholder="Mobile number"
-                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground"
-              />
-              <textarea
-                name="message"
-                value={form.message}
-                onChange={handleChange}
-                placeholder="Tell us about your venue or why GUILTY belongs there"
-                rows={3}
-                className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light placeholder:text-muted-foreground resize-none"
-              />
+            <div className="space-y-8 mb-8 text-left">
+              <div>
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Full Name</label>
+                <input type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Your name" required className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Business Name</label>
+                <input type="text" name="businessName" value={form.businessName} onChange={handleChange} placeholder="Venue / Store / Business name" required className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Email Address</label>
+                <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Email address" required className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Mobile Number</label>
+                <input type="tel" name="mobile" value={form.mobile} onChange={handleChange} placeholder="Mobile number" className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light" />
+              </div>
+              <div>
+                <label className="block text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-3 font-mono-light">Short Message</label>
+                <textarea name="message" value={form.message} onChange={handleChange} placeholder="Tell us about your venue or why GUILTY belongs there" rows={3} className="w-full bg-transparent border-b border-muted py-4 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light resize-none" />
+              </div>
             </div>
 
             <button
