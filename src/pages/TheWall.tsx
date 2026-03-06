@@ -18,6 +18,9 @@ const TheWall = () => {
   const [systemMessageVisible, setSystemMessageVisible] = useState(false);
   const [showGhost, setShowGhost] = useState(false);
   const [confessionCount, setConfessionCount] = useState(1842);
+  const [showBoothPrompt, setShowBoothPrompt] = useState(false);
+  const [boothPromptVisible, setBoothPromptVisible] = useState(false);
+  const [boothDismissed, setBoothDismissed] = useState(false);
   const nextIdRef = useRef(100);
   const nextConfessorRef = useRef(1850);
   const extraIndexRef = useRef(0);
@@ -94,6 +97,17 @@ const TheWall = () => {
     }, 50);
     return () => clearInterval(interval);
   }, []);
+
+  // Show booth prompt after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!boothDismissed) {
+        setShowBoothPrompt(true);
+        setTimeout(() => setBoothPromptVisible(true), 50);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [boothDismissed]);
 
   // Infinite scroll — append older confessions when sentinel is visible
   useEffect(() => {
@@ -256,6 +270,38 @@ const TheWall = () => {
           </Link>
         </div>
       </div>
+
+      {/* Booth prompt popup */}
+      {showBoothPrompt && !boothDismissed && (
+        <div
+          className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-30 transition-all duration-700 ${
+            boothPromptVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          }`}
+        >
+          <div className="relative border border-border/20 bg-background/90 backdrop-blur-sm px-8 py-5 text-center">
+            <button
+              onClick={() => {
+                setBoothPromptVisible(false);
+                setTimeout(() => {
+                  setShowBoothPrompt(false);
+                  setBoothDismissed(true);
+                }, 500);
+              }}
+              className="absolute top-2 right-3 text-muted-foreground/30 hover:text-muted-foreground/60 text-[10px] font-mono-light transition-colors"
+            >
+              ✕
+            </button>
+            <Link to="/confess" className="group inline-block">
+              <p className="text-muted-foreground/40 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 group-hover:text-muted-foreground/60 transition-colors duration-500">
+                YOUR TURN.
+              </p>
+              <p className="text-muted-foreground/50 text-[11px] tracking-[0.3em] uppercase font-mono-light group-hover:text-ritual/70 transition-colors duration-500">
+                ENTER THE BOOTH →
+              </p>
+            </Link>
+          </div>
+        </div>
+      )}
 
       <BoothFooter />
 
