@@ -1,228 +1,32 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
-
-interface ConfessionEntry {
-  id: number;
-  confessorId: string;
-  timestamp: string;
-  confession: string;
-  verdict: string;
-  verdictHidden: string;
-  insertedAt?: number; // epoch ms for relative time
-}
-
-const SYSTEM_MESSAGES = [
-  "NEW CONFESSION RECORDED",
-  "ANOTHER TRUTH LOGGED",
-  "CONFESSION ACCEPTED",
-  "ENTRY ADDED TO THE WALL",
-  "GUILT ARCHIVED",
-  "TRUTH CAPTURED",
-];
-
-const EXTRA_CONFESSIONS: Omit<ConfessionEntry, "id" | "confessorId" | "timestamp" | "insertedAt">[] = [
-  {
-    confession: "I read their journal.\nI never told them.",
-    verdict: "Privacy violated.",
-    verdictHidden: "You consumed someone's inner world without consent. Knowledge stolen is a wound that festers in silence.",
-  },
-  {
-    confession: "I only called\nbecause I needed something.",
-    verdict: "Transactional connection logged.",
-    verdictHidden: "Every conversation became a negotiation. They felt it, even if they never said it.",
-  },
-  {
-    confession: "I let them take the blame.\nIt was easier.",
-    verdict: "Cowardice recorded.",
-    verdictHidden: "The truth sat in your throat like a stone. You swallowed it and let someone else choke.",
-  },
-  {
-    confession: "I said I was happy for them.\nI wasn't.",
-    verdict: "False joy catalogued.",
-    verdictHidden: "Their success illuminated your stagnation. The smile you wore was a mask stitched from resentment.",
-  },
-  {
-    confession: "I kept the money.\nThey never asked for it back.",
-    verdict: "Debt unresolved.",
-    verdictHidden: "Silence is not forgiveness. The transaction haunts the space between you both.",
-  },
-  {
-    confession: "I watched them struggle\nand said nothing.",
-    verdict: "Inaction documented.",
-    verdictHidden: "Your silence was a choice. The booth does not distinguish between harm done and harm permitted.",
-  },
-  {
-    confession: "I lied on my résumé.\nI got the job.",
-    verdict: "False credentials filed.",
-    verdictHidden: "Every accomplishment since rests on a foundation of fabrication. The imposter knows.",
-  },
-  {
-    confession: "I told them I'd changed.\nI haven't even started.",
-    verdict: "False promise detected.",
-    verdictHidden: "The version of you they believe in does not exist. You perform growth while standing still.",
-  },
-];
-
-const BASE_CONFESSIONS: ConfessionEntry[] = [
-  {
-    id: 1,
-    confessorId: "#1842",
-    timestamp: "12 Mar 2026 — 11:48 PM",
-    confession: "I told them I was busy…\nbut I just didn't want to see them.",
-    verdict: "Avoidance catalogued.",
-    verdictHidden: "The distance you maintain is a mirror you refuse to look into. Guilt festers in silence.",
-  },
-  {
-    id: 2,
-    confessorId: "#1839",
-    timestamp: "11 Mar 2026 — 09:14 PM",
-    confession: "I said it didn't matter.\nBut I still check their profile.",
-    verdict: "Attachment remains.",
-    verdictHidden: "You hold onto what you claim to have released. The algorithm of longing does not forget.",
-  },
-  {
-    id: 3,
-    confessorId: "#1831",
-    timestamp: "10 Mar 2026 — 03:22 AM",
-    confession: "I smiled when they failed.\nI hated myself for it.",
-    verdict: "Envy acknowledged.",
-    verdictHidden: "Schadenfreude is the confession within the confession. Your awareness is the only redemption offered.",
-  },
-  {
-    id: 4,
-    confessorId: "#1824",
-    timestamp: "09 Mar 2026 — 07:55 PM",
-    confession: "I took the credit.\nThey'll never know.",
-    verdict: "Theft of recognition logged.",
-    verdictHidden: "The weight of stolen praise compounds silently. Every compliment you receive echoes with debt.",
-  },
-  {
-    id: 5,
-    confessorId: "#1817",
-    timestamp: "08 Mar 2026 — 11:01 PM",
-    confession: "I told her I forgave her.\nI haven't.",
-    verdict: "False absolution detected.",
-    verdictHidden: "Forgiveness spoken without conviction is just another form of deception. The wound remains open.",
-  },
-  {
-    id: 6,
-    confessorId: "#1809",
-    timestamp: "07 Mar 2026 — 02:33 AM",
-    confession: "I deleted the messages\nbefore anyone could see.",
-    verdict: "Evidence destroyed.",
-    verdictHidden: "Digital erasure does not erase memory. The booth remembers what you choose to forget.",
-  },
-  {
-    id: 7,
-    confessorId: "#1802",
-    timestamp: "06 Mar 2026 — 06:17 PM",
-    confession: "I pretend to care about things\nthat mean nothing to me.",
-    verdict: "Performed empathy noted.",
-    verdictHidden: "The mask you wear fits so well you've forgotten it's there. Authenticity is the first casualty.",
-  },
-];
-
-function getRelativeTime(insertedAt: number | undefined): string | null {
-  if (!insertedAt) return null;
-  const diff = Date.now() - insertedAt;
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 10) return "Just now";
-  if (seconds < 60) return `${seconds} seconds ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  return null;
-}
-
-const ConfessionCard = ({
-  entry,
-  index,
-  total,
-  isNew,
-}: {
-  entry: ConfessionEntry;
-  index: number;
-  total: number;
-  isNew?: boolean;
-}) => {
-  const [visible, setVisible] = useState(!isNew);
-  const [relativeTime, setRelativeTime] = useState<string | null>(
-    getRelativeTime(entry.insertedAt)
-  );
-
-  useEffect(() => {
-    if (isNew) {
-      const timer = setTimeout(() => setVisible(true), 50);
-      return () => clearTimeout(timer);
-    }
-  }, [isNew]);
-
-  // Update relative time every 10s
-  useEffect(() => {
-    if (!entry.insertedAt) return;
-    const interval = setInterval(() => {
-      setRelativeTime(getRelativeTime(entry.insertedAt));
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [entry.insertedAt]);
-
-  const opacityFactor = 1 - (index / total) * 0.3;
-  const displayTime = relativeTime || entry.timestamp;
-
-  return (
-    <div
-      className={`group transition-all duration-700 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-      }`}
-      style={{ opacity: visible ? opacityFactor : 0 }}
-    >
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-muted-foreground/30 text-[9px] tracking-[0.4em] uppercase font-mono-light">
-          CONFESSOR {entry.confessorId}
-        </span>
-        <span className="text-muted-foreground/20 text-[9px]">·</span>
-        <span className="text-muted-foreground/30 text-[9px] tracking-[0.2em] font-mono-light">
-          {displayTime}
-        </span>
-      </div>
-
-      <p className="text-foreground text-base md:text-lg font-mono-light leading-[1.6] whitespace-pre-line mb-4 max-w-[600px]">
-        {entry.confession}
-      </p>
-
-      <div className="max-w-[600px]">
-        <p className="text-muted-foreground/30 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-2">
-          VERDICT
-        </p>
-        <p className="text-ritual text-xs font-mono-light tracking-wide mb-1 opacity-80">
-          {entry.verdict}
-        </p>
-        <div className="relative overflow-hidden h-8 transition-all duration-500 group-hover:h-9">
-          <p className="text-muted-foreground/50 text-xs font-mono-light leading-relaxed select-none">
-            {entry.verdictHidden}
-          </p>
-          <div className="absolute inset-0 backdrop-blur-[6px] transition-all duration-500 group-hover:backdrop-blur-[4px]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/70 to-background" />
-        </div>
-      </div>
-    </div>
-  );
-};
+import ConfessionCard from "@/components/wall/ConfessionCard";
+import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
+import { SYSTEM_MESSAGES, EXTRA_CONFESSIONS, BASE_CONFESSIONS } from "@/components/wall/confessionData";
+import { useWallSound } from "@/hooks/useWallSound";
+import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 
 const TheWall = () => {
   const feedRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [confessions, setConfessions] = useState<ConfessionEntry[]>(
     BASE_CONFESSIONS.map((c) => ({ ...c }))
   );
   const [systemMessage, setSystemMessage] = useState<string | null>(null);
   const [systemMessageVisible, setSystemMessageVisible] = useState(false);
+  const [showGhost, setShowGhost] = useState(false);
+  const [confessionCount, setConfessionCount] = useState(1842);
   const nextIdRef = useRef(100);
   const nextConfessorRef = useRef(1850);
   const extraIndexRef = useRef(0);
+  const archiveIdRef = useRef(1795);
 
-  // Show a system message briefly
+  const { soundEnabled, toggleSound, playTone } = useWallSound();
+  const atmosphere = useTimeAtmosphere();
+
+  // Flash system message
   const flashSystemMessage = useCallback(() => {
     const msg = SYSTEM_MESSAGES[Math.floor(Math.random() * SYSTEM_MESSAGES.length)];
     setSystemMessage(msg);
@@ -231,32 +35,42 @@ const TheWall = () => {
     setTimeout(() => setSystemMessage(null), 1800);
   }, []);
 
-  // Insert a new confession at the top
+  // Insert a new confession with ghost effect
   const insertConfession = useCallback(() => {
-    const extra = EXTRA_CONFESSIONS[extraIndexRef.current % EXTRA_CONFESSIONS.length];
-    extraIndexRef.current++;
-    const newId = nextIdRef.current++;
-    const confessorNum = nextConfessorRef.current++;
+    // Phase 1: Show ghost
+    setShowGhost(true);
 
-    const newEntry: ConfessionEntry = {
-      ...extra,
-      id: newId,
-      confessorId: `#${confessorNum}`,
-      timestamp: new Date().toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      insertedAt: Date.now(),
-    };
-
-    flashSystemMessage();
+    // Phase 2: After 3s, hide ghost, flash message, insert
     setTimeout(() => {
-      setConfessions((prev) => [{ ...newEntry, id: newId } as ConfessionEntry, ...prev]);
-    }, 400);
-  }, [flashSystemMessage]);
+      setShowGhost(false);
+      flashSystemMessage();
+      playTone();
+
+      setTimeout(() => {
+        const extra = EXTRA_CONFESSIONS[extraIndexRef.current % EXTRA_CONFESSIONS.length];
+        extraIndexRef.current++;
+        const newId = nextIdRef.current++;
+        const confessorNum = nextConfessorRef.current++;
+
+        const newEntry: ConfessionEntry = {
+          ...extra,
+          id: newId,
+          confessorId: `#${confessorNum}`,
+          timestamp: new Date().toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          insertedAt: Date.now(),
+        };
+
+        setConfessions((prev) => [newEntry, ...prev]);
+        setConfessionCount((c) => c + 1);
+      }, 400);
+    }, 3000);
+  }, [flashSystemMessage, playTone]);
 
   // Random insertion every 25-55s
   useEffect(() => {
@@ -281,14 +95,63 @@ const TheWall = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Infinite scroll — append older confessions when sentinel is visible
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setConfessions((prev) => {
+            if (prev.length >= 50) return prev;
+            const batch: ConfessionEntry[] = [];
+            for (let i = 0; i < 5; i++) {
+              const extra = EXTRA_CONFESSIONS[(extraIndexRef.current + i) % EXTRA_CONFESSIONS.length];
+              const archiveId = archiveIdRef.current--;
+              batch.push({
+                ...extra,
+                id: nextIdRef.current++,
+                confessorId: `#${archiveId}`,
+                timestamp: `${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")} Feb 2026 — ${String(Math.floor(Math.random() * 12) + 1).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")} ${Math.random() > 0.5 ? "AM" : "PM"}`,
+              });
+            }
+            extraIndexRef.current += 5;
+            return [...prev, ...batch];
+          });
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-[100dvh] bg-background relative overflow-hidden">
       <BoothHeader />
 
+      {/* Sound toggle */}
+      <button
+        onClick={toggleSound}
+        className="fixed top-5 right-5 z-20 flex items-center gap-2 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors duration-300"
+      >
+        <span className="text-[9px] tracking-[0.3em] uppercase font-mono-light">
+          SOUND
+        </span>
+        <span
+          className={`inline-block w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
+            soundEnabled ? "bg-ritual" : "bg-muted-foreground/30"
+          }`}
+        />
+      </button>
+
       {/* Ambient scan line */}
       <div
-        className="pointer-events-none fixed inset-0 z-10 opacity-[0.03]"
+        className="pointer-events-none fixed inset-0 z-10"
         style={{
+          opacity: atmosphere.scanLineOpacity,
           backgroundImage:
             "repeating-linear-gradient(0deg, transparent, transparent 2px, hsl(var(--foreground) / 0.08) 2px, hsl(var(--foreground) / 0.08) 4px)",
           backgroundSize: "100% 4px",
@@ -296,14 +159,15 @@ const TheWall = () => {
       />
       {/* Moving scan line */}
       <div
-        className="pointer-events-none fixed left-0 right-0 z-10 h-[1px] opacity-[0.06]"
+        className="pointer-events-none fixed left-0 right-0 z-10 h-[1px]"
         style={{
+          opacity: atmosphere.movingScanOpacity,
           background: "hsl(var(--foreground))",
-          animation: "scanline 8s linear infinite",
+          animation: `scanline ${atmosphere.scanLineDuration} linear infinite`,
         }}
       />
 
-      {/* Compact header */}
+      {/* Header */}
       <div className="pt-16 pb-4 md:pt-20 md:pb-6 text-center px-6">
         <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide mb-2">
           THE WALL
@@ -315,6 +179,13 @@ const TheWall = () => {
         </p>
       </div>
 
+      {/* Confession counter */}
+      <div className="text-center pb-3">
+        <span className="text-muted-foreground/25 text-[10px] tracking-[0.4em] uppercase font-mono-light">
+          {confessionCount.toLocaleString()} CONFESSIONS RECORDED
+        </span>
+      </div>
+
       {/* Live indicator */}
       <div className="flex items-center justify-center gap-2 pb-6 md:pb-8">
         <span className="text-muted-foreground/30 text-[9px] tracking-[0.5em] uppercase font-mono-light">
@@ -322,7 +193,7 @@ const TheWall = () => {
         </span>
         <span
           className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
-          style={{ animation: "livePulse 3s ease-in-out infinite" }}
+          style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
         />
       </div>
 
@@ -339,8 +210,20 @@ const TheWall = () => {
         )}
       </div>
 
+      {/* Typing ghost */}
+      <div className="h-6 flex items-center justify-center mb-2">
+        <span
+          className={`text-ritual/50 text-[10px] tracking-[0.3em] font-mono-light transition-all duration-700 ${
+            showGhost ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          someone is confessing
+          <span className="inline-block w-[1px] h-3 bg-ritual/60 ml-1 align-middle" style={{ animation: "blink 1s step-end infinite" }} />
+        </span>
+      </div>
+
       {/* Confession feed */}
-      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-32">
+      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-16">
         {confessions.map((entry, i) => (
           <div key={entry.id}>
             <ConfessionCard
@@ -354,18 +237,40 @@ const TheWall = () => {
             )}
           </div>
         ))}
+
+        {/* Infinite scroll sentinel */}
+        <div ref={sentinelRef} className="h-1" />
+
+        {/* Submit your own CTA */}
+        <div className="py-16 text-center">
+          <Link
+            to="/confess"
+            className="group inline-block"
+          >
+            <p className="text-muted-foreground/25 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 group-hover:text-muted-foreground/50 transition-colors duration-500">
+              YOUR TURN.
+            </p>
+            <p className="text-muted-foreground/35 text-[11px] tracking-[0.3em] uppercase font-mono-light group-hover:text-ritual/60 transition-colors duration-500">
+              ENTER THE BOOTH →
+            </p>
+          </Link>
+        </div>
       </div>
 
       <BoothFooter />
 
       <style>{`
         @keyframes livePulse {
-          0%, 100% { opacity: 0.3; box-shadow: 0 0 3px hsl(var(--ritual) / 0.2); }
-          50% { opacity: 1; box-shadow: 0 0 8px hsl(var(--ritual) / 0.5); }
+          0%, 100% { opacity: 0.3; box-shadow: 0 0 3px hsl(var(--ritual-green) / 0.2); }
+          50% { opacity: 1; box-shadow: 0 0 8px hsl(var(--ritual-green) / 0.5); }
         }
         @keyframes scanline {
           0% { top: 0; }
           100% { top: 100vh; }
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
         }
       `}</style>
     </div>
