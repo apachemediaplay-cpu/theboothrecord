@@ -278,7 +278,7 @@ const TheWall = () => {
             boothPromptVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
         >
-          <div className="relative border border-border/20 bg-background/90 backdrop-blur-sm px-8 py-5 text-center">
+          <div className="relative border border-foreground/20 bg-primary px-10 py-6 text-center shadow-[0_0_30px_rgba(255,255,255,0.08)]">
             <button
               onClick={() => {
                 setBoothPromptVisible(false);
@@ -287,15 +287,15 @@ const TheWall = () => {
                   setBoothDismissed(true);
                 }, 500);
               }}
-              className="absolute top-2 right-3 text-muted-foreground/30 hover:text-muted-foreground/60 text-[10px] font-mono-light transition-colors"
+              className="absolute top-2.5 right-3.5 text-primary-foreground/40 hover:text-primary-foreground/70 text-[10px] font-mono-light transition-colors"
             >
               ✕
             </button>
             <Link to="/confess" className="group inline-block">
-              <p className="text-muted-foreground/40 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 group-hover:text-muted-foreground/60 transition-colors duration-500">
+              <p className="text-primary-foreground/60 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 group-hover:text-primary-foreground/80 transition-colors duration-500">
                 YOUR TURN.
               </p>
-              <p className="text-muted-foreground/50 text-[11px] tracking-[0.3em] uppercase font-mono-light group-hover:text-ritual/70 transition-colors duration-500">
+              <p className="text-primary-foreground/80 text-[12px] tracking-[0.3em] uppercase font-mono-light group-hover:text-primary-foreground transition-colors duration-500">
                 ENTER THE BOOTH →
               </p>
             </Link>
