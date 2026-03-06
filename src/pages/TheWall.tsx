@@ -271,36 +271,50 @@ const TheWall = () => {
         </div>
       </div>
 
-      {/* Booth prompt popup */}
+      {/* Booth prompt popup with overlay */}
       {showBoothPrompt && !boothDismissed && (
-        <div
-          className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-30 transition-all duration-700 ${
-            boothPromptVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
-        >
-          <div className="relative border border-foreground/20 bg-primary px-10 py-6 text-center shadow-[0_0_30px_rgba(255,255,255,0.08)]">
-            <button
-              onClick={() => {
-                setBoothPromptVisible(false);
-                setTimeout(() => {
-                  setShowBoothPrompt(false);
-                  setBoothDismissed(true);
-                }, 500);
-              }}
-              className="absolute top-2.5 right-3.5 text-primary-foreground/40 hover:text-primary-foreground/70 text-[10px] font-mono-light transition-colors"
-            >
-              ✕
-            </button>
-            <Link to="/confess" className="group inline-block">
-              <p className="text-primary-foreground/60 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 group-hover:text-primary-foreground/80 transition-colors duration-500">
-                YOUR TURN.
-              </p>
-              <p className="text-primary-foreground/80 text-[12px] tracking-[0.3em] uppercase font-mono-light group-hover:text-primary-foreground transition-colors duration-500">
-                ENTER THE BOOTH →
-              </p>
-            </Link>
+        <>
+          <div
+            className={`fixed inset-0 z-30 bg-background/60 transition-opacity duration-700 ${
+              boothPromptVisible ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={() => {
+              setBoothPromptVisible(false);
+              setTimeout(() => {
+                setShowBoothPrompt(false);
+                setBoothDismissed(true);
+              }, 500);
+            }}
+          />
+          <div
+            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 transition-all duration-700 ${
+              boothPromptVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            }`}
+          >
+            <div className="relative border border-foreground/20 bg-primary px-12 py-8 text-center shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+              <button
+                onClick={() => {
+                  setBoothPromptVisible(false);
+                  setTimeout(() => {
+                    setShowBoothPrompt(false);
+                    setBoothDismissed(true);
+                  }, 500);
+                }}
+                className="absolute top-3 right-4 text-primary-foreground/40 hover:text-primary-foreground/70 text-[10px] font-mono-light transition-colors"
+              >
+                ✕
+              </button>
+              <Link to="/confess" className="group inline-block">
+                <p className="text-primary-foreground/60 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-3 group-hover:text-primary-foreground/80 transition-colors duration-500">
+                  YOUR TURN.
+                </p>
+                <p className="text-primary-foreground/80 text-[12px] tracking-[0.3em] uppercase font-mono-light group-hover:text-primary-foreground transition-colors duration-500">
+                  ENTER THE BOOTH →
+                </p>
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <BoothFooter />
