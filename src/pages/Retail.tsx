@@ -201,10 +201,10 @@ const Retail = () => {
       </section>
 
       {/* ── Flavour Block ────────────────────────────── */}
-      <section className="px-6 md:px-10 py-28 md:py-40 bg-white text-foreground">
+      <section className="px-6 md:px-10 py-28 md:py-40 bg-white text-neutral-900">
         <div className="max-w-6xl mx-auto">
-          <p className={`${LABEL} text-center mb-4`}>The Range</p>
-          <h2 className={`${H2} text-center mb-20 md:mb-28`}>
+          <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light text-center mb-4">The Range</p>
+          <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 text-center mb-20 md:mb-28">
             Three Signature Flavours
           </h2>
           <div className="space-y-28 md:space-y-40">
@@ -223,37 +223,37 @@ const Retail = () => {
                   />
                 </div>
                 <div className={i % 2 !== 0 ? "md:[direction:ltr]" : ""}>
-                  <h3 className="font-control text-2xl md:text-4xl font-bold mb-1">
+                  <h3 className="font-control text-2xl md:text-4xl font-bold text-neutral-900 mb-1">
                     {f.name}
                   </h3>
-                  <p className="text-foreground/60 text-sm italic mb-6 font-mono-light">
+                  <p className="text-neutral-500 text-sm italic mb-6 font-mono-light">
                     {f.subtitle}
                   </p>
-                  <p className="text-foreground/50 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
+                  <p className="text-neutral-700 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
                     {f.description}
                   </p>
-                  <p className="text-foreground/70 text-[10px] tracking-[0.2em] uppercase font-bold mb-4 font-mono-light">
+                  <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold mb-4 font-mono-light">
                     {f.warning}
                   </p>
-                  <ul className="text-foreground/50 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light list-disc list-inside">
+                  <ul className="text-neutral-700 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light list-disc list-inside">
                     {f.ingredients.map((ing) => (
                       <li key={ing}>{ing}</li>
                     ))}
                   </ul>
-                  <p className="text-foreground/40 text-[10px] tracking-[0.15em] uppercase mb-1 font-mono-light">
+                  <p className="text-neutral-500 text-[10px] tracking-[0.15em] uppercase mb-1 font-mono-light">
                     Technical
                   </p>
-                  <p className="text-foreground/50 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
+                  <p className="text-neutral-700 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
                     {f.technical}
                   </p>
-                  <p className="text-foreground/60 text-sm italic mb-6 font-mono-light">
+                  <p className="text-neutral-600 text-sm italic mb-6 font-mono-light">
                     {f.closing}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {f.notes.map((note) => (
                       <span
                         key={note}
-                        className="px-4 py-1.5 border border-foreground/20 text-[10px] tracking-[0.2em] uppercase text-foreground/50"
+                        className="px-4 py-1.5 border border-neutral-300 text-[10px] tracking-[0.2em] uppercase text-neutral-600"
                       >
                         {note}
                       </span>
