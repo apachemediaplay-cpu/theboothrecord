@@ -188,8 +188,6 @@ const TheWall = () => {
         </h1>
         <p className="text-muted-foreground/40 text-[10px] md:text-xs font-mono-light tracking-[0.2em] leading-relaxed">
           Some truths don't disappear.
-          <br />
-          They just get recorded.
         </p>
       </div>
 
