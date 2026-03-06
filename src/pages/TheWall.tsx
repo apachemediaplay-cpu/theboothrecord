@@ -1,18 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 
 interface ConfessionEntry {
   id: number;
+  confessorId: string;
   timestamp: string;
   confession: string;
   verdict: string;
   verdictHidden: string;
 }
 
-const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
+const CONFESSIONS: ConfessionEntry[] = [
   {
     id: 1,
+    confessorId: "#1842",
     timestamp: "12 Mar 2026 — 11:48 PM",
     confession: "I told them I was busy…\nbut I just didn't want to see them.",
     verdict: "Avoidance catalogued.",
@@ -20,6 +22,7 @@ const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
   },
   {
     id: 2,
+    confessorId: "#1839",
     timestamp: "11 Mar 2026 — 09:14 PM",
     confession: "I said it didn't matter.\nBut I still check their profile.",
     verdict: "Attachment remains.",
@@ -27,6 +30,7 @@ const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
   },
   {
     id: 3,
+    confessorId: "#1831",
     timestamp: "10 Mar 2026 — 03:22 AM",
     confession: "I smiled when they failed.\nI hated myself for it.",
     verdict: "Envy acknowledged.",
@@ -34,6 +38,7 @@ const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
   },
   {
     id: 4,
+    confessorId: "#1824",
     timestamp: "09 Mar 2026 — 07:55 PM",
     confession: "I took the credit.\nThey'll never know.",
     verdict: "Theft of recognition logged.",
@@ -41,6 +46,7 @@ const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
   },
   {
     id: 5,
+    confessorId: "#1817",
     timestamp: "08 Mar 2026 — 11:01 PM",
     confession: "I told her I forgave her.\nI haven't.",
     verdict: "False absolution detected.",
@@ -48,6 +54,7 @@ const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
   },
   {
     id: 6,
+    confessorId: "#1809",
     timestamp: "07 Mar 2026 — 02:33 AM",
     confession: "I deleted the messages\nbefore anyone could see.",
     verdict: "Evidence destroyed.",
@@ -55,6 +62,7 @@ const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
   },
   {
     id: 7,
+    confessorId: "#1802",
     timestamp: "06 Mar 2026 — 06:17 PM",
     confession: "I pretend to care about things\nthat mean nothing to me.",
     verdict: "Performed empathy noted.",
@@ -62,46 +70,64 @@ const PLACEHOLDER_CONFESSIONS: ConfessionEntry[] = [
   },
 ];
 
-const ConfessionCard = ({ entry, index }: { entry: ConfessionEntry; index: number }) => {
+const ConfessionEntry = ({
+  entry,
+  index,
+  total,
+}: {
+  entry: ConfessionEntry;
+  index: number;
+  total: number;
+}) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), index * 120);
+    const timer = setTimeout(() => setVisible(true), index * 100);
     return () => clearTimeout(timer);
   }, [index]);
 
+  // Fade older entries: newest = 1, oldest approaches 0.7
+  const opacityFactor = 1 - (index / total) * 0.3;
+
   return (
     <div
-      className={`group relative border border-border/40 bg-secondary/30 backdrop-blur-sm rounded-sm px-6 py-7 md:px-8 md:py-9 transition-all duration-700 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-      } hover:border-muted-foreground/30 hover:shadow-[0_0_40px_-12px_hsl(var(--ritual-green)/0.08)]`}
+      className={`group transition-all duration-700 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      }`}
+      style={{ opacity: visible ? opacityFactor : 0 }}
     >
-      {/* Timestamp */}
-      <p className="text-muted-foreground/50 text-[10px] tracking-[0.3em] uppercase font-mono-light mb-5">
-        {entry.timestamp}
-      </p>
+      {/* Confessor ID + Timestamp */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-muted-foreground/30 text-[9px] tracking-[0.4em] uppercase font-mono-light">
+          CONFESSOR {entry.confessorId}
+        </span>
+        <span className="text-muted-foreground/20 text-[9px]">·</span>
+        <span className="text-muted-foreground/30 text-[9px] tracking-[0.2em] font-mono-light">
+          {entry.timestamp}
+        </span>
+      </div>
 
-      {/* Confession */}
-      <p className="text-foreground text-base md:text-lg font-mono-light leading-relaxed whitespace-pre-line mb-7">
+      {/* Confession — primary focus */}
+      <p className="text-foreground text-2xl md:text-[28px] font-mono-light leading-[1.6] whitespace-pre-line mb-6 max-w-[600px]">
         {entry.confession}
       </p>
 
-      {/* Verdict */}
-      <div className="border-t border-border/30 pt-5">
-        <p className="text-muted-foreground/40 text-[9px] tracking-[0.4em] uppercase font-mono-light mb-3">
+      {/* Verdict — secondary */}
+      <div className="max-w-[600px]">
+        <p className="text-muted-foreground/30 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-2">
           VERDICT
         </p>
-        <p className="text-ritual text-sm font-mono-light tracking-wide mb-2">
+        <p className="text-ritual text-xs font-mono-light tracking-wide mb-1 opacity-80">
           {entry.verdict}
         </p>
 
-        {/* Blurred / redacted verdict */}
-        <div className="relative overflow-hidden h-10 transition-all duration-500 group-hover:h-11">
-          <p className="text-muted-foreground text-sm font-mono-light leading-relaxed select-none">
+        {/* Gradient-blurred hidden verdict */}
+        <div className="relative overflow-hidden h-8 transition-all duration-500 group-hover:h-9">
+          <p className="text-muted-foreground/50 text-xs font-mono-light leading-relaxed select-none">
             {entry.verdictHidden}
           </p>
-          <div className="absolute inset-0 backdrop-blur-[6px] transition-all duration-500 group-hover:backdrop-blur-[5px]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-secondary/60 to-secondary/90" />
+          <div className="absolute inset-0 backdrop-blur-[6px] transition-all duration-500 group-hover:backdrop-blur-[4px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/70 to-background" />
         </div>
       </div>
     </div>
@@ -109,26 +135,46 @@ const ConfessionCard = ({ entry, index }: { entry: ConfessionEntry; index: numbe
 };
 
 const TheWall = () => {
+  const feedRef = useRef<HTMLDivElement>(null);
+
+  // Very slow auto-scroll
+  useEffect(() => {
+    const el = feedRef.current;
+    if (!el) return;
+    const interval = setInterval(() => {
+      el.scrollTop += 0.4;
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-[100dvh] bg-background">
       <BoothHeader />
 
-      {/* Header */}
-      <div className="pt-20 pb-12 md:pt-24 md:pb-16 text-center px-6">
-        <h1 className="font-control text-4xl md:text-6xl font-bold text-foreground tracking-wide mb-4">
+      {/* Compact header */}
+      <div className="pt-16 pb-8 md:pt-20 md:pb-10 text-center px-6">
+        <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide mb-2">
           THE WALL
         </h1>
-        <p className="text-muted-foreground text-xs md:text-sm font-mono-light tracking-[0.2em] leading-relaxed max-w-sm mx-auto">
+        <p className="text-muted-foreground/40 text-[10px] md:text-xs font-mono-light tracking-[0.2em] leading-relaxed">
           Some truths don't disappear.
           <br />
           They just get recorded.
         </p>
       </div>
 
-      {/* Feed */}
-      <div className="max-w-[680px] mx-auto px-6 pb-32 flex flex-col gap-9 md:gap-10">
-        {PLACEHOLDER_CONFESSIONS.map((entry, i) => (
-          <ConfessionCard key={entry.id} entry={entry} index={i} />
+      {/* Continuous feed */}
+      <div
+        ref={feedRef}
+        className="max-w-[720px] mx-auto px-6 pb-32"
+      >
+        {CONFESSIONS.map((entry, i) => (
+          <div key={entry.id}>
+            <ConfessionEntry entry={entry} index={i} total={CONFESSIONS.length} />
+            {i < CONFESSIONS.length - 1 && (
+              <div className="border-t border-border/15 my-7 md:my-8" />
+            )}
+          </div>
         ))}
       </div>
 
