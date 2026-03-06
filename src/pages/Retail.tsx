@@ -17,28 +17,43 @@ import contextStudio from "@/assets/retail/context-studio.png";
 
 const flavours = [
   {
-    name: "Cola Vice",
-    tagline: "Cola with a past.",
-    description:
-      "Dark spice. Real citrus. A smooth hit of vanilla. Every sip reveals something new — warmth, depth, a little trouble. Classic cola rewritten with better ingredients and fewer apologies.",
-    notes: ["Dark spice", "Citrus", "Vanilla"],
-    image: colaVice,
-  },
-  {
     name: "Citrus Confessional",
-    tagline: "What happens when lemon tells the truth.",
+    subtitle: "Lemon + Yuzu",
     description:
-      "Sharp. Bright. Unapologetically fresh. Yuzu slips in quietly — floral, mysterious, slightly wild — turning a familiar citrus soda into something far more interesting. Clean, crisp, and dangerously drinkable.",
-    notes: ["Lemon", "Yuzu", "Fresh citrus"],
+      "Bright citrus with real acidity. Lemon brings sharpness while yuzu adds aromatic lift. The drink stays bright rather than sweet. The finish clears quickly.",
+    warning: "WARNING: Evidence of indulgence.",
+    ingredients: ["Lemon juice", "Yuzu juice", "Raw sugar", "Carbonated"],
+    technical:
+      "~5.5g sugar per 100ml. Built on Japanese yuzu juice with natural citrus extracts.",
+    closing: "The first one rarely needs explaining.",
+    notes: ["Lemon", "Yuzu"],
     image: citrusConfessional,
   },
   {
     name: "Bitter Justice",
-    tagline: "This isn't sweet revenge. It's better.",
+    subtitle: "Blood Orange + Ginger",
     description:
-      "Blood orange brings the depth. Ginger delivers the bite. A quiet bitterness lingers just long enough to remind you why you came back for another sip. Sharp. Bold. Unapologetically guilty.",
-    notes: ["Blood orange", "Ginger", "Bitters"],
+      "Blood orange with ginger heat and a bitter edge. Blood orange brings depth while ginger adds warmth and lift. The bitterness lingers. Carbonation keeps the finish clean.",
+    warning: "WARNING: Evidence of indulgence.",
+    ingredients: ["Blood orange juice", "Ginger juice", "Raw sugar", "Carbonated"],
+    technical:
+      "~6g sugar per 100ml. Built on blood orange juice with bitter orange and juniper extracts.",
+    closing: "Justice rarely tastes sweet.",
+    notes: ["Blood orange", "Ginger"],
     image: bitterJustice,
+  },
+  {
+    name: "Cola Vice",
+    subtitle: "Spiced Cola",
+    description:
+      "Dark cola with citrus and warm spice. Kola nut and lime bring brightness while clove and cassia add depth. Sweetness supports the spice rather than dominating it. The drink dries slightly.",
+    warning: "WARNING: Evidence of indulgence.",
+    ingredients: ["Lime juice", "Kola nut extract", "Raw sugar", "Carbonated"],
+    technical:
+      "~7.5g sugar per 100ml. Built on kola nut and lime with warm spice extracts for balance.",
+    closing: "Some vices age well.",
+    notes: ["Spice", "Cola", "Lime"],
+    image: colaVice,
   },
 ];
 
@@ -50,20 +65,20 @@ const contextImages = [
 ];
 
 const productPoints = [
-  "Premium craft soda",
   "Three signature flavours",
   "Designed for modern hospitality",
-  "Limited production runs",
   "Strong shelf presence",
+  "Limited production runs",
+  "Built for bars and boutique retail",
   "Brand-led consumer demand",
 ];
 
 const retailPoints = [
-  "High-impact shelf presence",
-  "Designed for modern hospitality venues",
+  "Strong shelf presence",
+  "Designed for bars and hospitality venues",
   "Cultural brand positioning",
   "Limited distribution model",
-  "Built-in digital brand ecosystem",
+  "Digital brand ecosystem supporting the product",
 ];
 
 /* ─── Shared styles ───────────────────────────────────── */
@@ -134,7 +149,7 @@ const Retail = () => {
             Soda
           </h1>
           <p className={`${BODY} max-w-md mb-14 tracking-wide`}>
-            A premium craft soda built for modern venues and boutique retail.
+            A soda built for bars, restaurants and boutique retail.
           </p>
           <p className={LABEL}>
             Wholesale access and early retail allocations.
@@ -147,11 +162,14 @@ const Retail = () => {
         <div className="max-w-2xl mx-auto text-center">
           <p className={`${LABEL} mb-4`}>The Product</p>
           <h2 className={`${H2} mb-8`}>A Different Kind of Soda</h2>
+          <p className={`${BODY} max-w-xl mx-auto mb-5`}>
+            GUILTY Soda sits somewhere between soft drink and cultural product.
+          </p>
+          <p className={`${BODY} max-w-xl mx-auto mb-5`}>
+            Created for bars, restaurants and boutique retailers that care about flavour, design and brand presence.
+          </p>
           <p className={`${BODY} max-w-xl mx-auto`}>
-            GUILTY Soda sits somewhere between premium soft drink and cultural
-            product. Created for bars, restaurants and boutique retailers that
-            care about brand, design and flavour, the product is built to stand
-            apart on the shelf and behind the bar.
+            The drink is built to stand apart on the shelf and behind the bar.
           </p>
         </div>
       </section>
@@ -205,14 +223,31 @@ const Retail = () => {
                   />
                 </div>
                 <div className={i % 2 !== 0 ? "md:[direction:ltr]" : ""}>
-                  <h3 className="font-control text-2xl md:text-4xl font-bold mb-3">
+                  <h3 className="font-control text-2xl md:text-4xl font-bold mb-1">
                     {f.name}
                   </h3>
                   <p className="text-secondary-foreground/60 text-sm italic mb-6 font-mono-light">
-                    {f.tagline}
+                    {f.subtitle}
                   </p>
-                  <p className="text-secondary-foreground/50 text-xs leading-[1.9] mb-8 max-w-sm font-mono-light">
+                  <p className="text-secondary-foreground/50 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
                     {f.description}
+                  </p>
+                  <p className="text-secondary-foreground/70 text-[10px] tracking-[0.2em] uppercase font-bold mb-4 font-mono-light">
+                    {f.warning}
+                  </p>
+                  <ul className="text-secondary-foreground/50 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light list-disc list-inside">
+                    {f.ingredients.map((ing) => (
+                      <li key={ing}>{ing}</li>
+                    ))}
+                  </ul>
+                  <p className="text-secondary-foreground/40 text-[10px] tracking-[0.15em] uppercase mb-1 font-mono-light">
+                    Technical
+                  </p>
+                  <p className="text-secondary-foreground/50 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
+                    {f.technical}
+                  </p>
+                  <p className="text-secondary-foreground/60 text-sm italic mb-6 font-mono-light">
+                    {f.closing}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {f.notes.map((note) => (
@@ -238,17 +273,13 @@ const Retail = () => {
             <p className={`${LABEL} mb-4`}>The Story</p>
             <h2 className={`${H2} mb-8`}>Where It Started</h2>
             <p className={`${BODY} mb-5`}>
-              GUILTY began as a cultural brand exploring indulgence and
-              behaviour.
+              GUILTY began as a cultural brand exploring indulgence and behaviour.
             </p>
             <p className={`${BODY} mb-5`}>
-              The soda followed naturally — a physical product designed for
-              real-world environments where brand, flavour and experience matter
-              equally.
+              The soda followed naturally — a drink designed for the same environments where those ideas already exist.
             </p>
             <p className={BODY}>
-              Rather than compete with traditional soft drinks, GUILTY occupies a
-              different space: a premium cultural beverage.
+              Bars, restaurants and places where people gather.
             </p>
           </div>
           <img
@@ -297,8 +328,7 @@ const Retail = () => {
             Retail & Distribution Enquiries
           </h2>
           <p className={`${BODY} mb-12 max-w-lg mx-auto`}>
-            For wholesale access, venue partnerships or distribution discussions
-            please contact the founders directly.
+            For wholesale access, venue partnerships or distribution discussions please contact the founders directly.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="mailto:founders@guiltyconfess.com" className={CTA_PRIMARY}>
@@ -316,8 +346,11 @@ const Retail = () => {
           <h2 className={`${H2} text-center mb-4`}>
             Pre-Order Expression of Interest
           </h2>
+          <p className={`${BODY} text-center mb-5 max-w-sm mx-auto`}>
+            Early allocations are limited.
+          </p>
           <p className={`${BODY} text-center mb-12 max-w-sm mx-auto`}>
-            Submit your details and we'll be in touch regarding availability.
+            Submit your details and we will contact you regarding availability.
           </p>
 
           {submitted ? (
