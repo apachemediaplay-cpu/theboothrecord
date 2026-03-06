@@ -287,11 +287,13 @@ const TheWall = () => {
             }}
           />
           <div
-            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 transition-all duration-700 ${
-              boothPromptVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            className={`fixed inset-0 z-40 flex items-center justify-center p-4 transition-all duration-700 ${
+              boothPromptVisible ? "opacity-100" : "opacity-0"
             }`}
           >
-            <div className="relative border border-foreground/20 bg-primary px-12 py-8 text-center shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+            <div className={`relative border border-foreground/20 bg-primary px-8 py-6 sm:px-12 sm:py-8 text-center shadow-[0_0_40px_rgba(255,255,255,0.1)] w-full max-w-[320px] sm:max-w-[360px] transition-transform duration-700 ${
+              boothPromptVisible ? "scale-100" : "scale-95"
+            }`}>
               <button
                 onClick={() => {
                   setBoothPromptVisible(false);
