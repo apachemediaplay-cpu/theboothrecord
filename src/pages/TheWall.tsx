@@ -108,7 +108,7 @@ const ConfessionEntry = ({
       </div>
 
       {/* Confession — primary focus */}
-      <p className="text-foreground text-2xl md:text-[28px] font-mono-light leading-[1.6] whitespace-pre-line mb-6 max-w-[600px]">
+      <p className="text-foreground text-base md:text-lg font-mono-light leading-[1.6] whitespace-pre-line mb-4 max-w-[600px]">
         {entry.confession}
       </p>
 
