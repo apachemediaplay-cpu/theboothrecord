@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
@@ -10,21 +10,16 @@ import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 
 const TheWall = () => {
   const feedRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const [confessions, setConfessions] = useState<ConfessionEntry[]>(
     BASE_CONFESSIONS.map((c) => ({ ...c }))
   );
   const [systemMessage, setSystemMessage] = useState<string | null>(null);
   const [systemMessageVisible, setSystemMessageVisible] = useState(false);
-  const [showGhost, setShowGhost] = useState(false);
   const [confessionCount, setConfessionCount] = useState(1842);
   const [showBoothPrompt, setShowBoothPrompt] = useState(false);
   const [boothPromptVisible, setBoothPromptVisible] = useState(false);
   const [boothDismissed, setBoothDismissed] = useState(false);
   const nextIdRef = useRef(100);
-  const nextConfessorRef = useRef(1850);
-  const extraIndexRef = useRef(0);
-  const archiveIdRef = useRef(1795);
 
   // Fetch confessions from API on mount
   useEffect(() => {
