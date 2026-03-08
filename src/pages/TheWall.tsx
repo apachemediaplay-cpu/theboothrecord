@@ -4,7 +4,7 @@ import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
-import { SYSTEM_MESSAGES, EXTRA_CONFESSIONS, BASE_CONFESSIONS } from "@/components/wall/confessionData";
+import { SYSTEM_MESSAGES, BASE_CONFESSIONS } from "@/components/wall/confessionData";
 import { useWallSound } from "@/hooks/useWallSound";
 import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 
@@ -80,56 +80,6 @@ const TheWall = () => {
     setTimeout(() => setSystemMessage(null), 1800);
   }, []);
 
-  // Insert a new confession with ghost effect
-  const insertConfession = useCallback(() => {
-    // Phase 1: Show ghost
-    setShowGhost(true);
-
-    // Phase 2: After 3s, hide ghost, flash message, insert
-    setTimeout(() => {
-      setShowGhost(false);
-      flashSystemMessage();
-      playTone();
-
-      setTimeout(() => {
-        const extra = EXTRA_CONFESSIONS[extraIndexRef.current % EXTRA_CONFESSIONS.length];
-        extraIndexRef.current++;
-        const newId = nextIdRef.current++;
-        const confessorNum = nextConfessorRef.current++;
-
-        const newEntry: ConfessionEntry = {
-          ...extra,
-          id: newId,
-          confessorId: `#${confessorNum}`,
-          timestamp: new Date().toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          insertedAt: Date.now(),
-        };
-
-        setConfessions((prev) => [newEntry, ...prev]);
-        setConfessionCount((c) => c + 1);
-      }, 400);
-    }, 3000);
-  }, [flashSystemMessage, playTone]);
-
-  // Random insertion every 25-55s
-  useEffect(() => {
-    const scheduleNext = () => {
-      const delay = 25000 + Math.random() * 30000;
-      return setTimeout(() => {
-        insertConfession();
-        timerRef = scheduleNext();
-      }, delay);
-    };
-    let timerRef = scheduleNext();
-    return () => clearTimeout(timerRef);
-  }, [insertConfession]);
-
   // Very slow auto-scroll
   useEffect(() => {
     const el = feedRef.current;
@@ -151,38 +101,6 @@ const TheWall = () => {
     return () => clearTimeout(timer);
   }, [boothDismissed]);
 
-  // Infinite scroll — append older confessions when sentinel is visible
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setConfessions((prev) => {
-            if (prev.length >= 50) return prev;
-            const batch: ConfessionEntry[] = [];
-            for (let i = 0; i < 5; i++) {
-              const extra = EXTRA_CONFESSIONS[(extraIndexRef.current + i) % EXTRA_CONFESSIONS.length];
-              const archiveId = archiveIdRef.current--;
-              batch.push({
-                ...extra,
-                id: nextIdRef.current++,
-                confessorId: `#${archiveId}`,
-                timestamp: `${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")} Feb 2026 — ${String(Math.floor(Math.random() * 12) + 1).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")} ${Math.random() > 0.5 ? "AM" : "PM"}`,
-              });
-            }
-            extraIndexRef.current += 5;
-            return [...prev, ...batch];
-          });
-        }
-      },
-      { rootMargin: "200px" }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <div className="min-h-[100dvh] bg-background relative overflow-hidden">
