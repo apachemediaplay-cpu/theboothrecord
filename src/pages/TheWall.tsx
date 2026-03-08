@@ -55,7 +55,6 @@ const TheWall = () => {
         if (apiConfessions.length > 0) {
           setConfessions(apiConfessions);
           setConfessionCount(apiConfessions.length);
-          nextConfessorRef.current = 1842 + apiConfessions.length + 1;
         }
       })
       .catch(() => {
@@ -66,14 +65,6 @@ const TheWall = () => {
   const { soundEnabled, toggleSound, playTone } = useWallSound();
   const atmosphere = useTimeAtmosphere();
 
-  // Flash system message
-  const flashSystemMessage = useCallback(() => {
-    const msg = SYSTEM_MESSAGES[Math.floor(Math.random() * SYSTEM_MESSAGES.length)];
-    setSystemMessage(msg);
-    setSystemMessageVisible(true);
-    setTimeout(() => setSystemMessageVisible(false), 1200);
-    setTimeout(() => setSystemMessage(null), 1800);
-  }, []);
 
   // Very slow auto-scroll
   useEffect(() => {
@@ -177,17 +168,6 @@ const TheWall = () => {
         )}
       </div>
 
-      {/* Typing ghost */}
-      <div className="h-6 flex items-center justify-center mb-2">
-        <span
-          className={`text-ritual/50 text-[10px] tracking-[0.3em] font-mono-light transition-all duration-700 ${
-            showGhost ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          someone is confessing
-          <span className="inline-block w-[1px] h-3 bg-ritual/60 ml-1 align-middle" style={{ animation: "blink 1s step-end infinite" }} />
-        </span>
-      </div>
 
       {/* Confession feed */}
       <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-16">
@@ -206,7 +186,7 @@ const TheWall = () => {
         ))}
 
         {/* Infinite scroll sentinel */}
-        <div ref={sentinelRef} className="h-1" />
+        
 
         {/* Submit your own CTA */}
         <div className="py-16 text-center">
