@@ -4,16 +4,15 @@ import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
-import { BASE_CONFESSIONS } from "@/components/wall/confessionData";
+
 import { useWallSound } from "@/hooks/useWallSound";
 import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 
 const TheWall = () => {
   const feedRef = useRef<HTMLDivElement>(null);
-  const [confessions, setConfessions] = useState<ConfessionEntry[]>(
-    BASE_CONFESSIONS.map((c) => ({ ...c }))
-  );
-  const [confessionCount, setConfessionCount] = useState(1842);
+  const [confessions, setConfessions] = useState<ConfessionEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confessionCount, setConfessionCount] = useState(0);
   const [showBoothPrompt, setShowBoothPrompt] = useState(false);
   const [boothPromptVisible, setBoothPromptVisible] = useState(false);
   const [boothDismissed, setBoothDismissed] = useState(false);
