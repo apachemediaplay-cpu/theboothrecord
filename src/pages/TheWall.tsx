@@ -26,6 +26,48 @@ const TheWall = () => {
   const extraIndexRef = useRef(0);
   const archiveIdRef = useRef(1795);
 
+  // Fetch confessions from API on mount
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_BASE_URL;
+    fetch(`${baseUrl}/v1/confessions`)
+      .then((res) => res.json())
+      .then((data) => {
+        const apiConfessions: ConfessionEntry[] = (data?.data?.confessions || []).map(
+          (c: { _id: string; createdAt: string; content: string; response: string }, i: number) => {
+            const date = new Date(c.createdAt);
+            const timestamp = date.toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            // Extract first sentence as visible verdict, rest as hidden
+            const sentences = c.response.split(/(?<=\.)\s+/);
+            const verdict = sentences[0] || "Verdict rendered.";
+            const verdictHidden = sentences.slice(1).join(" ") || "";
+
+            return {
+              id: nextIdRef.current++,
+              confessorId: `#${1842 - i}`,
+              timestamp,
+              confession: c.content,
+              verdict,
+              verdictHidden,
+            };
+          }
+        );
+        if (apiConfessions.length > 0) {
+          setConfessions(apiConfessions);
+          setConfessionCount(apiConfessions.length);
+          nextConfessorRef.current = 1842 + apiConfessions.length + 1;
+        }
+      })
+      .catch(() => {
+        // Keep fallback BASE_CONFESSIONS on error
+      });
+  }, []);
+
   const { soundEnabled, toggleSound, playTone } = useWallSound();
   const atmosphere = useTimeAtmosphere();
 
