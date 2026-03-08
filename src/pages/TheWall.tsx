@@ -49,13 +49,12 @@ const TheWall = () => {
             };
           }
         );
-        if (apiConfessions.length > 0) {
-          setConfessions(apiConfessions);
-          setConfessionCount(apiConfessions.length);
-        }
+        setConfessions(apiConfessions);
+        setConfessionCount(apiConfessions.length);
+        setLoading(false);
       })
       .catch(() => {
-        // Keep fallback BASE_CONFESSIONS on error
+        setLoading(false);
       });
   }, []);
 
