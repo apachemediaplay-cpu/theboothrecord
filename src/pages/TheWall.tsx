@@ -4,16 +4,15 @@ import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
-import { BASE_CONFESSIONS } from "@/components/wall/confessionData";
+
 import { useWallSound } from "@/hooks/useWallSound";
 import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 
 const TheWall = () => {
   const feedRef = useRef<HTMLDivElement>(null);
-  const [confessions, setConfessions] = useState<ConfessionEntry[]>(
-    BASE_CONFESSIONS.map((c) => ({ ...c }))
-  );
-  const [confessionCount, setConfessionCount] = useState(1842);
+  const [confessions, setConfessions] = useState<ConfessionEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confessionCount, setConfessionCount] = useState(0);
   const [showBoothPrompt, setShowBoothPrompt] = useState(false);
   const [boothPromptVisible, setBoothPromptVisible] = useState(false);
   const [boothDismissed, setBoothDismissed] = useState(false);
@@ -50,13 +49,12 @@ const TheWall = () => {
             };
           }
         );
-        if (apiConfessions.length > 0) {
-          setConfessions(apiConfessions);
-          setConfessionCount(apiConfessions.length);
-        }
+        setConfessions(apiConfessions);
+        setConfessionCount(apiConfessions.length);
+        setLoading(false);
       })
       .catch(() => {
-        // Keep fallback BASE_CONFESSIONS on error
+        setLoading(false);
       });
   }, []);
 
@@ -157,22 +155,33 @@ const TheWall = () => {
 
       {/* Confession feed */}
       <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-16">
-        {confessions.map((entry, i) => (
-          <div key={entry.id}>
-            <ConfessionCard
-              entry={entry}
-              index={i}
-              total={confessions.length}
-              isNew={!!entry.insertedAt}
-            />
-            {i < confessions.length - 1 && (
-              <div className="border-t border-border/15 my-7 md:my-8" />
-            )}
+        {loading ? (
+          <div className="text-center py-20">
+            <span className="text-muted-foreground/30 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
+              LOADING CONFESSIONS...
+            </span>
           </div>
-        ))}
-
-        {/* Infinite scroll sentinel */}
-        
+        ) : confessions.length === 0 ? (
+          <div className="text-center py-20">
+            <span className="text-muted-foreground/30 text-[10px] tracking-[0.4em] uppercase font-mono-light">
+              NO CONFESSIONS YET
+            </span>
+          </div>
+        ) : (
+          confessions.map((entry, i) => (
+            <div key={entry.id}>
+              <ConfessionCard
+                entry={entry}
+                index={i}
+                total={confessions.length}
+                isNew={!!entry.insertedAt}
+              />
+              {i < confessions.length - 1 && (
+                <div className="border-t border-border/15 my-7 md:my-8" />
+              )}
+            </div>
+          ))
+        )}
 
         {/* Submit your own CTA */}
         <div className="py-16 text-center">
