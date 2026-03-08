@@ -4,7 +4,7 @@ import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
-import { SYSTEM_MESSAGES, BASE_CONFESSIONS } from "@/components/wall/confessionData";
+import { BASE_CONFESSIONS } from "@/components/wall/confessionData";
 import { useWallSound } from "@/hooks/useWallSound";
 import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 
@@ -13,8 +13,6 @@ const TheWall = () => {
   const [confessions, setConfessions] = useState<ConfessionEntry[]>(
     BASE_CONFESSIONS.map((c) => ({ ...c }))
   );
-  const [systemMessage, setSystemMessage] = useState<string | null>(null);
-  const [systemMessageVisible, setSystemMessageVisible] = useState(false);
   const [confessionCount, setConfessionCount] = useState(1842);
   const [showBoothPrompt, setShowBoothPrompt] = useState(false);
   const [boothPromptVisible, setBoothPromptVisible] = useState(false);
@@ -62,7 +60,7 @@ const TheWall = () => {
       });
   }, []);
 
-  const { soundEnabled, toggleSound, playTone } = useWallSound();
+  const { soundEnabled, toggleSound } = useWallSound();
   const atmosphere = useTimeAtmosphere();
 
 
@@ -155,18 +153,6 @@ const TheWall = () => {
         />
       </div>
 
-      {/* System message flash */}
-      <div className="h-5 flex items-center justify-center mb-2">
-        {systemMessage && (
-          <span
-            className={`text-ritual/70 text-[9px] tracking-[0.4em] uppercase font-mono-light transition-all duration-500 ${
-              systemMessageVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"
-            }`}
-          >
-            {systemMessage}
-          </span>
-        )}
-      </div>
 
 
       {/* Confession feed */}
