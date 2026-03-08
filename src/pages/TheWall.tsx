@@ -155,22 +155,33 @@ const TheWall = () => {
 
       {/* Confession feed */}
       <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-16">
-        {confessions.map((entry, i) => (
-          <div key={entry.id}>
-            <ConfessionCard
-              entry={entry}
-              index={i}
-              total={confessions.length}
-              isNew={!!entry.insertedAt}
-            />
-            {i < confessions.length - 1 && (
-              <div className="border-t border-border/15 my-7 md:my-8" />
-            )}
+        {loading ? (
+          <div className="text-center py-20">
+            <span className="text-muted-foreground/30 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
+              LOADING CONFESSIONS...
+            </span>
           </div>
-        ))}
-
-        {/* Infinite scroll sentinel */}
-        
+        ) : confessions.length === 0 ? (
+          <div className="text-center py-20">
+            <span className="text-muted-foreground/30 text-[10px] tracking-[0.4em] uppercase font-mono-light">
+              NO CONFESSIONS YET
+            </span>
+          </div>
+        ) : (
+          confessions.map((entry, i) => (
+            <div key={entry.id}>
+              <ConfessionCard
+                entry={entry}
+                index={i}
+                total={confessions.length}
+                isNew={!!entry.insertedAt}
+              />
+              {i < confessions.length - 1 && (
+                <div className="border-t border-border/15 my-7 md:my-8" />
+              )}
+            </div>
+          ))
+        )}
 
         {/* Submit your own CTA */}
         <div className="py-16 text-center">
