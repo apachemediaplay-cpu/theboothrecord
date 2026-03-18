@@ -237,35 +237,38 @@ const World = () => {
 
           <hr className="border-neutral-200 mb-10" />
 
-          <h3 className="font-control text-lg md:text-xl font-bold text-neutral-900 mb-6">
-            Drinks
-          </h3>
-          <div className="space-y-6 mb-10">
-            <div>
-              <p className="text-neutral-900 text-base font-mono-light font-bold">
-                Citrus Confessional — Lemon / Yuzu
-              </p>
-              <p className="text-neutral-600 text-base font-mono-light">
-                Lemon and yuzu juice with citrus oils.
-              </p>
+          <details className="group mb-10">
+            <summary className="cursor-pointer list-none flex items-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
+              Drinks
+              <span className="text-neutral-400 text-sm transition-transform group-open:rotate-180">▾</span>
+            </summary>
+            <div className="space-y-6 mt-6">
+              <div>
+                <p className="text-neutral-900 text-base font-mono-light font-bold">
+                  Citrus Confessional — Lemon / Yuzu
+                </p>
+                <p className="text-neutral-600 text-base font-mono-light">
+                  Lemon and yuzu juice with citrus oils.
+                </p>
+              </div>
+              <div>
+                <p className="text-neutral-900 text-base font-mono-light font-bold">
+                  Bitter Justice — Blood Orange / Ginger
+                </p>
+                <p className="text-neutral-600 text-base font-mono-light">
+                  Blood orange and ginger juice with bitter orange extracts.
+                </p>
+              </div>
+              <div>
+                <p className="text-neutral-900 text-base font-mono-light font-bold">
+                  Cola Vice — Spiced Cola
+                </p>
+                <p className="text-neutral-600 text-base font-mono-light">
+                  Lime juice, kola nut and warm spice extracts.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-neutral-900 text-base font-mono-light font-bold">
-                Bitter Justice — Blood Orange / Ginger
-              </p>
-              <p className="text-neutral-600 text-base font-mono-light">
-                Blood orange and ginger juice with bitter orange extracts.
-              </p>
-            </div>
-            <div>
-              <p className="text-neutral-900 text-base font-mono-light font-bold">
-                Cola Vice — Spiced Cola
-              </p>
-              <p className="text-neutral-600 text-base font-mono-light">
-                Lime juice, kola nut and warm spice extracts.
-              </p>
-            </div>
-          </div>
+          </details>
 
           <hr className="border-neutral-200 mb-10" />
 
