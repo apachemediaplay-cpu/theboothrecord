@@ -17,8 +17,8 @@ const Verdict = () => {
   const [btnGlitchOffset2, setBtnGlitchOffset2] = useState(0);
   const [btnGlitchTop, setBtnGlitchTop] = useState(30);
   const [btnGlitchTop2, setBtnGlitchTop2] = useState(60);
-  const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const btnGlitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const glitchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const btnGlitchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const verdictResponse = sessionStorage.getItem("verdictResponse") || "";
   const fullText = "The booth noticed.";
