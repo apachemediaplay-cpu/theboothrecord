@@ -68,21 +68,27 @@ const contextImages = [
 const contrabandDrops = [
   {
     code: "DROP-001",
-    label: "CLASSIFIED",
-    status: "RESTRICTED",
-    note: "Monitored.",
+    name: "BATCH 77 — BURNT SERMON",
+    redactedName: "BATCH 77 — ████ SERMON",
+    teaser: "Dark roast. Smoke and sacrament. Never meant for general release.",
+    status: "RESTRICTED" as const,
+    lastSeen: "Last sighted: 14.02.26",
   },
   {
     code: "DROP-002",
-    label: "REDACTED",
-    status: "REFORMED",
-    note: "Reformed. Access revoked.",
+    name: "TRIAL 13 — ABSOLUTION TONIC",
+    redactedName: "TRIAL 13 — ████████ TONIC",
+    teaser: "Bitter herbs. A remedy or a sentence — depends who's drinking.",
+    status: "REFORMED" as const,
+    lastSeen: "Last sighted: 03.11.25",
   },
   {
     code: "DROP-003",
-    label: "PENDING",
-    status: "DISAPPEARED",
-    note: "Quietly disappeared.",
+    name: "EXHIBIT R — NIGHT COUNSEL",
+    redactedName: "EXHIBIT R — ████ ████████",
+    teaser: "Whispered about. Never confirmed. Some things stay off the record.",
+    status: "DISAPPEARED" as const,
+    lastSeen: "Last sighted: Unknown",
   },
 ];
 
