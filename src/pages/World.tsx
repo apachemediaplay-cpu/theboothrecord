@@ -90,14 +90,14 @@ interface ConfessionPreview {
   confessorId: string;
 }
 
-/* ─── Shared styles ───────────────────────────────────── */
+/* ─── Shared styles (light theme) ─────────────────────── */
 
 const SECTION = "px-6 md:px-10 py-28 md:py-40";
-const H2 = "font-control text-3xl md:text-5xl font-bold";
+const H2 = "font-control text-3xl md:text-5xl font-bold text-neutral-900";
 const LABEL =
-  "text-muted-foreground text-[10px] tracking-[0.35em] uppercase font-mono-light";
+  "text-neutral-400 text-[10px] tracking-[0.35em] uppercase font-mono-light";
 const BODY =
-  "text-muted-foreground text-sm leading-[1.9] font-mono-light";
+  "text-neutral-500 text-sm leading-[1.9] font-mono-light";
 
 /* ─── Component ───────────────────────────────────────── */
 
@@ -129,37 +129,35 @@ const World = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* ── Hero ─────────────────────────────────────── */}
+    <div className="min-h-screen bg-white text-neutral-900">
+      {/* ── Hero (stays dark — image-based) ──────────── */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
         <img
           src={heroCan}
           alt="GUILTY Soda"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
           <img
             src={guiltyLogoWhite}
             alt="GUILTY"
             className="h-10 mb-10 opacity-80"
           />
-          <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
+          <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 text-white">
             Indulgence has a name.
           </h1>
-          <p className={`${BODY} max-w-md mb-6 tracking-wide`}>
+          <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-6 tracking-wide">
             A world built around flavour, ritual and things that don't explain themselves.
           </p>
         </div>
       </section>
 
       {/* ── The Drinks ───────────────────────────────── */}
-      <section className="px-6 md:px-10 py-28 md:py-40 bg-white text-neutral-900">
+      <section className={`${SECTION} bg-white`}>
         <div className="max-w-6xl mx-auto">
-          <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light text-center mb-4">
-            The Range
-          </p>
-          <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 text-center mb-20 md:mb-28">
+          <p className={`${LABEL} text-center mb-4`}>The Range</p>
+          <h2 className={`${H2} text-center mb-20 md:mb-28`}>
             Three Signature Flavours
           </h2>
           <div className="space-y-28 md:space-y-40">
@@ -181,34 +179,34 @@ const World = () => {
                   <h3 className="font-control text-2xl md:text-4xl font-bold text-neutral-900 mb-1">
                     {f.name}
                   </h3>
-                  <p className="text-neutral-500 text-sm italic mb-6 font-mono-light">
+                  <p className="text-neutral-400 text-sm italic mb-6 font-mono-light">
                     {f.subtitle}
                   </p>
-                  <p className="text-neutral-700 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
+                  <p className="text-neutral-600 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
                     {f.description}
                   </p>
                   <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold mb-4 font-mono-light">
                     {f.warning}
                   </p>
-                  <ul className="text-neutral-700 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light list-disc list-inside">
+                  <ul className="text-neutral-600 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light list-disc list-inside">
                     {f.ingredients.map((ing) => (
                       <li key={ing}>{ing}</li>
                     ))}
                   </ul>
-                  <p className="text-neutral-500 text-[10px] tracking-[0.15em] uppercase mb-1 font-mono-light">
+                  <p className="text-neutral-400 text-[10px] tracking-[0.15em] uppercase mb-1 font-mono-light">
                     Technical
                   </p>
-                  <p className="text-neutral-700 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
+                  <p className="text-neutral-600 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
                     {f.technical}
                   </p>
-                  <p className="text-neutral-600 text-sm italic mb-6 font-mono-light">
+                  <p className="text-neutral-500 text-sm italic mb-6 font-mono-light">
                     {f.closing}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {f.notes.map((note) => (
                       <span
                         key={note}
-                        className="px-4 py-1.5 border border-neutral-300 text-[10px] tracking-[0.2em] uppercase text-neutral-600"
+                        className="px-4 py-1.5 border border-neutral-200 text-[10px] tracking-[0.2em] uppercase text-neutral-500"
                       >
                         {note}
                       </span>
@@ -222,7 +220,7 @@ const World = () => {
       </section>
 
       {/* ── Venues ───────────────────────────────────── */}
-      <section className={SECTION}>
+      <section className={`${SECTION} bg-neutral-50`}>
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mx-auto text-center mb-16 md:mb-24">
             <p className={`${LABEL} mb-4`}>Where It Lives</p>
@@ -245,17 +243,19 @@ const World = () => {
       </section>
 
       {/* ── Contraband ───────────────────────────────── */}
-      <section className="px-6 md:px-10 py-28 md:py-40 bg-[hsl(20,15%,5%)]">
+      <section className={`${SECTION} bg-neutral-900`}>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16 md:mb-24">
-            <p className="text-destructive text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
+            <p className="text-red-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               ⬤ Restricted Access
             </p>
-            <h2 className={`${H2} mb-6`}>Contraband</h2>
-            <p className={`${BODY} max-w-md mx-auto mb-3`}>
+            <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
+              Contraband
+            </h2>
+            <p className="text-neutral-400 text-sm leading-[1.9] font-mono-light max-w-md mx-auto mb-3">
               Limited drops. Restricted material. Outside the current range.
             </p>
-            <p className="text-muted-foreground/60 text-xs font-mono-light italic">
+            <p className="text-neutral-500 text-xs font-mono-light italic">
               Some are monitored. Some are reformed. Some quietly disappear.
             </p>
           </div>
@@ -264,24 +264,23 @@ const World = () => {
             {contrabandDrops.map((drop) => (
               <div
                 key={drop.code}
-                className="border border-muted/20 p-6 md:p-8 relative overflow-hidden group hover:border-muted/40 transition-colors"
+                className="border border-neutral-700/40 p-6 md:p-8 relative overflow-hidden group hover:border-neutral-600 transition-colors"
               >
-                {/* Scan line overlay */}
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,hsl(var(--foreground)/0.1)_2px,hsl(var(--foreground)/0.1)_4px)]" />
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" />
 
-                <p className="text-muted-foreground/30 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-6">
+                <p className="text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-6">
                   {drop.code}
                 </p>
                 <div className="h-24 flex items-center justify-center mb-6">
-                  <p className="font-control text-2xl font-bold text-foreground/20 tracking-widest">
+                  <p className="font-control text-2xl font-bold text-white/15 tracking-widest">
                     {drop.label}
                   </p>
                 </div>
-                <div className="border-t border-muted/15 pt-4 flex items-center justify-between">
-                  <span className="text-destructive/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                <div className="border-t border-neutral-700/30 pt-4 flex items-center justify-between">
+                  <span className="text-red-500/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
                     {drop.status}
                   </span>
-                  <span className="text-muted-foreground/30 text-[9px] font-mono-light">
+                  <span className="text-neutral-600 text-[9px] font-mono-light">
                     {drop.note}
                   </span>
                 </div>
@@ -294,10 +293,9 @@ const World = () => {
       {/* ── Confessional ─────────────────────────────── */}
       <section
         ref={scanRef}
-        className="relative px-6 md:px-10 py-28 md:py-40 bg-[hsl(20,15%,4%)] overflow-hidden"
+        className="relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
       >
-        {/* Scan line overlay */}
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,hsl(var(--foreground)/0.15)_2px,hsl(var(--foreground)/0.15)_4px)]" />
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)]" />
 
         <div className="relative z-10 max-w-3xl mx-auto">
           <div className="text-center mb-16 md:mb-20">
@@ -307,62 +305,62 @@ const World = () => {
                 Live Feed
               </span>
             </div>
-            <h2 className={`${H2} mb-6`}>The Confessional</h2>
-            <p className={`${BODY} max-w-md mx-auto`}>
+            <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
+              The Confessional
+            </h2>
+            <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
               Anonymous confessions. AI verdicts. Some truths don't disappear.
             </p>
           </div>
 
-          {/* Confession previews */}
           <div className="space-y-10 mb-16">
             {confessions.length > 0 ? (
               confessions.map((c, i) => (
                 <div
                   key={i}
-                  className="border-l border-muted/20 pl-6"
+                  className="border-l border-neutral-800 pl-6"
                   style={{ opacity: 1 - i * 0.15 }}
                 >
-                  <p className="text-muted-foreground/30 text-[9px] tracking-[0.4em] uppercase font-mono-light mb-3">
+                  <p className="text-neutral-600 text-[9px] tracking-[0.4em] uppercase font-mono-light mb-3">
                     Confessor {c.confessorId}
                   </p>
-                  <p className="text-foreground text-sm md:text-base font-mono-light leading-[1.7] mb-4 max-w-[550px]">
+                  <p className="text-neutral-200 text-sm md:text-base font-mono-light leading-[1.7] mb-4 max-w-[550px]">
                     {c.confession}
                   </p>
                   <div>
-                    <p className="text-muted-foreground/30 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-1.5">
+                    <p className="text-neutral-600 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-1.5">
                       Verdict
                     </p>
                     <p className="text-ritual/80 text-xs font-mono-light tracking-wide mb-1">
                       {c.verdict}
                     </p>
                     <div className="relative overflow-hidden h-6">
-                      <p className="text-muted-foreground/40 text-xs font-mono-light leading-relaxed select-none">
+                      <p className="text-neutral-500 text-xs font-mono-light leading-relaxed select-none">
                         {c.verdictHidden}
                       </p>
                       <div className="absolute inset-0 backdrop-blur-[6px]" />
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(20,15%,4%)]" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-950" />
                     </div>
                   </div>
                 </div>
               ))
             ) : (
               <div className="text-center py-10">
-                <p className="text-muted-foreground/30 text-xs font-mono-light animate-pulse">
+                <p className="text-neutral-600 text-xs font-mono-light animate-pulse">
                   Loading confessions...
                 </p>
               </div>
             )}
           </div>
 
-          {/* CTA */}
           <div className="text-center">
             <Link
               to="/confess"
-              className="inline-block px-12 py-4 bg-foreground text-background font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em]"
+              className="inline-block px-12 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em]"
             >
               Enter the Booth
             </Link>
-            <p className={`${LABEL} mt-6 opacity-60`}>
+            <p className="text-neutral-600 text-[10px] tracking-[0.35em] uppercase font-mono-light mt-6">
               Your confession will be judged.
             </p>
           </div>
@@ -370,10 +368,10 @@ const World = () => {
       </section>
 
       {/* ── Footer ───────────────────────────────────── */}
-      <footer className="px-6 py-14 border-t border-muted/30">
+      <footer className="px-6 py-14 border-t border-neutral-100 bg-white">
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-4">
           <img src={guiltyLogoRed} alt="GUILTY" className="h-5 opacity-50" />
-          <p className={LABEL}>
+          <p className="text-neutral-400 text-[10px] tracking-[0.35em] uppercase font-mono-light">
             © {new Date().getFullYear()} GUILTY. All rights reserved.
           </p>
         </div>
