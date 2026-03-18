@@ -336,13 +336,21 @@ const World = () => {
                     {drop.label}
                   </p>
                 </div>
-                <div className="border-t border-neutral-700/30 pt-4 flex items-center justify-between">
-                  <span className="text-red-500/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
-                    {drop.status}
-                  </span>
-                  <span className="text-neutral-600 text-[9px] font-mono-light">
-                    {drop.note}
-                  </span>
+                <div className="border-t border-neutral-700/30 pt-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-red-500/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                      {drop.status}
+                    </span>
+                    <span className="text-neutral-600 text-[9px] font-mono-light">
+                      {drop.note}
+                    </span>
+                  </div>
+                  <a
+                    href="mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20" 
+                    className="block w-full text-center py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all hover:border-red-500/60 hover:text-red-400 hover:bg-red-500/5"
+                  >
+                    Request Access
+                  </a>
                 </div>
               </div>
             ))}
