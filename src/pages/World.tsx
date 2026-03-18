@@ -380,61 +380,6 @@ const World = () => {
         </div>
       </section>
 
-      {/* ── From the Scene ──────────────────────────── */}
-      <section className={`${SECTION} bg-white`}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16 md:mb-20">
-            <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
-              @houseofguilty
-            </p>
-            <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
-              From the Scene
-            </h2>
-            <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
-              Evidence collected. Case ongoing.
-            </p>
-          </div>
-
-          <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-6 px-6">
-            {[
-              { src: socialInterrogation, alt: "Interrogation room", caption: "Evidence recovered from the scene.", likes: "2,847", time: "3h" },
-              { src: socialPressConference, alt: "Press conference", caption: "No further questions.", likes: "4,112", time: "1d" },
-              { src: socialAirportCustoms, alt: "Airport customs", caption: "Detained at the border. Worth it.", likes: "3,291", time: "3d" },
-              { src: socialInterrogation, alt: "Interrogation room", caption: "Caught in the act.", likes: "1,923", time: "5d" },
-              { src: socialPressConference, alt: "Press conference", caption: "The evidence speaks for itself.", likes: "3,540", time: "1w" },
-              { src: socialAirportCustoms, alt: "Airport customs", caption: "Crossing lines since day one.", likes: "2,108", time: "2w" },
-            ].map((img, i) => (
-              <a
-                key={i}
-                href="https://instagram.com/houseofguilty"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-shrink-0 w-36 snap-start group"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-5 h-5 rounded-full bg-neutral-900 flex items-center justify-center">
-                    <span className="text-white text-[6px] font-bold tracking-wider">G</span>
-                  </div>
-                  <p className="text-neutral-900 text-[10px] font-bold tracking-wide">houseofguilty</p>
-                  <p className="text-neutral-400 text-[9px] font-mono-light ml-auto">{img.time}</p>
-                </div>
-
-                <div className="relative aspect-[4/5] overflow-hidden rounded-sm mb-2">
-                  <img
-                    src={img.src}
-                    alt={img.alt}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                  />
-                </div>
-
-                <p className="text-neutral-900 text-[9px] font-bold mb-0.5">{img.likes} likes</p>
-                <p className="text-neutral-600 text-[9px] leading-relaxed line-clamp-2">{img.caption}</p>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Contraband ───────────────────────────────── */}
       <section id="contraband" className={`${SECTION} bg-neutral-900`}>
         <div className="max-w-5xl mx-auto">
@@ -488,6 +433,61 @@ const World = () => {
                   </a>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── From the Scene ──────────────────────────── */}
+      <section className={`${SECTION} bg-white`}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16 md:mb-20">
+            <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
+              @houseofguilty
+            </p>
+            <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
+              From the Scene
+            </h2>
+            <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
+              Evidence collected. Case ongoing.
+            </p>
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-6 px-6">
+            {[
+              { src: socialInterrogation, alt: "Interrogation room", caption: "Evidence recovered from the scene.", likes: "2,847", time: "3h" },
+              { src: socialPressConference, alt: "Press conference", caption: "No further questions.", likes: "4,112", time: "1d" },
+              { src: socialAirportCustoms, alt: "Airport customs", caption: "Detained at the border. Worth it.", likes: "3,291", time: "3d" },
+              { src: socialInterrogation, alt: "Interrogation room", caption: "Caught in the act.", likes: "1,923", time: "5d" },
+              { src: socialPressConference, alt: "Press conference", caption: "The evidence speaks for itself.", likes: "3,540", time: "1w" },
+              { src: socialAirportCustoms, alt: "Airport customs", caption: "Crossing lines since day one.", likes: "2,108", time: "2w" },
+            ].map((img, i) => (
+              <a
+                key={i}
+                href="https://instagram.com/houseofguilty"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0 w-36 snap-start group"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-5 h-5 rounded-full bg-neutral-900 flex items-center justify-center">
+                    <span className="text-white text-[6px] font-bold tracking-wider">G</span>
+                  </div>
+                  <p className="text-neutral-900 text-[10px] font-bold tracking-wide">houseofguilty</p>
+                  <p className="text-neutral-400 text-[9px] font-mono-light ml-auto">{img.time}</p>
+                </div>
+
+                <div className="relative aspect-[4/5] overflow-hidden rounded-sm mb-2">
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  />
+                </div>
+
+                <p className="text-neutral-900 text-[9px] font-bold mb-0.5">{img.likes} likes</p>
+                <p className="text-neutral-600 text-[9px] leading-relaxed line-clamp-2">{img.caption}</p>
+              </a>
             ))}
           </div>
         </div>
