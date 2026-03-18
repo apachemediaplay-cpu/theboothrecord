@@ -103,6 +103,8 @@ const BODY =
 
 const World = () => {
   const [confessions, setConfessions] = useState<ConfessionPreview[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [confessionCount, setConfessionCount] = useState(1842);
   const scanRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,7 +113,7 @@ const World = () => {
       .then((res) => res.json())
       .then((data) => {
         const items = (data?.data?.confessions || [])
-          .slice(0, 3)
+          .slice(0, 6)
           .map(
             (c: { content: string; response: string }, i: number) => {
               const sentences = c.response.split(/(?<=\.)\s+/);
@@ -127,6 +129,16 @@ const World = () => {
       })
       .catch(() => {});
   }, []);
+
+  // Cycle through confessions to simulate live feed
+  useEffect(() => {
+    if (confessions.length === 0) return;
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % confessions.length);
+      setConfessionCount((prev) => prev + 1);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [confessions.length]);
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
