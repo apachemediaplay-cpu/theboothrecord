@@ -14,7 +14,7 @@ const Index = () => {
   const [glitchOffset2, setGlitchOffset2] = useState(0);
   const [glitchTop, setGlitchTop] = useState(30);
   const [glitchTop2, setGlitchTop2] = useState(60);
-  const glitchIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const glitchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fullText1 = "Once you begin, you can't take it back.";
   const fullText2 = "That's the point.";
