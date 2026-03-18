@@ -1,13 +1,11 @@
-import { useState } from "react";
-import { X } from "lucide-react";
-import RetailEarlyAccessModal from "@/components/RetailEarlyAccessModal";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroCan from "@/assets/retail/hero-can.png";
 import colaVice from "@/assets/retail/cola-vice.png";
 import citrusConfessional from "@/assets/retail/citrus-confessional.png";
 import bitterJustice from "@/assets/retail/bitter-justice.png";
-import productLineup from "@/assets/retail/product-lineup.png";
 import contextBar from "@/assets/retail/context-bar.png";
 import contextRetail from "@/assets/retail/context-retail.png";
 import contextSpirits from "@/assets/retail/context-spirits.png";
@@ -58,79 +56,80 @@ const flavours = [
 ];
 
 const contextImages = [
-  { src: contextBar, alt: "GUILTY Soda on marble bar beside cocktail" },
-  { src: contextRetail, alt: "GUILTY Soda in boutique retail fridge" },
-  { src: contextSpirits, alt: "GUILTY Soda beside premium spirits" },
-  { src: contextStudio, alt: "GUILTY Soda in minimal studio lighting" },
+  { src: contextBar, alt: "GUILTY in a dimly lit bar" },
+  { src: contextRetail, alt: "GUILTY on a boutique shelf" },
+  { src: contextSpirits, alt: "GUILTY beside spirits" },
+  { src: contextStudio, alt: "GUILTY in low studio light" },
 ];
 
-const productPoints = [
-  "Three signature flavours",
-  "Designed for modern hospitality",
-  "Strong shelf presence",
-  "Limited production runs",
-  "Built for bars and boutique retail",
-  "Brand-led consumer demand",
+const contrabandDrops = [
+  {
+    code: "DROP-001",
+    label: "CLASSIFIED",
+    status: "RESTRICTED",
+    note: "Monitored.",
+  },
+  {
+    code: "DROP-002",
+    label: "REDACTED",
+    status: "REFORMED",
+    note: "Reformed. Access revoked.",
+  },
+  {
+    code: "DROP-003",
+    label: "PENDING",
+    status: "DISAPPEARED",
+    note: "Quietly disappeared.",
+  },
 ];
 
-const retailPoints = [
-  "Strong shelf presence",
-  "Designed for bars and hospitality venues",
-  "Cultural brand positioning",
-  "Limited distribution model",
-  "Digital brand ecosystem supporting the product",
-];
+interface ConfessionPreview {
+  confession: string;
+  verdict: string;
+  verdictHidden: string;
+  confessorId: string;
+}
 
 /* ─── Shared styles ───────────────────────────────────── */
 
 const SECTION = "px-6 md:px-10 py-28 md:py-40";
-const SECTION_ALT = `${SECTION} bg-secondary/30`;
 const H2 = "font-control text-3xl md:text-5xl font-bold";
 const LABEL =
   "text-muted-foreground text-[10px] tracking-[0.35em] uppercase font-mono-light";
 const BODY =
   "text-muted-foreground text-sm leading-[1.9] font-mono-light";
-const LIST_ITEM =
-  "text-muted-foreground text-sm font-mono-light tracking-wide border-b border-muted/30 pb-5";
-const CTA_PRIMARY =
-  "px-10 py-4 bg-foreground text-background font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-90";
-const CTA_OUTLINE =
-  "px-10 py-4 border border-foreground text-foreground font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-80";
 
 /* ─── Component ───────────────────────────────────────── */
 
 const World = () => {
-  const [form, setForm] = useState({
-    businessName: "",
-    contactName: "",
-    email: "",
-    phone: "",
-    venueType: "",
-    monthlyVolume: "",
-    location: "",
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [ctaDismissed, setCtaDismissed] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [confessions, setConfessions] = useState<ConfessionPreview[]>([]);
+  const scanRef = useRef<HTMLDivElement>(null);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_BASE_URL;
+    fetch(`${baseUrl}/v1/confessions`)
+      .then((res) => res.json())
+      .then((data) => {
+        const items = (data?.data?.confessions || [])
+          .slice(0, 3)
+          .map(
+            (c: { content: string; response: string }, i: number) => {
+              const sentences = c.response.split(/(?<=\.)\s+/);
+              return {
+                confession: c.content,
+                verdict: sentences[0] || "Verdict rendered.",
+                verdictHidden: sentences.slice(1).join(" ") || "",
+                confessorId: `#${1842 - i}`,
+              };
+            }
+          );
+        setConfessions(items);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <RetailEarlyAccessModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-      />
-
       {/* ── Hero ─────────────────────────────────────── */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
         <img
@@ -138,7 +137,7 @@ const World = () => {
           alt="GUILTY Soda"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
           <img
             src={guiltyLogoWhite}
@@ -146,64 +145,20 @@ const World = () => {
             className="h-10 mb-10 opacity-80"
           />
           <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6">
-            Soda
+            Indulgence has a name.
           </h1>
-          <p className={`${BODY} max-w-md mb-14 tracking-wide`}>
-            A soda built for bars, restaurants and boutique retail.
-          </p>
-          <p className={LABEL}>
-            Wholesale access and early retail allocations.
+          <p className={`${BODY} max-w-md mb-6 tracking-wide`}>
+            A world built around flavour, ritual and things that don't explain themselves.
           </p>
         </div>
       </section>
 
-      {/* ── Product Statement ────────────────────────── */}
-      <section className={SECTION}>
-        <div className="max-w-2xl mx-auto text-center">
-          <p className={`${LABEL} mb-4`}>The Product</p>
-          <h2 className={`${H2} mb-8`}>A Different Kind of Soda</h2>
-          <p className={`${BODY} max-w-xl mx-auto mb-5`}>
-            GUILTY Soda sits somewhere between soft drink and cultural product.
-          </p>
-          <p className={`${BODY} max-w-xl mx-auto mb-5`}>
-            Created for bars, restaurants and boutique retailers that care about flavour, design and brand presence.
-          </p>
-          <p className={`${BODY} max-w-xl mx-auto`}>
-            The drink is built to stand apart on the shelf and behind the bar.
-          </p>
-        </div>
-      </section>
-
-      {/* ── Full Width Lineup Image ──────────────────── */}
-      <section className="w-full">
-        <img
-          src={productLineup}
-          alt="GUILTY Soda product lineup on marble bar"
-          className="w-full h-80 md:h-[500px] lg:h-[600px] object-cover"
-        />
-      </section>
-
-      {/* ── Product Overview ─────────────────────────── */}
-      <section className={SECTION}>
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
-          <div>
-            <p className={`${LABEL} mb-4`}>At a Glance</p>
-            <h2 className={`${H2} mb-10`}>Product Overview</h2>
-            <div className="space-y-5">
-              {productPoints.map((point) => (
-                <p key={point} className={LIST_ITEM}>
-                  {point}
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Flavour Block ────────────────────────────── */}
+      {/* ── The Drinks ───────────────────────────────── */}
       <section className="px-6 md:px-10 py-28 md:py-40 bg-white text-neutral-900">
         <div className="max-w-6xl mx-auto">
-          <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light text-center mb-4">The Range</p>
+          <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light text-center mb-4">
+            The Range
+          </p>
           <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 text-center mb-20 md:mb-28">
             Three Signature Flavours
           </h2>
@@ -266,145 +221,151 @@ const World = () => {
         </div>
       </section>
 
-      {/* ── Product Origin ───────────────────────────── */}
+      {/* ── Venues ───────────────────────────────────── */}
       <section className={SECTION}>
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
-          <div>
-            <p className={`${LABEL} mb-4`}>The Story</p>
-            <h2 className={`${H2} mb-8`}>Where It Started</h2>
-            <p className={`${BODY} mb-5`}>
-              GUILTY began as a cultural brand exploring indulgence and behaviour.
-            </p>
-            <p className={`${BODY} mb-5`}>
-              The soda followed naturally — a drink designed for the same environments where those ideas already exist.
-            </p>
-            <p className={BODY}>
-              Bars, restaurants and places where people gather.
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mx-auto text-center mb-16 md:mb-24">
+            <p className={`${LABEL} mb-4`}>Where It Lives</p>
+            <h2 className={`${H2} mb-8`}>Bars. Late Nights. Places That Don't Explain Themselves.</h2>
+            <p className={`${BODY} max-w-lg mx-auto`}>
+              GUILTY exists in environments that already understand indulgence. The drink was designed for the spaces, not the other way around.
             </p>
           </div>
-          <img
-            src={contextSpirits}
-            alt="GUILTY beside premium spirits"
-            className="w-full max-w-sm mx-auto md:max-w-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
-          />
-        </div>
-      </section>
-
-      {/* ── Retail Positioning ───────────────────────── */}
-      <section className={SECTION_ALT}>
-        <div className="max-w-2xl mx-auto text-center">
-          <p className={`${LABEL} mb-4`}>The Opportunity</p>
-          <h2 className={`${H2} mb-10`}>Built for Premium Retail</h2>
-          <div className="space-y-5 inline-block text-left">
-            {retailPoints.map((point) => (
-              <p key={point} className={LIST_ITEM}>
-                {point}
-              </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+            {contextImages.map((img) => (
+              <img
+                key={img.alt}
+                src={img.src}
+                alt={img.alt}
+                className="w-full aspect-[3/4] object-cover"
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Product In Context Gallery ────────────────── */}
-      <section className="py-28 md:py-40">
-        <p className={`${LABEL} text-center mb-14`}>Product In Context</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-          {contextImages.map((img) => (
-            <img
-              key={img.alt}
-              src={img.src}
-              alt={img.alt}
-              className="w-full aspect-[3/4] object-cover"
-            />
-          ))}
-        </div>
-      </section>
+      {/* ── Contraband ───────────────────────────────── */}
+      <section className="px-6 md:px-10 py-28 md:py-40 bg-[hsl(20,15%,5%)]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16 md:mb-24">
+            <p className="text-destructive text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
+              ⬤ Restricted Access
+            </p>
+            <h2 className={`${H2} mb-6`}>Contraband</h2>
+            <p className={`${BODY} max-w-md mx-auto mb-3`}>
+              Limited drops. Restricted material. Outside the current range.
+            </p>
+            <p className="text-muted-foreground/60 text-xs font-mono-light italic">
+              Some are monitored. Some are reformed. Some quietly disappear.
+            </p>
+          </div>
 
-      {/* ── Retail Enquiry Block ──────────────────────── */}
-      <section id="enquiry" className={SECTION_ALT}>
-        <div className="max-w-2xl mx-auto text-center">
-          <p className={`${LABEL} mb-4`}>Get In Touch</p>
-          <h2 className={`${H2} mb-6`}>
-            Retail & Distribution Enquiries
-          </h2>
-          <p className={`${BODY} mb-12 max-w-lg mx-auto`}>
-            For wholesale access, venue partnerships or distribution discussions please contact the founders directly.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="mailto:founders@guiltyconfess.com" className={CTA_PRIMARY}>
-              Email Founders
-            </a>
-            <button className={CTA_OUTLINE}>Download Retail Pack</button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {contrabandDrops.map((drop) => (
+              <div
+                key={drop.code}
+                className="border border-muted/20 p-6 md:p-8 relative overflow-hidden group hover:border-muted/40 transition-colors"
+              >
+                {/* Scan line overlay */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,hsl(var(--foreground)/0.1)_2px,hsl(var(--foreground)/0.1)_4px)]" />
+
+                <p className="text-muted-foreground/30 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-6">
+                  {drop.code}
+                </p>
+                <div className="h-24 flex items-center justify-center mb-6">
+                  <p className="font-control text-2xl font-bold text-foreground/20 tracking-widest">
+                    {drop.label}
+                  </p>
+                </div>
+                <div className="border-t border-muted/15 pt-4 flex items-center justify-between">
+                  <span className="text-destructive/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                    {drop.status}
+                  </span>
+                  <span className="text-muted-foreground/30 text-[9px] font-mono-light">
+                    {drop.note}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Expression of Interest Form ──────────────── */}
-      <section className={SECTION}>
-        <div className="max-w-lg mx-auto">
-          <p className={`${LABEL} text-center mb-4`}>Limited Allocations</p>
-          <h2 className={`${H2} text-center mb-4`}>
-            Pre-Order Expression of Interest
-          </h2>
-          <p className={`${BODY} text-center mb-5 max-w-sm mx-auto`}>
-            Early allocations are limited.
-          </p>
-          <p className={`${BODY} text-center mb-12 max-w-sm mx-auto`}>
-            Submit your details and we will contact you regarding availability.
-          </p>
+      {/* ── Confessional ─────────────────────────────── */}
+      <section
+        ref={scanRef}
+        className="relative px-6 md:px-10 py-28 md:py-40 bg-[hsl(20,15%,4%)] overflow-hidden"
+      >
+        {/* Scan line overlay */}
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,hsl(var(--foreground)/0.15)_2px,hsl(var(--foreground)/0.15)_4px)]" />
 
-          {submitted ? (
-            <div className="text-center py-20">
-              <p className="font-control text-3xl font-bold mb-5">
-                Thank you.
-              </p>
-              <p className={BODY}>
-                We'll be in touch regarding your allocation.
-              </p>
+        <div className="relative z-10 max-w-3xl mx-auto">
+          <div className="text-center mb-16 md:mb-20">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-ritual animate-pulse" />
+              <span className="text-ritual text-[10px] tracking-[0.5em] uppercase font-mono-light">
+                Live Feed
+              </span>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-7">
-              {[
-                { name: "businessName", label: "Business Name", type: "text" },
-                { name: "contactName", label: "Contact Name", type: "text" },
-                { name: "email", label: "Email", type: "email" },
-                { name: "phone", label: "Phone", type: "tel" },
-                {
-                  name: "venueType",
-                  label: "Venue / Retail Type",
-                  type: "text",
-                },
-                {
-                  name: "monthlyVolume",
-                  label: "Estimated Monthly Volume",
-                  type: "text",
-                },
-                { name: "location", label: "Location", type: "text" },
-              ].map((field) => (
-                <div key={field.name}>
-                  <label className={`block ${LABEL} mb-3`}>
-                    {field.label}
-                  </label>
-                  <input
-                    type={field.type}
-                    name={field.name}
-                    value={form[field.name as keyof typeof form]}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-transparent border-b border-muted py-3 text-sm text-foreground focus:outline-none focus:border-foreground transition-colors font-mono-light"
-                  />
+            <h2 className={`${H2} mb-6`}>The Confessional</h2>
+            <p className={`${BODY} max-w-md mx-auto`}>
+              Anonymous confessions. AI verdicts. Some truths don't disappear.
+            </p>
+          </div>
+
+          {/* Confession previews */}
+          <div className="space-y-10 mb-16">
+            {confessions.length > 0 ? (
+              confessions.map((c, i) => (
+                <div
+                  key={i}
+                  className="border-l border-muted/20 pl-6"
+                  style={{ opacity: 1 - i * 0.15 }}
+                >
+                  <p className="text-muted-foreground/30 text-[9px] tracking-[0.4em] uppercase font-mono-light mb-3">
+                    Confessor {c.confessorId}
+                  </p>
+                  <p className="text-foreground text-sm md:text-base font-mono-light leading-[1.7] mb-4 max-w-[550px]">
+                    {c.confession}
+                  </p>
+                  <div>
+                    <p className="text-muted-foreground/30 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-1.5">
+                      Verdict
+                    </p>
+                    <p className="text-ritual/80 text-xs font-mono-light tracking-wide mb-1">
+                      {c.verdict}
+                    </p>
+                    <div className="relative overflow-hidden h-6">
+                      <p className="text-muted-foreground/40 text-xs font-mono-light leading-relaxed select-none">
+                        {c.verdictHidden}
+                      </p>
+                      <div className="absolute inset-0 backdrop-blur-[6px]" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(20,15%,4%)]" />
+                    </div>
+                  </div>
                 </div>
-              ))}
-              <div className="pt-8">
-                <button type="submit" className={`w-full ${CTA_PRIMARY}`}>
-                  Request Allocation
-                </button>
-                <p className={`${LABEL} text-center mt-5`}>
-                  Early allocations are limited.
+              ))
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground/30 text-xs font-mono-light animate-pulse">
+                  Loading confessions...
                 </p>
               </div>
-            </form>
-          )}
+            )}
+          </div>
+
+          {/* CTA */}
+          <div className="text-center">
+            <Link
+              to="/confess"
+              className="inline-block px-12 py-4 bg-foreground text-background font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em]"
+            >
+              Enter the Booth
+            </Link>
+            <p className={`${LABEL} mt-6 opacity-60`}>
+              Your confession will be judged.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -417,27 +378,6 @@ const World = () => {
           </p>
         </div>
       </footer>
-
-      {/* ── Sticky CTA Banner ────────────────────────── */}
-      {!ctaDismissed && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 md:px-6 md:pb-6">
-          <div className="relative max-w-xl mx-auto bg-foreground text-background px-6 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_30px_rgba(0,0,0,0.3)]">
-            <button
-              onClick={() => setModalOpen(true)}
-              className="flex-1 text-center font-bold text-xs tracking-[0.25em] uppercase transition-opacity hover:opacity-80"
-            >
-              Retailer Enquiries
-            </button>
-            <button
-              onClick={() => setCtaDismissed(true)}
-              className="absolute -top-2.5 -right-2.5 w-6 h-6 bg-muted text-muted-foreground rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
-              aria-label="Dismiss"
-            >
-              <X size={12} />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
