@@ -176,15 +176,15 @@ const World = () => {
                 <p className="text-neutral-400 text-sm italic mb-2 font-mono-light">
                   {f.subtitle}
                 </p>
+                <p className="text-neutral-600 text-xs leading-[1.9] mb-2 font-mono-light">
+                  {f.description}
+                </p>
                 <details className="group w-full mt-2">
                   <summary className="cursor-pointer list-none flex items-center justify-center gap-1.5 text-neutral-400 text-[10px] tracking-[0.3em] uppercase font-mono-light hover:text-neutral-600 transition-colors">
-                    Details
+                    More
                     <span className="text-[10px] transition-transform group-open:rotate-180">▾</span>
                   </summary>
                   <div className="mt-4 space-y-3">
-                    <p className="text-neutral-600 text-xs leading-[1.9] font-mono-light">
-                      {f.description}
-                    </p>
                     <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light">
                       {f.warning}
                     </p>
