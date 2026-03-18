@@ -220,12 +220,11 @@ const World = () => {
 
       {/* ── Venues ───────────────────────────────────── */}
       <section className={`${SECTION} bg-neutral-50`}>
-        <div className="max-w-3xl mx-auto">
-          <h2 className="font-control text-2xl md:text-4xl font-bold text-neutral-900 mb-1">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className={`${LABEL} mb-4`}>For Trade</p>
+          <h2 className={`${H2} mb-20 md:mb-28`}>
             Venues
           </h2>
-
-          <hr className="border-neutral-200 mb-10" />
 
           <p className="text-neutral-900 text-base leading-[1.8] font-mono-light mb-4">
             Structured non-alcoholic drinks for serious menus.
@@ -237,7 +236,7 @@ const World = () => {
           <hr className="border-neutral-200 mb-10" />
 
           <details className="group mb-10">
-            <summary className="cursor-pointer list-none flex items-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
+            <summary className="cursor-pointer list-none flex items-center justify-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
               Drinks
               <span className="text-neutral-400 text-sm transition-transform group-open:rotate-180">▾</span>
             </summary>
@@ -272,7 +271,7 @@ const World = () => {
           <hr className="border-neutral-200 mb-10" />
 
           <details className="group mb-10">
-            <summary className="cursor-pointer list-none flex items-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
+            <summary className="cursor-pointer list-none flex items-center justify-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
               Product Format
               <span className="text-neutral-400 text-sm transition-transform group-open:rotate-180">▾</span>
             </summary>
@@ -291,7 +290,7 @@ const World = () => {
             </div>
           </details>
 
-          <hr className="border-neutral-200 mb-10 mt-10" />
+          <hr className="border-neutral-200 mb-10" />
           <a
             href="mailto:trade@houseofguilty.com"
             className="inline-block px-10 py-4 bg-neutral-900 text-white font-bold text-xs tracking-[0.3em] uppercase font-mono-light transition-all hover:bg-neutral-800 hover:tracking-[0.4em]"
