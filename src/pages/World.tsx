@@ -181,8 +181,8 @@ const World = () => {
               display: flex;
               align-items: center;
               justify-content: center;
-              background: white;
-              color: #171717;
+              background: transparent;
+              color: white;
               opacity: 0;
               pointer-events: none;
             }
