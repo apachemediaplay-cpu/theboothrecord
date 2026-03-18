@@ -362,14 +362,42 @@ const World = () => {
         ref={scanRef}
         className="relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
       >
+        {/* Scan lines */}
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)]" />
+        {/* Slow moving scan line */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            className="absolute left-0 right-0 h-px bg-ritual/20"
+            style={{
+              animation: "scanMove 8s linear infinite",
+            }}
+          />
+        </div>
+
+        <style>{`
+          @keyframes scanMove {
+            0% { top: -2%; }
+            100% { top: 102%; }
+          }
+          @keyframes fadeSlideIn {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes borderPulse {
+            0%, 100% { border-color: rgba(255,255,255,0.08); }
+            50% { border-color: rgba(255,255,255,0.2); }
+          }
+        `}</style>
 
         <div className="relative z-10 max-w-3xl mx-auto">
           <div className="text-center mb-16 md:mb-20">
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex items-center justify-center gap-3 mb-4">
               <span className="w-1.5 h-1.5 rounded-full bg-ritual animate-pulse" />
               <span className="text-ritual text-[10px] tracking-[0.5em] uppercase font-mono-light">
                 Live Feed
+              </span>
+              <span className="text-neutral-600 text-[10px] font-mono-light">
+                — {confessionCount.toLocaleString()} confessions logged
               </span>
             </div>
             <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
@@ -380,45 +408,77 @@ const World = () => {
             </p>
           </div>
 
-          <div className="space-y-10 mb-16">
+          {/* Active confession - highlighted */}
+          <div className="mb-10">
             {confessions.length > 0 ? (
-              confessions.map((c, i) => (
-                <div
-                  key={i}
-                  className="border-l border-neutral-800 pl-6"
-                  style={{ opacity: 1 - i * 0.15 }}
-                >
-                  <p className="text-neutral-600 text-[9px] tracking-[0.4em] uppercase font-mono-light mb-3">
-                    Confessor {c.confessorId}
+              <div
+                key={activeIndex}
+                className="border-l-2 border-ritual/40 pl-6 py-2"
+                style={{
+                  animation: "fadeSlideIn 0.6s ease-out, borderPulse 2s ease-in-out infinite",
+                }}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="w-1 h-1 rounded-full bg-ritual animate-pulse" />
+                  <p className="text-neutral-500 text-[9px] tracking-[0.4em] uppercase font-mono-light">
+                    Confessor {confessions[activeIndex]?.confessorId}
                   </p>
-                  <p className="text-neutral-200 text-sm md:text-base font-mono-light leading-[1.7] mb-4 max-w-[550px]">
-                    {c.confession}
+                  <span className="text-neutral-700 text-[9px] font-mono-light">
+                    just now
+                  </span>
+                </div>
+                <p className="text-neutral-100 text-sm md:text-base font-mono-light leading-[1.7] mb-4 max-w-[550px]">
+                  {confessions[activeIndex]?.confession}
+                </p>
+                <div>
+                  <p className="text-neutral-600 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-1.5">
+                    Verdict
                   </p>
-                  <div>
-                    <p className="text-neutral-600 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-1.5">
-                      Verdict
+                  <p className="text-ritual/80 text-xs font-mono-light tracking-wide mb-1">
+                    {confessions[activeIndex]?.verdict}
+                  </p>
+                  <div className="relative overflow-hidden h-6">
+                    <p className="text-neutral-500 text-xs font-mono-light leading-relaxed select-none">
+                      {confessions[activeIndex]?.verdictHidden}
                     </p>
-                    <p className="text-ritual/80 text-xs font-mono-light tracking-wide mb-1">
-                      {c.verdict}
-                    </p>
-                    <div className="relative overflow-hidden h-6">
-                      <p className="text-neutral-500 text-xs font-mono-light leading-relaxed select-none">
-                        {c.verdictHidden}
-                      </p>
-                      <div className="absolute inset-0 backdrop-blur-[6px]" />
-                      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-950" />
-                    </div>
+                    <div className="absolute inset-0 backdrop-blur-[6px]" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-950" />
                   </div>
                 </div>
-              ))
+              </div>
             ) : (
               <div className="text-center py-10">
                 <p className="text-neutral-600 text-xs font-mono-light animate-pulse">
-                  Loading confessions...
+                  Intercepting confessions...
                 </p>
               </div>
             )}
           </div>
+
+          {/* Previous confessions - faded queue */}
+          {confessions.length > 1 && (
+            <div className="space-y-4 mb-16 opacity-40">
+              {[1, 2].map((offset) => {
+                const idx = (activeIndex - offset + confessions.length) % confessions.length;
+                const c = confessions[idx];
+                if (!c) return null;
+                return (
+                  <div
+                    key={`prev-${offset}`}
+                    className="border-l border-neutral-800/50 pl-6"
+                    style={{ opacity: 1 - offset * 0.3 }}
+                  >
+                    <p className="text-neutral-700 text-[9px] tracking-[0.4em] uppercase font-mono-light mb-1">
+                      Confessor {c.confessorId}
+                    </p>
+                    <p className="text-neutral-600 text-xs font-mono-light leading-[1.7] line-clamp-1 max-w-[450px]">
+                      {c.confession}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="text-center">
             <Link
