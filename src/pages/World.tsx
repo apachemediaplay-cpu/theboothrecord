@@ -225,9 +225,6 @@ const World = () => {
           <h2 className="font-control text-2xl md:text-4xl font-bold text-neutral-900 mb-1">
             Venues
           </h2>
-          <p className="text-neutral-500 text-sm font-mono-light mb-10">
-            Purpose: <span className="font-bold text-neutral-900">hospitality trade page</span>
-          </p>
 
           <hr className="border-neutral-200 mb-10" />
 
