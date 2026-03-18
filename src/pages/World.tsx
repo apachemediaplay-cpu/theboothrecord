@@ -175,7 +175,7 @@ const World = () => {
               <button
                 key={item.target}
                 onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-                className="w-20 h-20 md:w-24 md:h-24 border border-white/20 text-white text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-mono-light flex items-center justify-center text-center leading-tight transition-all hover:bg-white/10 hover:border-white/40"
+                className="px-8 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em]"
               >
                 {item.label}
               </button>
