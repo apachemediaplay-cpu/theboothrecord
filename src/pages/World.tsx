@@ -215,25 +215,30 @@ const World = () => {
               100% { transform: translateX(0); }
             }
           `}</style>
-          {/* Vertical nav – left-aligned, matches reference */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex flex-col divide-y divide-white/30">
-            {[
-              { label: "DRINKS", target: "drinks" },
-              { label: "VENUES", target: "venues" },
-              { label: "CONTRABAND", target: "contraband" },
-              { label: "THE BOOTH", target: "confessional" },
-            ].map((item) => (
+        </div>
+
+        {/* Vertical nav – fixed left side of hero */}
+        <div className="absolute left-0 top-0 bottom-0 z-20 flex flex-col justify-start pt-24">
+          {[
+            { label: "DRINKS", target: "drinks" },
+            { label: "VENUES", target: "venues" },
+            { label: "CONTRABAND", target: "contraband" },
+            { label: "THE BOOTH", target: "confessional" },
+          ].map((item, i, arr) => (
+            <div key={item.target} className="flex flex-col items-center">
               <button
-                key={item.target}
                 data-text={item.label}
                 onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-                className="glitch-btn py-8 md:py-10 px-4 md:px-6 text-white font-bold text-[10px] md:text-xs tracking-[0.3em] uppercase transition-all hover:bg-white/10"
+                className="glitch-btn py-5 md:py-6 px-3 md:px-5 text-white font-bold text-[9px] md:text-[10px] tracking-[0.25em] uppercase transition-all hover:bg-white/10"
                 style={{ writingMode: "vertical-lr" }}
               >
                 {item.label}
               </button>
-            ))}
-          </div>
+              {i < arr.length - 1 && (
+                <div className="w-4 border-t border-white/30 my-1" />
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
