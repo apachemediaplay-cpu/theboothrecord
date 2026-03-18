@@ -163,7 +163,7 @@ const World = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
           <h1 className="font-control text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 text-white">
-            Indulgence has a name.
+            Indulgence begins here.
           </h1>
           <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-10 tracking-wide">
             A world built around flavour, ritual and things that don't explain themselves.
