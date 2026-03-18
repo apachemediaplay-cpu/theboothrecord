@@ -185,7 +185,7 @@ const World = () => {
       </section>
 
       {/* ── The Drinks ───────────────────────────────── */}
-      <section className={`${SECTION} bg-white`}>
+      <section id="drinks" className={`${SECTION} bg-white`}>
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}>The Range</p>
           <h2 className={`${H2} text-center mb-20 md:mb-28`}>
