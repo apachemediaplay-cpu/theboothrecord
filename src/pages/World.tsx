@@ -418,6 +418,7 @@ const World = () => {
 
       {/* ── Confessional ─────────────────────────────── */}
       <section
+        id="confessional"
         ref={scanRef}
         className="relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
       >
