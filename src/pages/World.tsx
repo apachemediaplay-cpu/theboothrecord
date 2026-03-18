@@ -388,29 +388,47 @@ const World = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 md:gap-2">
+          <div className="max-w-sm mx-auto flex flex-col gap-5">
             {[
-              { src: socialInterrogation, alt: "Interrogation room" },
-              { src: socialPressConference, alt: "Press conference" },
-              { src: socialAirportCustoms, alt: "Airport customs" },
+              { src: socialInterrogation, alt: "Interrogation room", caption: "Evidence recovered from the scene. Handle with care.", likes: "2,847", time: "3h" },
+              { src: socialPressConference, alt: "Press conference", caption: "No further questions.", likes: "4,112", time: "1d" },
+              { src: socialAirportCustoms, alt: "Airport customs", caption: "Detained at the border. Worth it.", likes: "3,291", time: "3d" },
             ].map((img, i) => (
               <a
                 key={i}
                 href="https://instagram.com/houseofguilty"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative aspect-square overflow-hidden group cursor-pointer"
+                className="block group"
               >
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-                  <span className="text-white text-[10px] tracking-[0.4em] uppercase font-mono-light opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    View
-                  </span>
+                {/* Post header */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center">
+                    <span className="text-white text-[8px] font-bold tracking-wider">G</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-neutral-900 text-xs font-bold tracking-wide">houseofguilty</p>
+                  </div>
+                  <p className="text-neutral-400 text-[10px] font-mono-light">{img.time}</p>
                 </div>
+
+                {/* Image */}
+                <div className="relative aspect-[4/5] overflow-hidden rounded-sm mb-3">
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  />
+                </div>
+
+                {/* Engagement */}
+                <div className="mb-1">
+                  <p className="text-neutral-900 text-[11px] font-bold">{img.likes} likes</p>
+                </div>
+                <p className="text-neutral-700 text-xs leading-relaxed">
+                  <span className="font-bold text-neutral-900 mr-1.5">houseofguilty</span>
+                  {img.caption}
+                </p>
               </a>
             ))}
           </div>
