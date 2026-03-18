@@ -160,58 +160,40 @@ const World = () => {
           <h2 className={`${H2} text-center mb-20 md:mb-28`}>
             The Usual Suspects
           </h2>
-          <div className="space-y-28 md:space-y-40">
-            {flavours.map((f, i) => (
-              <div
-                key={f.name}
-                className={`grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center ${
-                  i % 2 !== 0 ? "md:[direction:rtl]" : ""
-                }`}
-              >
-                <div className="flex justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
+            {flavours.map((f) => (
+              <div key={f.name} className="flex flex-col items-center text-center">
+                <div className="flex justify-center mb-8">
                   <img
                     src={f.image}
                     alt={f.name}
-                    className="w-56 md:w-72 lg:w-80"
+                    className="w-48 md:w-52 lg:w-60"
                   />
                 </div>
-                <div className={i % 2 !== 0 ? "md:[direction:ltr]" : ""}>
-                  <h3 className="font-control text-2xl md:text-4xl font-bold text-neutral-900 mb-1">
-                    {f.name}
-                  </h3>
-                  <p className="text-neutral-400 text-sm italic mb-6 font-mono-light">
-                    {f.subtitle}
-                  </p>
-                  <p className="text-neutral-600 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
-                    {f.description}
-                  </p>
-                  <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold mb-4 font-mono-light">
-                    {f.warning}
-                  </p>
-                  <ul className="text-neutral-600 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light list-disc list-inside">
-                    {f.ingredients.map((ing) => (
-                      <li key={ing}>{ing}</li>
-                    ))}
-                  </ul>
-                  <p className="text-neutral-400 text-[10px] tracking-[0.15em] uppercase mb-1 font-mono-light">
-                    Technical
-                  </p>
-                  <p className="text-neutral-600 text-xs leading-[1.9] mb-4 max-w-sm font-mono-light">
-                    {f.technical}
-                  </p>
-                  <p className="text-neutral-500 text-sm italic mb-6 font-mono-light">
-                    {f.closing}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {f.notes.map((note) => (
-                      <span
-                        key={note}
-                        className="px-4 py-1.5 border border-neutral-200 text-[10px] tracking-[0.2em] uppercase text-neutral-500"
-                      >
-                        {note}
-                      </span>
-                    ))}
-                  </div>
+                <h3 className="font-control text-xl md:text-2xl font-bold text-neutral-900 mb-1">
+                  {f.name}
+                </h3>
+                <p className="text-neutral-400 text-sm italic mb-4 font-mono-light">
+                  {f.subtitle}
+                </p>
+                <p className="text-neutral-600 text-xs leading-[1.9] mb-4 font-mono-light">
+                  {f.description}
+                </p>
+                <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold mb-4 font-mono-light">
+                  {f.warning}
+                </p>
+                <p className="text-neutral-500 text-sm italic mb-4 font-mono-light">
+                  {f.closing}
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {f.notes.map((note) => (
+                    <span
+                      key={note}
+                      className="px-4 py-1.5 border border-neutral-200 text-[10px] tracking-[0.2em] uppercase text-neutral-500"
+                    >
+                      {note}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}
