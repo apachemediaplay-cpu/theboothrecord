@@ -14,6 +14,7 @@ import Summon from "./pages/Summon";
 import Answer from "./pages/Answer";
 import Landing from "./pages/Landing";
 import Retail from "./pages/Retail";
+import World from "./pages/World";
 import TheWall from "./pages/TheWall";
 import NotFound from "./pages/NotFound";
 
