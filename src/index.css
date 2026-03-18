@@ -218,16 +218,33 @@
   animation: pageGlitch 200ms infinite;
 }
 
-@keyframes warningGlitch {
-  0%, 92%, 98%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
-  93% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
-  94% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: none; }
-  95% { transform: translate(-1px, 0); text-shadow: 1px 0 #ff0000, -1px 0 #00ffff; clip-path: inset(30% 0 40% 0); }
-  96% { transform: translate(3px, 1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: inset(60% 0 10% 0); }
-  97% { transform: translate(-2px, -1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
+@keyframes warningGlitch1 {
+  0%, 94%, 98%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
+  95% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
+  96% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: inset(30% 0 40% 0); }
+  97% { transform: translate(-1px, 0); text-shadow: 1px 0 #ff0000, -1px 0 #00ffff; clip-path: none; }
 }
 
-.animate-warning-glitch {
-  animation: warningGlitch 4s ease-in-out infinite;
-  position: relative;
+@keyframes warningGlitch2 {
+  0%, 88%, 93%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
+  89% { transform: translate(3px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: none; }
+  90% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: inset(55% 0 15% 0); }
+  91% { transform: translate(1px, 0); text-shadow: -1px 0 #ff0000, 1px 0 #00ffff; clip-path: none; }
+  92% { transform: translate(-1px, -1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
+}
+
+@keyframes warningGlitch3 {
+  0%, 96%, 99%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
+  97% { transform: translate(-3px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: inset(20% 0 50% 0); }
+  98% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: none; }
+}
+
+.animate-warning-glitch-1 {
+  animation: warningGlitch1 3.7s ease-in-out infinite;
+}
+.animate-warning-glitch-2 {
+  animation: warningGlitch2 5.3s ease-in-out infinite;
+}
+.animate-warning-glitch-3 {
+  animation: warningGlitch3 7.1s ease-in-out infinite;
 }
