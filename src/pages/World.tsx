@@ -162,14 +162,30 @@ const World = () => {
           <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 text-white">
             Indulgence has a name.
           </h1>
-          <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-6 tracking-wide">
+          <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-10 tracking-wide">
             A world built around flavour, ritual and things that don't explain themselves.
           </p>
+          <div className="flex gap-2 md:gap-3">
+            {[
+              { label: "Drinks", target: "drinks" },
+              { label: "Venues", target: "venues" },
+              { label: "Contraband", target: "contraband" },
+              { label: "The Confessional", target: "confessional" },
+            ].map((item) => (
+              <button
+                key={item.target}
+                onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
+                className="w-20 h-20 md:w-24 md:h-24 border border-white/20 text-white text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-mono-light flex items-center justify-center text-center leading-tight transition-all hover:bg-white/10 hover:border-white/40"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── The Drinks ───────────────────────────────── */}
-      <section className={`${SECTION} bg-white`}>
+      <section id="drinks" className={`${SECTION} bg-white`}>
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}>The Range</p>
           <h2 className={`${H2} text-center mb-20 md:mb-28`}>
@@ -222,7 +238,7 @@ const World = () => {
       </section>
 
       {/* ── Venues ───────────────────────────────────── */}
-      <section className={`${SECTION} bg-neutral-50`}>
+      <section id="venues" className={`${SECTION} bg-neutral-50`}>
         <div className="max-w-3xl mx-auto text-center">
           <p className={`${LABEL} mb-4`}>For Trade</p>
           <h2 className={`${H2} mb-20 md:mb-28`}>
@@ -304,7 +320,7 @@ const World = () => {
       </section>
 
       {/* ── Contraband ───────────────────────────────── */}
-      <section className={`${SECTION} bg-neutral-900`}>
+      <section id="contraband" className={`${SECTION} bg-neutral-900`}>
         <div className="max-w-5xl mx-auto">
           {/* Social Feed */}
           <div className="text-center mb-16 md:mb-20">
@@ -402,6 +418,7 @@ const World = () => {
 
       {/* ── Confessional ─────────────────────────────── */}
       <section
+        id="confessional"
         ref={scanRef}
         className="relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
       >
