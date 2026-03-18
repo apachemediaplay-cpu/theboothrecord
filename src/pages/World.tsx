@@ -239,9 +239,12 @@ const World = () => {
       <section id="drinks" className={`${SECTION} bg-white`}>
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}>The Range</p>
-          <h2 className={`${H2} text-center mb-20 md:mb-28`}>
-            The Usual Suspects
-          </h2>
+           <h2 className={`${H2} text-center mb-4`}>
+             The Usual Suspects
+           </h2>
+           <p className="text-center text-muted-foreground text-sm md:text-base tracking-wide mb-20 md:mb-28">
+             Three drinks. Built for flavour rather than sweetness.
+           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
             {flavours.map((f) => (
               <div key={f.name} className="flex flex-col items-center text-center">
