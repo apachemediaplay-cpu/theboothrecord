@@ -375,24 +375,32 @@ const World = () => {
 
       {/* ── From the Scene ──────────────────────────── */}
       <section className={`${SECTION} bg-white`}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16 md:mb-20">
-            <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
-              @houseofguilty
-            </p>
-            <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
-              From the Scene
-            </h2>
-            <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
-              Evidence collected. Case ongoing.
-            </p>
+        <div className="max-w-2xl mx-auto">
+          {/* Profile header */}
+          <div className="flex items-center gap-3 mb-8 px-4">
+            <div className="w-12 h-12 rounded-full border-2 border-neutral-200 flex items-center justify-center bg-neutral-100 overflow-hidden">
+              <img src={guiltyLogoRed} alt="GUILTY" className="w-7 h-7 object-contain" />
+            </div>
+            <div>
+              <p className="text-neutral-900 text-sm font-bold font-mono-light">houseofguilty</p>
+              <p className="text-neutral-400 text-xs font-mono-light">Evidence collected. Case ongoing.</p>
+            </div>
+            <a
+              href="https://instagram.com/houseofguilty"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light border border-neutral-900 text-neutral-900 px-4 py-2 hover:bg-neutral-900 hover:text-white transition-colors"
+            >
+              Follow
+            </a>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 md:gap-2">
+          {/* Posts grid */}
+          <div className="grid grid-cols-3 gap-[2px]">
             {[
-              { src: socialInterrogation, alt: "Interrogation room" },
-              { src: socialPressConference, alt: "Press conference" },
-              { src: socialAirportCustoms, alt: "Airport customs" },
+              { src: socialInterrogation, alt: "Interrogation room", likes: "1,247", caption: "Some questions answer themselves." },
+              { src: socialPressConference, alt: "Press conference", likes: "983", caption: "No comment." },
+              { src: socialAirportCustoms, alt: "Airport customs", likes: "2,106", caption: "Nothing to declare." },
             ].map((img, i) => (
               <a
                 key={i}
@@ -406,13 +414,28 @@ const World = () => {
                   alt={img.alt}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
-                  <span className="text-white text-[10px] tracking-[0.4em] uppercase font-mono-light opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    View
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300 flex flex-col items-center justify-center gap-1">
+                  <span className="text-white text-xs font-bold font-mono-light opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    ♥ {img.likes}
+                  </span>
+                  <span className="text-white/70 text-[9px] font-mono-light opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 text-center">
+                    {img.caption}
                   </span>
                 </div>
               </a>
             ))}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-center gap-2 mt-6 px-4">
+            <a
+              href="https://instagram.com/houseofguilty"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-400 text-[10px] tracking-[0.3em] uppercase font-mono-light hover:text-neutral-900 transition-colors"
+            >
+              View all on Instagram →
+            </a>
           </div>
         </div>
       </section>
