@@ -246,7 +246,7 @@ const World = () => {
              Three drinks. Built for flavour rather than sweetness.
            </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
-            {flavours.map((f) => (
+            {flavours.map((f, i) => (
               <div key={f.name} className="flex flex-col items-center text-center">
                 <div className="flex justify-center mb-8">
                   <img
@@ -266,7 +266,7 @@ const World = () => {
                 </p>
                 <details className="group w-full mt-2">
                   <summary className="cursor-pointer list-none flex items-center justify-center gap-1.5 text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light hover:text-neutral-600 transition-colors">
-                     <span className="underline animate-warning-glitch">{f.warning}</span>
+                     <span className="underline animate-warning-glitch" style={{ animationDelay: `${i * 1.3}s` }}>{f.warning}</span>
                      <span className="text-neutral-800 text-xs transition-transform group-open:rotate-180">▾</span>
                   </summary>
                   <div className="mt-4 space-y-3">
