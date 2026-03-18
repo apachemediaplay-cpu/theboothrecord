@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { Lock } from "lucide-react";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroCan from "@/assets/retail/hero-can.png";
