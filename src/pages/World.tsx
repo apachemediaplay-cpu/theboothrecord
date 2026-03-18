@@ -147,6 +147,14 @@ const World = () => {
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — image-based) ──────────── */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
+        {/* Logo tab at top center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 bg-white px-8 py-4 rounded-b-lg">
+          <img
+            src={guiltyLogoRed}
+            alt="GUILTY"
+            className="h-8 md:h-10"
+          />
+        </div>
         <img
           src={heroCan}
           alt="GUILTY Soda"
@@ -154,11 +162,6 @@ const World = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
-          <img
-            src={guiltyLogoWhite}
-            alt="GUILTY"
-            className="h-10 mb-10 opacity-80"
-          />
           <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 text-white">
             Indulgence has a name.
           </h1>
