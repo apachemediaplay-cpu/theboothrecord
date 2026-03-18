@@ -99,7 +99,7 @@ const CTA_OUTLINE =
 
 /* ─── Component ───────────────────────────────────────── */
 
-const Retail = () => {
+const World = () => {
   const [form, setForm] = useState({
     businessName: "",
     contactName: "",
