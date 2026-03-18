@@ -437,7 +437,7 @@ const World = () => {
             <p className="text-red-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               ⬤ Restricted Access
             </p>
-            <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
               Contraband
             </h2>
             <p className="text-neutral-400 text-sm leading-[1.9] font-mono-light max-w-md mx-auto mb-3">
