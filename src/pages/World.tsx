@@ -380,7 +380,7 @@ const World = () => {
             <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               @houseofguilty
             </p>
-            <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
+            <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
               From the Scene
             </h2>
             <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
