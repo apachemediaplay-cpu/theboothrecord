@@ -1,63 +1,39 @@
 
 
-# The Wall — Enhancement Plan
+## Contraband Section — Making Drops Feel Elusive & Desirable
 
-Six features to make The Wall feel alive, deep, and interactive while preserving the minimal Guilty aesthetic.
+### Problem
+The current cards are flat and static — just text labels like "CLASSIFIED" and "REDACTED" with minimal visual treatment. They feel like placeholder data rather than coveted hidden items.
 
----
+### Proposed Updates
 
-## 1. Confession Counter / Running Total
+**1. Richer drop data with evocative names and descriptions**
+Replace generic labels with cryptic but intriguing item names (e.g., "BATCH 77 — BURNT SERMON", "TRIAL 13 — ABSOLUTION TONIC") and short teaser descriptions that hint at what the item might be without revealing it. Add a "drop date" or "last sighted" timestamp for urgency.
 
-Add a slowly incrementing counter below the header: `1,842 CONFESSIONS RECORDED`. Starts at a base number (matching the highest confessor ID) and increments by 1 each time a new confession is inserted. Small, monospaced, low-opacity text — system-log style.
+**2. Redacted / censored visual treatment**
+- Add black redaction bars partially obscuring the item name (CSS pseudo-elements with `bg-white/90` blocks over portions of text) — makes it feel like classified intelligence.
+- The label area (currently just faint text) becomes a layered composition: a subtle blurred/ghosted product silhouette behind redaction marks.
 
-**Location**: Between the header subtext and the "LIVE CONFESSIONS" indicator.
+**3. Animated scan-line + flicker on hover**
+- On hover, the card gets a horizontal scan-line sweep (a thin bright line animating top-to-bottom) as if being "scanned" or "detected."
+- A brief screen-flicker/glitch on the card border (reusing the existing `warningGlitch` keyframes) to make it feel like the system is reacting to your attention.
 
----
+**4. Status indicators with pulsing dots**
+Replace plain text statuses with a small colored dot (red = restricted, amber = reformed, grey = disappeared) that gently pulses, paired with the status label — makes the cards feel alive and monitored.
 
-## 2. Sound Design (Micro-Interactions)
+**5. "Request Access" button upgrade**
+- Add a small lock icon before the text.
+- On hover, the button border glitches red and the text shifts to "SUBMIT REQUEST ›" — adds tension and interactivity.
 
-Add an optional ambient tone when new confessions appear. A tiny toggle in the top-right corner: `SOUND` with a muted/unmuted state. Use the Web Audio API to generate a short, low-frequency sine wave click (no audio files needed). Default state: off.
+**6. Card border glow on hover**
+A subtle red glow (`box-shadow: 0 0 20px rgba(239,68,68,0.15)`) on hover to make each card feel like a hot/dangerous item being highlighted.
 
-**Implementation**: `useRef` for `AudioContext`, a helper function `playTone()` that creates a brief oscillator node. Called inside `insertConfession`. Toggle stored in state.
+### Technical Details
 
----
+**Files modified:** `src/pages/World.tsx`, `src/index.css`
 
-## 3. "Submit Your Own" Entry Point
+- **World.tsx**: Update `contrabandDrops` data array with richer fields. Rebuild card markup with redaction bars, pulsing status dots, scan-line overlay div, lock icon on button.
+- **index.css**: Add `@keyframes scanLine` (translateY sweep), `.contraband-card:hover` glow styles, `.redact-bar` utility class, and pulsing dot animation.
 
-At the bottom of the feed (before the footer), add a minimal CTA block:
-
-```
-YOUR TURN.
-ENTER THE BOOTH →
-```
-
-Links to `/confess`. Styled as small uppercase monospaced text with low opacity, a subtle hover glow. No buttons — just text as a link.
-
----
-
-## 4. Infinite Scroll with Pagination
-
-When the user scrolls near the bottom of the feed, dynamically generate and append more confessions from a shuffled pool. Use an `IntersectionObserver` on a sentinel element at the bottom. Each batch appends 5 entries with older timestamps and lower confessor IDs, reinforcing the "deep archive" illusion. Cap at ~50 total entries for performance.
-
----
-
-## 5. Typing Ghost Effect
-
-Before a new confession is inserted, show a brief "someone is confessing..." indicator at the top of the feed with a blinking cursor. Appears 3-4 seconds before the actual confession drops in. Small, ritual-green text, fades in and out. This replaces the current instant insertion with a two-phase sequence: ghost preview → system message → confession appears.
-
-**Sequence**: `showGhost(true)` → 3s delay → `showGhost(false)` + `flashSystemMessage()` → 400ms → insert confession.
-
----
-
-## 6. Time-of-Day Atmosphere
-
-Read the user's local hour via `new Date().getHours()`. Between 10PM–5AM ("late night"), increase scan-line opacity from `0.03` to `0.06`, slow the scan-line animation from `8s` to `12s`, and increase the live-pulse intensity. During daytime, keep current values. Applied via a `timeAtmosphere` object computed once on mount.
-
----
-
-## Files Modified
-
-- **`src/pages/TheWall.tsx`** — All six features added to the existing component.
-
-No new files, no new dependencies.
+All animations use CSS only — no new dependencies. The glitch effects reuse the existing `warningGlitch` keyframe pattern already in the codebase.
 
