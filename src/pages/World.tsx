@@ -215,18 +215,20 @@ const World = () => {
               100% { transform: translateX(0); }
             }
           `}</style>
-          <div className="flex gap-2 md:gap-3">
+          {/* Vertical nav – left-aligned, matches reference */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex flex-col divide-y divide-white/30">
             {[
-              { label: "Drinks", target: "drinks" },
-              { label: "Venues", target: "venues" },
-              { label: "Contraband", target: "contraband" },
-              { label: "The Confessional", target: "confessional" },
+              { label: "DRINKS", target: "drinks" },
+              { label: "VENUES", target: "venues" },
+              { label: "CONTRABAND", target: "contraband" },
+              { label: "THE BOOTH", target: "confessional" },
             ].map((item) => (
               <button
                 key={item.target}
                 data-text={item.label}
                 onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-                className="glitch-btn px-8 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:tracking-[0.4em]"
+                className="glitch-btn py-8 md:py-10 px-4 md:px-6 text-white font-bold text-[10px] md:text-xs tracking-[0.3em] uppercase transition-all hover:bg-white/10"
+                style={{ writingMode: "vertical-lr" }}
               >
                 {item.label}
               </button>
