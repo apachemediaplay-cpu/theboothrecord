@@ -221,24 +221,85 @@ const World = () => {
 
       {/* ── Venues ───────────────────────────────────── */}
       <section className={`${SECTION} bg-neutral-50`}>
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-2xl mx-auto text-center mb-16 md:mb-24">
-            <p className={`${LABEL} mb-4`}>Where It Lives</p>
-            <h2 className={`${H2} mb-8`}>Bars. Late Nights. Places That Don't Explain Themselves.</h2>
-            <p className={`${BODY} max-w-lg mx-auto`}>
-              GUILTY exists in environments that already understand indulgence. The drink was designed for the spaces, not the other way around.
+        <div className="max-w-3xl mx-auto">
+          <h2 className="font-control text-2xl md:text-4xl font-bold text-neutral-900 mb-1">
+            Venues
+          </h2>
+          <p className="text-neutral-500 text-sm font-mono-light mb-10">
+            Purpose: <span className="font-bold text-neutral-900">hospitality trade page</span>
+          </p>
+
+          <hr className="border-neutral-200 mb-10" />
+
+          <p className="text-neutral-900 text-base leading-[1.8] font-mono-light mb-4">
+            Structured non-alcoholic drinks for serious menus.
+          </p>
+          <p className="text-neutral-900 text-base leading-[1.8] font-mono-light mb-10">
+            GUILTY is a range of premium non-alcoholic drinks built around balance, acidity and flavour structure rather than sweetness.
+          </p>
+
+          <hr className="border-neutral-200 mb-10" />
+
+          <h3 className="font-control text-lg md:text-xl font-bold text-neutral-900 mb-6">
+            Drinks
+          </h3>
+          <div className="space-y-6 mb-10">
+            <div>
+              <p className="text-neutral-900 text-base font-mono-light font-bold">
+                Citrus Confessional — Lemon / Yuzu
+              </p>
+              <p className="text-neutral-600 text-base font-mono-light">
+                Lemon and yuzu juice with citrus oils.
+              </p>
+            </div>
+            <div>
+              <p className="text-neutral-900 text-base font-mono-light font-bold">
+                Bitter Justice — Blood Orange / Ginger
+              </p>
+              <p className="text-neutral-600 text-base font-mono-light">
+                Blood orange and ginger juice with bitter orange extracts.
+              </p>
+            </div>
+            <div>
+              <p className="text-neutral-900 text-base font-mono-light font-bold">
+                Cola Vice — Spiced Cola
+              </p>
+              <p className="text-neutral-600 text-base font-mono-light">
+                Lime juice, kola nut and warm spice extracts.
+              </p>
+            </div>
+          </div>
+
+          <hr className="border-neutral-200 mb-10" />
+
+          <h3 className="font-control text-lg md:text-xl font-bold text-neutral-900 mb-6">
+            Product Format
+          </h3>
+          <div className="space-y-4 mb-4">
+            <div>
+              <p className="text-neutral-900 text-base font-mono-light">250ml slim can</p>
+              <p className="text-neutral-900 text-base font-mono-light">24 cans per carton</p>
+            </div>
+            <div>
+              <p className="text-neutral-900 text-base font-mono-light">Carbonated and ready to serve</p>
+              <p className="text-neutral-900 text-base font-mono-light">Shelf stable</p>
+            </div>
+            <p className="text-neutral-900 text-base font-mono-light">
+              Carbonation levels vary slightly between drinks.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-            {contextImages.map((img) => (
-              <img
-                key={img.alt}
-                src={img.src}
-                alt={img.alt}
-                className="w-full aspect-[3/4] object-cover"
-              />
-            ))}
-          </div>
+
+          <hr className="border-neutral-200 mb-10 mt-10" />
+
+          <h3 className="font-control text-lg md:text-xl font-bold text-neutral-900 mb-4">
+            Trade Enquiries
+          </h3>
+          <a
+            href="mailto:trade@houseofguilty.com"
+            className="text-neutral-900 text-base font-mono-light underline underline-offset-4 hover:text-neutral-600 transition-colors"
+          >
+            trade@houseofguilty.com ↗
+          </a>
         </div>
       </section>
 
