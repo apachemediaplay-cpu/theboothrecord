@@ -219,14 +219,12 @@
 }
 
 @keyframes warningGlitch {
-  0%, 92% { transform: translate(0); text-shadow: none; }
-  93% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; }
-  94% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
+  0%, 92%, 98%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
+  93% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
+  94% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: none; }
   95% { transform: translate(-1px, 0); text-shadow: 1px 0 #ff0000, -1px 0 #00ffff; clip-path: inset(30% 0 40% 0); }
   96% { transform: translate(3px, 1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: inset(60% 0 10% 0); }
   97% { transform: translate(-2px, -1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
-  98% { transform: translate(1px, 0); text-shadow: none; }
-  100% { transform: translate(0); text-shadow: none; }
 }
 
 .animate-warning-glitch {
