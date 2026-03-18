@@ -266,8 +266,8 @@ const World = () => {
                 </p>
                 <details className="group w-full mt-2">
                   <summary className="cursor-pointer list-none flex items-center justify-center gap-1.5 text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light hover:text-neutral-600 transition-colors">
-                    {f.warning}
-                    <span className="text-neutral-400 text-[10px] transition-transform group-open:rotate-180">▾</span>
+                     <span className="underline">{f.warning}</span>
+                     <span className="text-neutral-800 text-xs transition-transform group-open:rotate-180">▾</span>
                   </summary>
                   <div className="mt-4 space-y-3">
                     <p className="text-neutral-500 text-sm italic font-mono-light">
