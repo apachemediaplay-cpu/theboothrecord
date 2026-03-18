@@ -165,6 +165,53 @@ const World = () => {
           <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-10 tracking-wide">
             A world built around flavour, ritual and things that don't explain themselves.
           </p>
+          <style>{`
+            .glitch-btn {
+              position: relative;
+              overflow: hidden;
+            }
+            .glitch-btn::before,
+            .glitch-btn::after {
+              content: attr(data-text);
+              position: absolute;
+              inset: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: white;
+              color: #171717;
+              opacity: 0;
+              pointer-events: none;
+            }
+            .glitch-btn:hover::before {
+              opacity: 1;
+              animation: glitchSlice1 200ms infinite;
+              clip-path: inset(20% 0 50% 0);
+              text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+            }
+            .glitch-btn:hover::after {
+              opacity: 1;
+              animation: glitchSlice2 200ms infinite;
+              clip-path: inset(60% 0 10% 0);
+              text-shadow: -2px 0 #ff0000, 2px 0 #00ffff;
+            }
+            @keyframes glitchSlice1 {
+              0% { transform: translateX(0); }
+              20% { transform: translateX(-4px); }
+              40% { transform: translateX(6px); }
+              60% { transform: translateX(-2px); }
+              80% { transform: translateX(4px); }
+              100% { transform: translateX(0); }
+            }
+            @keyframes glitchSlice2 {
+              0% { transform: translateX(0); }
+              20% { transform: translateX(5px); }
+              40% { transform: translateX(-3px); }
+              60% { transform: translateX(4px); }
+              80% { transform: translateX(-6px); }
+              100% { transform: translateX(0); }
+            }
+          `}</style>
           <div className="flex gap-2 md:gap-3">
             {[
               { label: "Drinks", target: "drinks" },
@@ -174,8 +221,9 @@ const World = () => {
             ].map((item) => (
               <button
                 key={item.target}
+                data-text={item.label}
                 onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-                className="px-8 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em]"
+                className="glitch-btn px-8 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:tracking-[0.4em]"
               >
                 {item.label}
               </button>
