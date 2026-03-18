@@ -256,3 +256,32 @@
 .animate-warning-glitch-3 {
   animation: warningGlitch3 7.1s ease-in-out infinite;
 }
+
+/* ── Contraband Section ─────────────────────────────── */
+
+@keyframes contrabandScan {
+  0% { top: -2px; }
+  100% { top: 100%; }
+}
+
+@keyframes contrabandPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.contraband-card {
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.contraband-card:hover {
+  border-color: hsl(0 60% 50% / 0.3);
+  box-shadow: 0 0 25px hsl(0 70% 50% / 0.1), inset 0 0 30px hsl(0 70% 50% / 0.03);
+}
+
+.contraband-scanline {
+  animation: contrabandScan 2s linear infinite;
+}
+
+.contraband-pulse {
+  animation: contrabandPulse 2.5s ease-in-out infinite;
+}
