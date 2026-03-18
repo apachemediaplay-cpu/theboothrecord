@@ -388,18 +388,21 @@ const World = () => {
             </p>
           </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-6 px-6">
+          <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-6 px-6">
             {[
               { src: socialInterrogation, alt: "Interrogation room", caption: "Evidence recovered from the scene.", likes: "2,847", time: "3h" },
               { src: socialPressConference, alt: "Press conference", caption: "No further questions.", likes: "4,112", time: "1d" },
               { src: socialAirportCustoms, alt: "Airport customs", caption: "Detained at the border. Worth it.", likes: "3,291", time: "3d" },
+              { src: socialInterrogation, alt: "Interrogation room", caption: "Caught in the act.", likes: "1,923", time: "5d" },
+              { src: socialPressConference, alt: "Press conference", caption: "The evidence speaks for itself.", likes: "3,540", time: "1w" },
+              { src: socialAirportCustoms, alt: "Airport customs", caption: "Crossing lines since day one.", likes: "2,108", time: "2w" },
             ].map((img, i) => (
               <a
                 key={i}
                 href="https://instagram.com/houseofguilty"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 w-52 snap-start group"
+                className="flex-shrink-0 w-36 snap-start group"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-5 h-5 rounded-full bg-neutral-900 flex items-center justify-center">
