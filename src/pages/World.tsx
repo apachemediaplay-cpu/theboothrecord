@@ -10,6 +10,9 @@ import contextBar from "@/assets/retail/context-bar.png";
 import contextRetail from "@/assets/retail/context-retail.png";
 import contextSpirits from "@/assets/retail/context-spirits.png";
 import contextStudio from "@/assets/retail/context-studio.png";
+import socialInterrogation from "@/assets/social/interrogation.png";
+import socialPressConference from "@/assets/social/press-conference.png";
+import socialAirportCustoms from "@/assets/social/airport-customs.png";
 
 /* ─── Data ────────────────────────────────────────────── */
 
@@ -302,7 +305,48 @@ const World = () => {
 
       {/* ── Contraband ───────────────────────────────── */}
       <section className={`${SECTION} bg-neutral-900`}>
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
+          {/* Social Feed */}
+          <div className="text-center mb-16 md:mb-20">
+            <p className="text-neutral-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
+              @houseofguilty
+            </p>
+            <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
+              From the Scene
+            </h2>
+            <p className="text-neutral-400 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
+              Evidence collected. Case ongoing.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1 md:gap-2 mb-20 md:mb-28">
+            {[
+              { src: socialInterrogation, alt: "Interrogation room" },
+              { src: socialPressConference, alt: "Press conference" },
+              { src: socialAirportCustoms, alt: "Airport customs" },
+            ].map((img, i) => (
+              <a
+                key={i}
+                href="https://instagram.com/houseofguilty"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative aspect-square overflow-hidden group cursor-pointer"
+              >
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
+                  <span className="text-white text-[10px] tracking-[0.4em] uppercase font-mono-light opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    View
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          {/* Contraband */}
           <div className="text-center mb-16 md:mb-24">
             <p className="text-red-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               ⬤ Restricted Access
@@ -318,7 +362,7 @@ const World = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
             {contrabandDrops.map((drop) => (
               <div
                 key={drop.code}
