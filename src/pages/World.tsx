@@ -290,15 +290,11 @@ const World = () => {
           </div>
 
           <hr className="border-neutral-200 mb-10 mt-10" />
-
-          <h3 className="font-control text-lg md:text-xl font-bold text-neutral-900 mb-4">
-            Trade Enquiries
-          </h3>
           <a
             href="mailto:trade@houseofguilty.com"
-            className="text-neutral-900 text-base font-mono-light underline underline-offset-4 hover:text-neutral-600 transition-colors"
+            className="inline-block px-10 py-4 bg-neutral-900 text-white font-bold text-xs tracking-[0.3em] uppercase font-mono-light transition-all hover:bg-neutral-800 hover:tracking-[0.4em]"
           >
-            trade@houseofguilty.com ↗
+            Trade Enquiries
           </a>
         </div>
       </section>
