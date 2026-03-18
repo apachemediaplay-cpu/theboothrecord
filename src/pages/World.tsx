@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { Lock } from "lucide-react";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroCan from "@/assets/retail/hero-can.png";
@@ -68,21 +69,27 @@ const contextImages = [
 const contrabandDrops = [
   {
     code: "DROP-001",
-    label: "CLASSIFIED",
-    status: "RESTRICTED",
-    note: "Monitored.",
+    name: "BATCH 77 — BURNT SERMON",
+    redactedName: "BATCH 77 — ████ SERMON",
+    teaser: "Dark roast. Smoke and sacrament. Never meant for general release.",
+    status: "RESTRICTED" as const,
+    lastSeen: "Last sighted: 14.02.26",
   },
   {
     code: "DROP-002",
-    label: "REDACTED",
-    status: "REFORMED",
-    note: "Reformed. Access revoked.",
+    name: "TRIAL 13 — ABSOLUTION TONIC",
+    redactedName: "TRIAL 13 — ████████ TONIC",
+    teaser: "Bitter herbs. A remedy or a sentence — depends who's drinking.",
+    status: "REFORMED" as const,
+    lastSeen: "Last sighted: 03.11.25",
   },
   {
     code: "DROP-003",
-    label: "PENDING",
-    status: "DISAPPEARED",
-    note: "Quietly disappeared.",
+    name: "EXHIBIT R — NIGHT COUNSEL",
+    redactedName: "EXHIBIT R — ████ ████████",
+    teaser: "Whispered about. Never confirmed. Some things stay off the record.",
+    status: "DISAPPEARED" as const,
+    lastSeen: "Last sighted: Unknown",
   },
 ];
 
@@ -401,39 +408,69 @@ const World = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            {contrabandDrops.map((drop) => (
-              <div
-                key={drop.code}
-                className="border border-neutral-700/40 p-6 md:p-8 relative overflow-hidden group hover:border-neutral-600 transition-colors"
-              >
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" />
+            {contrabandDrops.map((drop) => {
+              const dotColor =
+                drop.status === "RESTRICTED"
+                  ? "bg-red-500"
+                  : drop.status === "REFORMED"
+                  ? "bg-amber-500"
+                  : "bg-neutral-500";
 
-                <p className="text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-6">
-                  {drop.code}
-                </p>
-                <div className="h-24 flex items-center justify-center mb-6">
-                  <p className="font-control text-2xl font-bold text-white/15 tracking-widest">
-                    {drop.label}
-                  </p>
-                </div>
-                <div className="border-t border-neutral-700/30 pt-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-red-500/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
-                      {drop.status}
-                    </span>
-                    <span className="text-neutral-600 text-[9px] font-mono-light">
-                      {drop.note}
-                    </span>
+              return (
+                <div
+                  key={drop.code}
+                  className="contraband-card border border-neutral-700/40 p-6 md:p-8 relative overflow-hidden group transition-all duration-300"
+                >
+                  {/* Scan-line overlay */}
+                  <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="contraband-scanline absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
                   </div>
-                  <a
-                    href="mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20" 
-                    className="block w-full text-center py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all hover:border-red-500/60 hover:text-red-400 hover:bg-red-500/5"
-                  >
-                    Request Access
-                  </a>
+
+                  {/* Static noise overlay */}
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" />
+
+                  {/* Code label */}
+                  <p className="text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10">
+                    {drop.code}
+                  </p>
+
+                  {/* Redacted name area */}
+                  <div className="min-h-[80px] flex flex-col justify-center mb-4 relative z-10">
+                    <p className="font-control text-lg md:text-xl font-bold text-white/90 tracking-wide leading-tight mb-2">
+                      {drop.redactedName}
+                    </p>
+                    <p className="text-neutral-500 text-[10px] leading-[1.7] font-mono-light">
+                      {drop.teaser}
+                    </p>
+                  </div>
+
+                  {/* Status + metadata */}
+                  <div className="border-t border-neutral-700/30 pt-4 space-y-4 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} contraband-pulse`} />
+                        <span className="text-red-500/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                          {drop.status}
+                        </span>
+                      </span>
+                      <span className="text-neutral-600 text-[9px] font-mono-light italic">
+                        {drop.lastSeen}
+                      </span>
+                    </div>
+
+                    {/* Request Access button */}
+                    <a
+                      href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
+                      className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:border-red-500/60 hover:text-red-400 hover:bg-red-500/5"
+                    >
+                      <Lock size={10} className="opacity-60" />
+                      <span className="group-hover/btn:hidden">Request Access</span>
+                      <span className="hidden group-hover/btn:inline">Submit Request ›</span>
+                    </a>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
