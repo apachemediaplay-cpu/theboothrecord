@@ -96,7 +96,7 @@ interface ConfessionPreview {
 /* ─── Shared styles (light theme) ─────────────────────── */
 
 const SECTION = "px-6 md:px-10 py-28 md:py-40";
-const H2 = "font-control text-3xl md:text-5xl font-bold text-neutral-900";
+const H2 = "font-control text-2xl sm:text-3xl md:text-5xl font-bold text-neutral-900";
 const LABEL =
   "text-neutral-400 text-[10px] tracking-[0.35em] uppercase font-mono-light";
 const BODY =
