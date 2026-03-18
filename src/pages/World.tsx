@@ -96,7 +96,7 @@ interface ConfessionPreview {
 /* ─── Shared styles (light theme) ─────────────────────── */
 
 const SECTION = "px-6 md:px-10 py-28 md:py-40";
-const H2 = "font-control text-3xl md:text-5xl font-bold text-neutral-900";
+const H2 = "font-control text-2xl sm:text-3xl md:text-5xl font-bold text-neutral-900";
 const LABEL =
   "text-neutral-400 text-[10px] tracking-[0.35em] uppercase font-mono-light";
 const BODY =
@@ -162,7 +162,7 @@ const World = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
-          <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 text-white">
+          <h1 className="font-control text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 text-white">
             Indulgence has a name.
           </h1>
           <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-10 tracking-wide">
@@ -380,7 +380,7 @@ const World = () => {
             <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               @houseofguilty
             </p>
-            <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
+            <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
               From the Scene
             </h2>
             <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
@@ -437,7 +437,7 @@ const World = () => {
             <p className="text-red-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               ⬤ Restricted Access
             </p>
-            <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
               Contraband
             </h2>
             <p className="text-neutral-400 text-sm leading-[1.9] font-mono-light max-w-md mx-auto mb-3">
@@ -530,7 +530,7 @@ const World = () => {
                 — {confessionCount.toLocaleString()} confessions logged
               </span>
             </div>
-            <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
               The Confessional
             </h2>
             <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
