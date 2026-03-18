@@ -320,7 +320,7 @@ const World = () => {
       </section>
 
       {/* ── Contraband ───────────────────────────────── */}
-      <section className={`${SECTION} bg-neutral-900`}>
+      <section id="contraband" className={`${SECTION} bg-neutral-900`}>
         <div className="max-w-5xl mx-auto">
           {/* Social Feed */}
           <div className="text-center mb-16 md:mb-20">
