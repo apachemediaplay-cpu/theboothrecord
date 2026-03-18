@@ -10,6 +10,9 @@ import contextBar from "@/assets/retail/context-bar.png";
 import contextRetail from "@/assets/retail/context-retail.png";
 import contextSpirits from "@/assets/retail/context-spirits.png";
 import contextStudio from "@/assets/retail/context-studio.png";
+import socialInterrogation from "@/assets/social/interrogation.png";
+import socialPressConference from "@/assets/social/press-conference.png";
+import socialAirportCustoms from "@/assets/social/airport-customs.png";
 
 /* ─── Data ────────────────────────────────────────────── */
 
