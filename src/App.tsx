@@ -14,6 +14,7 @@ import Summon from "./pages/Summon";
 import Answer from "./pages/Answer";
 import Landing from "./pages/Landing";
 import Retail from "./pages/Retail";
+import World from "./pages/World";
 import TheWall from "./pages/TheWall";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/answer" element={<Answer />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/retail" element={<Retail />} />
+          <Route path="/world" element={<World />} />
           <Route path="/thewall" element={<TheWall />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
