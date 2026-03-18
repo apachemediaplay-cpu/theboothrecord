@@ -162,9 +162,25 @@ const World = () => {
           <h1 className="font-control text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 text-white">
             Indulgence has a name.
           </h1>
-          <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-6 tracking-wide">
+          <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-10 tracking-wide">
             A world built around flavour, ritual and things that don't explain themselves.
           </p>
+          <div className="flex gap-2 md:gap-3">
+            {[
+              { label: "Drinks", target: "drinks" },
+              { label: "Venues", target: "venues" },
+              { label: "Contraband", target: "contraband" },
+              { label: "The Confessional", target: "confessional" },
+            ].map((item) => (
+              <button
+                key={item.target}
+                onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
+                className="w-20 h-20 md:w-24 md:h-24 border border-white/20 text-white text-[9px] md:text-[10px] tracking-[0.2em] uppercase font-mono-light flex items-center justify-center text-center leading-tight transition-all hover:bg-white/10 hover:border-white/40"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
