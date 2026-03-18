@@ -442,4 +442,4 @@ const World = () => {
   );
 };
 
-export default Retail;
+export default World;
