@@ -158,7 +158,7 @@ const World = () => {
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}>The Range</p>
           <h2 className={`${H2} text-center mb-20 md:mb-28`}>
-            Three Signature Flavours
+            The Usual Suspects
           </h2>
           <div className="space-y-28 md:space-y-40">
             {flavours.map((f, i) => (
