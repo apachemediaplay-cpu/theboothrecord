@@ -373,23 +373,22 @@ const World = () => {
         </div>
       </section>
 
-      {/* ── Contraband ───────────────────────────────── */}
-      <section id="contraband" className={`${SECTION} bg-neutral-900`}>
+      {/* ── From the Scene ──────────────────────────── */}
+      <section className={`${SECTION} bg-white`}>
         <div className="max-w-5xl mx-auto">
-          {/* Social Feed */}
           <div className="text-center mb-16 md:mb-20">
-            <p className="text-neutral-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
+            <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               @houseofguilty
             </p>
-            <h2 className="font-control text-3xl md:text-5xl font-bold text-white mb-6">
+            <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 mb-6">
               From the Scene
             </h2>
-            <p className="text-neutral-400 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
+            <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
               Evidence collected. Case ongoing.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 md:gap-2 mb-20 md:mb-28">
+          <div className="grid grid-cols-3 gap-1 md:gap-2">
             {[
               { src: socialInterrogation, alt: "Interrogation room" },
               { src: socialPressConference, alt: "Press conference" },
@@ -415,6 +414,12 @@ const World = () => {
               </a>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Contraband ───────────────────────────────── */}
+      <section id="contraband" className={`${SECTION} bg-neutral-900`}>
+        <div className="max-w-5xl mx-auto">
 
           {/* Contraband */}
           <div className="text-center mb-16 md:mb-24">
