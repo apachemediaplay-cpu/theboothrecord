@@ -185,9 +185,6 @@ const World = () => {
                     <span className="text-neutral-400 text-[10px] transition-transform group-open:rotate-180">▾</span>
                   </summary>
                   <div className="mt-4 space-y-3">
-                    <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light">
-                      {f.warning}
-                    </p>
                     <p className="text-neutral-500 text-sm italic font-mono-light">
                       {f.closing}
                     </p>
