@@ -403,7 +403,7 @@ const World = () => {
               The Confessional
             </h2>
             <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
-              Anonymous confessions. AI verdicts. Some truths don't disappear.
+              Anonymous confessions. Some truths don't disappear.
             </p>
           </div>
 
