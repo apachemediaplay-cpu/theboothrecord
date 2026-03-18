@@ -173,28 +173,36 @@ const World = () => {
                 <h3 className="font-control text-xl md:text-2xl font-bold text-neutral-900 mb-1">
                   {f.name}
                 </h3>
-                <p className="text-neutral-400 text-sm italic mb-4 font-mono-light">
+                <p className="text-neutral-400 text-sm italic mb-2 font-mono-light">
                   {f.subtitle}
                 </p>
-                <p className="text-neutral-600 text-xs leading-[1.9] mb-4 font-mono-light">
-                  {f.description}
-                </p>
-                <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold mb-4 font-mono-light">
-                  {f.warning}
-                </p>
-                <p className="text-neutral-500 text-sm italic mb-4 font-mono-light">
-                  {f.closing}
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {f.notes.map((note) => (
-                    <span
-                      key={note}
-                      className="px-4 py-1.5 border border-neutral-200 text-[10px] tracking-[0.2em] uppercase text-neutral-500"
-                    >
-                      {note}
-                    </span>
-                  ))}
-                </div>
+                <details className="group w-full mt-2">
+                  <summary className="cursor-pointer list-none flex items-center justify-center gap-1.5 text-neutral-400 text-[10px] tracking-[0.3em] uppercase font-mono-light hover:text-neutral-600 transition-colors">
+                    Details
+                    <span className="text-[10px] transition-transform group-open:rotate-180">▾</span>
+                  </summary>
+                  <div className="mt-4 space-y-3">
+                    <p className="text-neutral-600 text-xs leading-[1.9] font-mono-light">
+                      {f.description}
+                    </p>
+                    <p className="text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light">
+                      {f.warning}
+                    </p>
+                    <p className="text-neutral-500 text-sm italic font-mono-light">
+                      {f.closing}
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2 pt-1">
+                      {f.notes.map((note) => (
+                        <span
+                          key={note}
+                          className="px-4 py-1.5 border border-neutral-200 text-[10px] tracking-[0.2em] uppercase text-neutral-500"
+                        >
+                          {note}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </details>
               </div>
             ))}
           </div>
