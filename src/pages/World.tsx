@@ -21,7 +21,7 @@ const flavours = [
     name: "Citrus Confessional",
     subtitle: "Lemon + Yuzu",
     description:
-      "Bright citrus with real acidity. Lemon brings sharpness while yuzu adds aromatic lift. The drink stays bright rather than sweet. The finish clears quickly.",
+      "Bright yuzu citrus with a clean finish. Light, aromatic and refreshing. Some things are easier to confess than others.",
     warning: "WARNING: Evidence of indulgence.",
     ingredients: ["Lemon juice", "Yuzu juice", "Raw sugar", "Carbonated"],
     technical:
