@@ -34,7 +34,7 @@ const flavours = [
     name: "Bitter Justice",
     subtitle: "Blood Orange + Ginger",
     description:
-      "Blood orange with ginger heat and a bitter edge. Blood orange brings depth while ginger adds warmth and lift. The bitterness lingers. Carbonation keeps the finish clean.",
+      "Bright citrus with real acidity. Lemon brings sharpness while yuzu adds aromatic lift. The drink stays bright rather than sweet. The finish clears quickly.",
     warning: "WARNING: Evidence of indulgence.",
     ingredients: ["Blood orange juice", "Ginger juice", "Raw sugar", "Carbonated"],
     technical:
