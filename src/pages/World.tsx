@@ -272,22 +272,25 @@ const World = () => {
 
           <hr className="border-neutral-200 mb-10" />
 
-          <h3 className="font-control text-lg md:text-xl font-bold text-neutral-900 mb-6">
-            Product Format
-          </h3>
-          <div className="space-y-4 mb-4">
-            <div>
-              <p className="text-neutral-900 text-base font-mono-light">250ml slim can</p>
-              <p className="text-neutral-900 text-base font-mono-light">24 cans per carton</p>
+          <details className="group mb-10">
+            <summary className="cursor-pointer list-none flex items-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
+              Product Format
+              <span className="text-neutral-400 text-sm transition-transform group-open:rotate-180">▾</span>
+            </summary>
+            <div className="space-y-4 mt-6">
+              <div>
+                <p className="text-neutral-900 text-base font-mono-light">250ml slim can</p>
+                <p className="text-neutral-900 text-base font-mono-light">24 cans per carton</p>
+              </div>
+              <div>
+                <p className="text-neutral-900 text-base font-mono-light">Carbonated and ready to serve</p>
+                <p className="text-neutral-900 text-base font-mono-light">Shelf stable</p>
+              </div>
+              <p className="text-neutral-900 text-base font-mono-light">
+                Carbonation levels vary slightly between drinks.
+              </p>
             </div>
-            <div>
-              <p className="text-neutral-900 text-base font-mono-light">Carbonated and ready to serve</p>
-              <p className="text-neutral-900 text-base font-mono-light">Shelf stable</p>
-            </div>
-            <p className="text-neutral-900 text-base font-mono-light">
-              Carbonation levels vary slightly between drinks.
-            </p>
-          </div>
+          </details>
 
           <hr className="border-neutral-200 mb-10 mt-10" />
           <a
