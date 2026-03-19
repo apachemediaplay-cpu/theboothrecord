@@ -172,18 +172,24 @@ const World = () => {
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
-      {/* ── Hero (stays dark — image-based) ──────────── */}
+      {/* ── Hero (stays dark — video-based) ──────────── */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster={heroCan}
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="/videos/hero-loop.mp4" type="video/mp4" />
-        </video>
+        {/* Multi-video background with glitch transitions */}
+        {["/videos/hero-loop.mp4", "/videos/hero-loop-2.mp4", "/videos/hero-loop-3.mp4"].map((src, i) => (
+          <video
+            key={src}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 hero-video ${i === 0 ? "hero-video-active" : ""}`}
+            data-hero-index={i}
+          >
+            <source src={src} type="video/mp4" />
+          </video>
+        ))}
+        {/* Glitch overlay — flashes on transition */}
+        <div className="absolute inset-0 pointer-events-none z-[1] hero-glitch-overlay" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
           <div className="relative h-16 sm:h-20 md:h-28 mb-8">
