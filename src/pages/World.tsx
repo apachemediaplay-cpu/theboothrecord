@@ -116,6 +116,18 @@ const World = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [confessionCount, setConfessionCount] = useState(1842);
   const scanRef = useRef<HTMLDivElement>(null);
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      setNavVisible(currentY < 10 || currentY < lastScrollY.current);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_BASE_URL;
