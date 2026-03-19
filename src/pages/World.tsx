@@ -262,13 +262,13 @@ const World = () => {
             <button
               data-text={item.label}
               onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-              className="glitch-btn py-5 md:py-6 px-3 md:px-5 text-white font-bold text-[9px] md:text-[10px] tracking-[0.25em] uppercase transition-all hover:bg-white/10"
+               className="glitch-btn py-3 md:py-6 px-2 md:px-5 text-white font-bold text-[7px] md:text-[10px] tracking-[0.2em] md:tracking-[0.25em] uppercase transition-all hover:bg-white/10"
               style={{ writingMode: "vertical-lr" }}
             >
               {item.label}
             </button>
             {i < arr.length - 1 && (
-              <div className="w-4 border-t border-white/30 my-1" />
+              <div className="w-3 md:w-4 border-t border-white/30 my-0.5 md:my-1" />
             )}
           </div>
         ))}
