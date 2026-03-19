@@ -600,6 +600,10 @@ const World = () => {
             0%, 100% { border-color: rgba(255,255,255,0.08); }
             50% { border-color: rgba(255,255,255,0.2); }
           }
+          @keyframes confessionScroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+          }
         `}</style>
 
         <div className="relative z-10 max-w-3xl mx-auto">
