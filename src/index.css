@@ -257,6 +257,44 @@
   animation: warningGlitch3 7.1s ease-in-out infinite;
 }
 
+/* ── Hero Video Cycling ──────────────────────────────── */
+
+.hero-video {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.hero-video-active {
+  opacity: 1;
+}
+
+.hero-glitch-overlay {
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 0, 0, 0.03) 2px,
+    rgba(255, 0, 0, 0.03) 4px
+  );
+  transition: opacity 0.05s;
+}
+
+.hero-glitch-active {
+  animation: heroGlitch 350ms steps(4) forwards;
+}
+
+@keyframes heroGlitch {
+  0%   { opacity: 1; transform: translate(0); filter: none; }
+  15%  { opacity: 1; transform: translate(-4px, 1px) skewX(-2deg); filter: hue-rotate(90deg) saturate(3); }
+  30%  { opacity: 0.8; transform: translate(3px, -2px) skewX(1deg); filter: hue-rotate(180deg); }
+  45%  { opacity: 1; transform: translate(-2px, 0); filter: hue-rotate(270deg) saturate(2); }
+  60%  { opacity: 0.6; transform: translate(2px, 1px) skewX(-1deg); filter: none; }
+  80%  { opacity: 0.3; transform: translate(-1px, -1px); filter: hue-rotate(90deg); }
+  100% { opacity: 0; transform: translate(0); filter: none; }
+}
+
 /* ── Contraband Section ─────────────────────────────── */
 
 @keyframes contrabandScan {
