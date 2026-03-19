@@ -128,31 +128,37 @@ const World = () => {
   const lastScrollY = useRef(0);
   const heroVideoIndex = useRef(0);
 
-  // Cycle hero videos with glitch transition
+  // Cycle hero videos — rapid 2s clips with glitch
   useEffect(() => {
     const videos = document.querySelectorAll<HTMLVideoElement>(".hero-video");
     const glitchOverlay = document.querySelector<HTMLElement>(".hero-glitch-overlay");
     if (videos.length < 2) return;
+
+    // Start each video at a random point
+    videos.forEach((v) => {
+      v.currentTime = Math.random() * (v.duration || 5);
+    });
 
     const cycle = () => {
       const prev = heroVideoIndex.current;
       heroVideoIndex.current = (prev + 1) % videos.length;
       const next = heroVideoIndex.current;
 
-      // Trigger glitch flash
+      // Glitch flash
       if (glitchOverlay) {
         glitchOverlay.classList.add("hero-glitch-active");
-        setTimeout(() => glitchOverlay.classList.remove("hero-glitch-active"), 350);
+        setTimeout(() => glitchOverlay.classList.remove("hero-glitch-active"), 250);
       }
 
-      // Swap active video
+      // Swap — jump to random timestamp for variety
       videos[prev].classList.remove("hero-video-active");
       videos[next].classList.add("hero-video-active");
-      videos[next].currentTime = 0;
+      const dur = videos[next].duration || 10;
+      videos[next].currentTime = Math.random() * Math.max(0, dur - 2);
       videos[next].play().catch(() => {});
     };
 
-    const interval = setInterval(cycle, 6000);
+    const interval = setInterval(cycle, 2000);
     return () => clearInterval(interval);
   }, []);
 
