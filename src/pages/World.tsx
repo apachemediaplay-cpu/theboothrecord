@@ -181,6 +181,7 @@ const World = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
+          <img src={guiltyLogoRed} alt="GUILTY" className="h-16 sm:h-20 md:h-28 mb-8" />
           <h1 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-6 text-white">
             Indulgence begins here.
           </h1>
