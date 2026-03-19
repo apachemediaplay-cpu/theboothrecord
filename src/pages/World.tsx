@@ -290,12 +290,12 @@ const World = () => {
       </section>
 
       {/* Vertical nav – fixed left side, visible across all sections */}
-      <div className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center rounded-r-md overflow-hidden transition-opacity duration-300 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+      <div className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 flex flex-col items-stretch rounded-r-md overflow-hidden transition-opacity duration-300 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
         {/* Logo tab */}
-        <div className="bg-white p-1.5 md:p-2.5 flex items-center justify-center w-full">
+        <div className="bg-white p-1.5 md:p-2.5 flex items-center justify-center">
           <img src={guiltyLogoRed} alt="GUILTY" className="h-3 md:h-4 w-auto" />
         </div>
-        <div className="bg-black/70 backdrop-blur-sm py-1 md:py-2">
+        <div className="bg-black/70 backdrop-blur-sm py-1 md:py-2 w-full">
           {[
             { label: "DRINKS", target: "drinks" },
             { label: "VENUES", target: "venues" },
