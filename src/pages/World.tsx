@@ -549,6 +549,32 @@ const World = () => {
         ref={scanRef}
         className="relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
       >
+        {/* Background confession stream */}
+        {confessions.length > 0 && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.06]">
+            <div
+              className="absolute left-0 right-0 flex flex-col gap-6 px-8 md:px-16"
+              style={{
+                animation: "confessionScroll 40s linear infinite",
+              }}
+            >
+              {[...confessions, ...confessions, ...confessions, ...confessions].map((c, i) => (
+                <div key={`bg-${i}`} className="py-3 border-l border-white/20 pl-4">
+                  <p className="text-white text-[9px] tracking-[0.4em] uppercase font-mono-light mb-1">
+                    Confessor {c.confessorId}
+                  </p>
+                  <p className="text-white text-xs font-mono-light leading-relaxed">
+                    {c.confession}
+                  </p>
+                  <p className="text-white/60 text-[10px] font-mono-light mt-1">
+                    {c.verdict}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Scan lines */}
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)]" />
         {/* Slow moving scan line */}
@@ -573,6 +599,10 @@ const World = () => {
           @keyframes borderPulse {
             0%, 100% { border-color: rgba(255,255,255,0.08); }
             50% { border-color: rgba(255,255,255,0.2); }
+          }
+          @keyframes confessionScroll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
           }
         `}</style>
 
