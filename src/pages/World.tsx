@@ -109,7 +109,15 @@ const LABEL =
 const BODY =
   "text-neutral-500 text-sm leading-[1.9] font-mono-light";
 
-/* ─── Component ───────────────────────────────────────── */
+const fallbackConfessions: ConfessionPreview[] = [
+  { confession: "I told them I was fine. I wasn't.", verdict: "Guilt confirmed.", verdictHidden: "The silence was louder than the lie.", confessorId: "#1841" },
+  { confession: "I take credit for work I didn't do.", verdict: "The system sees everything.", verdictHidden: "Recognition built on sand.", confessorId: "#1839" },
+  { confession: "I read their messages when they left the room.", verdict: "Trust violated.", verdictHidden: "What you found was your own insecurity.", confessorId: "#1837" },
+  { confession: "I pretend to care about things I don't.", verdict: "Performance noted.", verdictHidden: "The mask fits too well now.", confessorId: "#1835" },
+  { confession: "I threw away the letter without reading it.", verdict: "Some doors close themselves.", verdictHidden: "You already knew what it said.", confessorId: "#1833" },
+  { confession: "I smile at people I've already decided to cut off.", verdict: "Calculated withdrawal.", verdictHidden: "The goodbye was said in silence.", confessorId: "#1831" },
+];
+
 
 const World = () => {
   const [confessions, setConfessions] = useState<ConfessionPreview[]>([]);
