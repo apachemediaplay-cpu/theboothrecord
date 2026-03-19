@@ -109,7 +109,15 @@ const LABEL =
 const BODY =
   "text-neutral-500 text-sm leading-[1.9] font-mono-light";
 
-/* ─── Component ───────────────────────────────────────── */
+const fallbackConfessions: ConfessionPreview[] = [
+  { confession: "I told them I was fine. I wasn't.", verdict: "Guilt confirmed.", verdictHidden: "The silence was louder than the lie.", confessorId: "#1841" },
+  { confession: "I take credit for work I didn't do.", verdict: "The system sees everything.", verdictHidden: "Recognition built on sand.", confessorId: "#1839" },
+  { confession: "I read their messages when they left the room.", verdict: "Trust violated.", verdictHidden: "What you found was your own insecurity.", confessorId: "#1837" },
+  { confession: "I pretend to care about things I don't.", verdict: "Performance noted.", verdictHidden: "The mask fits too well now.", confessorId: "#1835" },
+  { confession: "I threw away the letter without reading it.", verdict: "Some doors close themselves.", verdictHidden: "You already knew what it said.", confessorId: "#1833" },
+  { confession: "I smile at people I've already decided to cut off.", verdict: "Calculated withdrawal.", verdictHidden: "The goodbye was said in silence.", confessorId: "#1831" },
+];
+
 
 const World = () => {
   const [confessions, setConfessions] = useState<ConfessionPreview[]>([]);
@@ -550,30 +558,33 @@ const World = () => {
         className="relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
       >
         {/* Background confession stream */}
-        {confessions.length > 0 && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.06]">
-            <div
-              className="absolute left-0 right-0 flex flex-col gap-6 px-8 md:px-16"
-              style={{
-                animation: "confessionScroll 40s linear infinite",
-              }}
-            >
-              {[...confessions, ...confessions, ...confessions, ...confessions].map((c, i) => (
-                <div key={`bg-${i}`} className="py-3 border-l border-white/20 pl-4">
-                  <p className="text-white text-[9px] tracking-[0.4em] uppercase font-mono-light mb-1">
-                    Confessor {c.confessorId}
-                  </p>
-                  <p className="text-white text-xs font-mono-light leading-relaxed">
-                    {c.confession}
-                  </p>
-                  <p className="text-white/60 text-[10px] font-mono-light mt-1">
-                    {c.verdict}
-                  </p>
-                </div>
-              ))}
+        {(() => {
+          const streamData = confessions.length > 0 ? confessions : fallbackConfessions;
+          return (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.06]">
+              <div
+                className="absolute left-0 right-0 flex flex-col gap-6 px-8 md:px-16"
+                style={{
+                  animation: "confessionScroll 40s linear infinite",
+                }}
+              >
+                {[...streamData, ...streamData, ...streamData, ...streamData].map((c, i) => (
+                  <div key={`bg-${i}`} className="py-3 border-l border-white/20 pl-4">
+                    <p className="text-white text-[9px] tracking-[0.4em] uppercase font-mono-light mb-1">
+                      Confessor {c.confessorId}
+                    </p>
+                    <p className="text-white text-xs font-mono-light leading-relaxed">
+                      {c.confession}
+                    </p>
+                    <p className="text-white/60 text-[10px] font-mono-light mt-1">
+                      {c.verdict}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Scan lines */}
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)]" />
