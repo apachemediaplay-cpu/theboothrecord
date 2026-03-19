@@ -126,6 +126,35 @@ const World = () => {
   const scanRef = useRef<HTMLDivElement>(null);
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const heroVideoIndex = useRef(0);
+
+  // Cycle hero videos with glitch transition
+  useEffect(() => {
+    const videos = document.querySelectorAll<HTMLVideoElement>(".hero-video");
+    const glitchOverlay = document.querySelector<HTMLElement>(".hero-glitch-overlay");
+    if (videos.length < 2) return;
+
+    const cycle = () => {
+      const prev = heroVideoIndex.current;
+      heroVideoIndex.current = (prev + 1) % videos.length;
+      const next = heroVideoIndex.current;
+
+      // Trigger glitch flash
+      if (glitchOverlay) {
+        glitchOverlay.classList.add("hero-glitch-active");
+        setTimeout(() => glitchOverlay.classList.remove("hero-glitch-active"), 350);
+      }
+
+      // Swap active video
+      videos[prev].classList.remove("hero-video-active");
+      videos[next].classList.add("hero-video-active");
+      videos[next].currentTime = 0;
+      videos[next].play().catch(() => {});
+    };
+
+    const interval = setInterval(cycle, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
