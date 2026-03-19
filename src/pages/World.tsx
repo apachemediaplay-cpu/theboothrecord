@@ -174,11 +174,16 @@ const World = () => {
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — image-based) ──────────── */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
-        <img
-          src={heroCan}
-          alt="GUILTY Soda"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster={heroCan}
           className="absolute inset-0 w-full h-full object-cover"
-        />
+        >
+          <source src="/videos/hero-loop.mp4" type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
           <div className="relative h-16 sm:h-20 md:h-28 mb-8">
