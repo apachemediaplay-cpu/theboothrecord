@@ -295,7 +295,7 @@ const World = () => {
         <div className="bg-white p-1.5 md:p-2.5 flex items-center justify-center w-full">
           <img src={guiltyLogoRed} alt="GUILTY" className="h-3 md:h-4 w-auto" />
         </div>
-        <div className="bg-black/70 backdrop-blur-sm py-1 md:py-2">
+        <div className="bg-black/70 backdrop-blur-sm py-1 md:py-2 w-full">
           {[
             { label: "DRINKS", target: "drinks" },
             { label: "VENUES", target: "venues" },
