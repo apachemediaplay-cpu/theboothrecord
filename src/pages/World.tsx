@@ -209,6 +209,12 @@ const World = () => {
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — video-based) ──────────── */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
+        {/* Static fallback image — always visible behind videos */}
+        <img
+          src={heroCan}
+          alt="GUILTY Soda"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
         {/* Multi-video background with glitch transitions */}
         {["/videos/hero-loop.mp4", "/videos/hero-loop-2.mp4", "/videos/hero-loop-3.mp4"].map((src, i) => (
           <video
@@ -217,7 +223,8 @@ const World = () => {
             loop
             muted
             playsInline
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 hero-video ${i === 0 ? "hero-video-active" : ""}`}
+            preload="auto"
+            className={`absolute inset-0 w-full h-full object-cover hero-video ${i === 0 ? "hero-video-active" : ""}`}
             data-hero-index={i}
           >
             <source src={src} type="video/mp4" />
