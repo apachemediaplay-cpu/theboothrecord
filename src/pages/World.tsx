@@ -637,7 +637,7 @@ const World = () => {
           </div>
 
           {/* Active confession - highlighted */}
-          <div className="mb-10">
+          <div className="mb-6">
             {confessions.length > 0 ? (
               <div
                 key={activeIndex}
