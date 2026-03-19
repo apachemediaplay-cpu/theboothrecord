@@ -562,7 +562,7 @@ const World = () => {
         {(() => {
           const streamData = confessions.length > 0 ? confessions : fallbackConfessions;
           return (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.06]">
+            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-[0.12]">
               <div
                 className="absolute left-0 right-0 flex flex-col gap-6 px-8 md:px-16"
                 style={{
