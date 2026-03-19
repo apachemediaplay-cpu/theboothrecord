@@ -116,6 +116,18 @@ const World = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [confessionCount, setConfessionCount] = useState(1842);
   const scanRef = useRef<HTMLDivElement>(null);
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      setNavVisible(currentY < 10 || currentY < lastScrollY.current);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_BASE_URL;
@@ -227,7 +239,7 @@ const World = () => {
       </section>
 
       {/* Vertical nav – fixed left side, visible across all sections */}
-      <div className="fixed left-0 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col items-center">
+      <div className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col items-center transition-all duration-300 ${navVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-full"}`}>
         {[
           { label: "DRINKS", target: "drinks" },
           { label: "VENUES", target: "venues" },
