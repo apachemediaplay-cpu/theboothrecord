@@ -174,14 +174,6 @@ const World = () => {
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — image-based) ──────────── */}
       <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
-        {/* Logo tab at top center */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 bg-white px-8 py-4">
-          <img
-            src={guiltyLogoRed}
-            alt="GUILTY"
-            className="h-8 md:h-10"
-          />
-        </div>
         <img
           src={heroCan}
           alt="GUILTY Soda"
