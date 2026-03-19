@@ -187,7 +187,7 @@ const World = () => {
             <img src={guiltyLogoRed} alt="" className="absolute inset-0 h-full w-auto opacity-70 animate-warning-glitch-2" aria-hidden="true" />
           </div>
           <h1 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-6 text-white">
-            Indulgence begins here.
+            of Indulgence.
           </h1>
           <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-10 tracking-wide">
             A world built around flavour, ritual and things that don't explain themselves.
