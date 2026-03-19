@@ -726,7 +726,7 @@ const World = () => {
       {/* ── Footer ───────────────────────────────────── */}
       <footer className="px-6 py-14 border-t border-neutral-100 bg-white">
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-4">
-          <img src={guiltyLogoRed} alt="GUILTY" className="h-5 opacity-50" />
+          
           <p className="text-neutral-400 text-[10px] tracking-[0.35em] uppercase font-mono-light">
             © {new Date().getFullYear()} GUILTY. All rights reserved.
           </p>
