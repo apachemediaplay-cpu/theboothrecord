@@ -290,31 +290,33 @@ const World = () => {
       </section>
 
       {/* Vertical nav – fixed left side, visible across all sections */}
-      <div className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center bg-black/70 backdrop-blur-sm rounded-r-md py-1 md:py-2 transition-opacity duration-300 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+      <div className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center rounded-r-md overflow-hidden transition-opacity duration-300 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
         {/* Logo tab */}
-        <div className="bg-white p-1.5 md:p-2.5 mb-1 md:mb-2 flex items-center justify-center">
+        <div className="bg-white p-1.5 md:p-2.5 flex items-center justify-center w-full">
           <img src={guiltyLogoRed} alt="GUILTY" className="h-3 md:h-4 w-auto" />
         </div>
-        {[
-          { label: "DRINKS", target: "drinks" },
-          { label: "VENUES", target: "venues" },
-          { label: "CONTRABAND", target: "contraband" },
-          { label: "THE BOOTH", target: "confessional" },
-        ].map((item, i, arr) => (
-          <div key={item.target} className="flex flex-col items-center">
-            <button
-              data-text={item.label}
-              onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-               className="glitch-btn py-3 md:py-6 px-2 md:px-5 text-white font-bold text-[7px] md:text-[10px] tracking-[0.2em] md:tracking-[0.25em] uppercase transition-all hover:bg-white/10"
-              style={{ writingMode: "vertical-lr" }}
-            >
-              {item.label}
-            </button>
-            {i < arr.length - 1 && (
-              <div className="w-3 md:w-4 border-t border-white/30 my-0.5 md:my-1" />
-            )}
-          </div>
-        ))}
+        <div className="bg-black/70 backdrop-blur-sm py-1 md:py-2">
+          {[
+            { label: "DRINKS", target: "drinks" },
+            { label: "VENUES", target: "venues" },
+            { label: "CONTRABAND", target: "contraband" },
+            { label: "THE BOOTH", target: "confessional" },
+          ].map((item, i, arr) => (
+            <div key={item.target} className="flex flex-col items-center">
+              <button
+                data-text={item.label}
+                onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
+                 className="glitch-btn py-3 md:py-6 px-2 md:px-5 text-white font-bold text-[7px] md:text-[10px] tracking-[0.2em] md:tracking-[0.25em] uppercase transition-all hover:bg-white/10"
+                style={{ writingMode: "vertical-lr" }}
+              >
+                {item.label}
+              </button>
+              {i < arr.length - 1 && (
+                <div className="w-3 md:w-4 border-t border-white/30 my-0.5 md:my-1" />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── The Drinks ───────────────────────────────── */}
