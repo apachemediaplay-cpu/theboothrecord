@@ -224,30 +224,31 @@ const World = () => {
           `}</style>
         </div>
 
-        {/* Vertical nav – fixed left side of hero */}
-        <div className="absolute left-0 top-0 bottom-0 z-20 flex flex-col justify-start pt-24">
-          {[
-            { label: "DRINKS", target: "drinks" },
-            { label: "VENUES", target: "venues" },
-            { label: "CONTRABAND", target: "contraband" },
-            { label: "THE BOOTH", target: "confessional" },
-          ].map((item, i, arr) => (
-            <div key={item.target} className="flex flex-col items-center">
-              <button
-                data-text={item.label}
-                onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-                className="glitch-btn py-5 md:py-6 px-3 md:px-5 text-white font-bold text-[9px] md:text-[10px] tracking-[0.25em] uppercase transition-all hover:bg-white/10"
-                style={{ writingMode: "vertical-lr" }}
-              >
-                {item.label}
-              </button>
-              {i < arr.length - 1 && (
-                <div className="w-4 border-t border-white/30 my-1" />
-              )}
-            </div>
-          ))}
-        </div>
       </section>
+
+      {/* Vertical nav – fixed left side, visible across all sections */}
+      <div className="fixed left-0 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col items-center">
+        {[
+          { label: "DRINKS", target: "drinks" },
+          { label: "VENUES", target: "venues" },
+          { label: "CONTRABAND", target: "contraband" },
+          { label: "THE BOOTH", target: "confessional" },
+        ].map((item, i, arr) => (
+          <div key={item.target} className="flex flex-col items-center">
+            <button
+              data-text={item.label}
+              onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
+              className="glitch-btn py-5 md:py-6 px-3 md:px-5 text-foreground font-bold text-[9px] md:text-[10px] tracking-[0.25em] uppercase transition-all hover:bg-foreground/10 mix-blend-difference"
+              style={{ writingMode: "vertical-lr" }}
+            >
+              {item.label}
+            </button>
+            {i < arr.length - 1 && (
+              <div className="w-4 border-t border-foreground/30 my-1 mix-blend-difference" />
+            )}
+          </div>
+        ))}
+      </div>
 
       {/* ── The Drinks ───────────────────────────────── */}
       <section id="drinks" className={`${SECTION} bg-white`}>
