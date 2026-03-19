@@ -675,7 +675,7 @@ const World = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-10">
+              <div className="text-center py-4">
                 <p className="text-neutral-600 text-xs font-mono-light animate-pulse">
                   Intercepting confessions...
                 </p>
