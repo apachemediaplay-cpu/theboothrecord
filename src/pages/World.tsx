@@ -618,7 +618,7 @@ const World = () => {
         `}</style>
 
         <div className="relative z-10 max-w-3xl mx-auto">
-          <div className="text-center mb-16 md:mb-20">
+          <div className="text-center mb-10 md:mb-14">
             <div className="flex items-center justify-center gap-3 mb-4">
               <span className="w-1.5 h-1.5 rounded-full bg-ritual animate-pulse" />
               <span className="text-ritual text-[10px] tracking-[0.5em] uppercase font-mono-light">
@@ -637,7 +637,7 @@ const World = () => {
           </div>
 
           {/* Active confession - highlighted */}
-          <div className="mb-10">
+          <div className="mb-6">
             {confessions.length > 0 ? (
               <div
                 key={activeIndex}
@@ -675,7 +675,7 @@ const World = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-10">
+              <div className="text-center py-4">
                 <p className="text-neutral-600 text-xs font-mono-light animate-pulse">
                   Intercepting confessions...
                 </p>
