@@ -618,7 +618,7 @@ const World = () => {
         `}</style>
 
         <div className="relative z-10 max-w-3xl mx-auto">
-          <div className="text-center mb-16 md:mb-20">
+          <div className="text-center mb-10 md:mb-14">
             <div className="flex items-center justify-center gap-3 mb-4">
               <span className="w-1.5 h-1.5 rounded-full bg-ritual animate-pulse" />
               <span className="text-ritual text-[10px] tracking-[0.5em] uppercase font-mono-light">
