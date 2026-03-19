@@ -239,7 +239,7 @@ const World = () => {
       </section>
 
       {/* Vertical nav – fixed left side, visible across all sections */}
-      <div className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col items-center transition-opacity duration-300 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+      <div className={`fixed left-0 top-1/2 -translate-y-1/2 z-50 hidden md:flex flex-col items-center bg-black/70 backdrop-blur-sm rounded-r-md py-2 transition-opacity duration-300 ${navVisible ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
         {[
           { label: "DRINKS", target: "drinks" },
           { label: "VENUES", target: "venues" },
@@ -250,13 +250,13 @@ const World = () => {
             <button
               data-text={item.label}
               onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
-              className="glitch-btn py-5 md:py-6 px-3 md:px-5 text-foreground font-bold text-[9px] md:text-[10px] tracking-[0.25em] uppercase transition-all hover:bg-foreground/10 mix-blend-difference"
+              className="glitch-btn py-5 md:py-6 px-3 md:px-5 text-white font-bold text-[9px] md:text-[10px] tracking-[0.25em] uppercase transition-all hover:bg-white/10"
               style={{ writingMode: "vertical-lr" }}
             >
               {item.label}
             </button>
             {i < arr.length - 1 && (
-              <div className="w-4 border-t border-foreground/30 my-1 mix-blend-difference" />
+              <div className="w-4 border-t border-white/30 my-1" />
             )}
           </div>
         ))}
