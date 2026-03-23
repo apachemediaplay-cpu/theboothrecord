@@ -589,10 +589,9 @@ const Home = () => {
                 <line x1="50" y1="60" x2="50" y2="35" stroke="hsl(14, 80%, 45%)" strokeWidth="7" strokeLinecap="round" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="hsl(0, 0%, 5%)" />
+            <rect width="100%" height="100%" fill="hsl(0, 0%, 5%)" fillOpacity="0.7" />
             <rect width="100%" height="100%" fill="url(#g-pattern)" opacity="0.85" />
           </svg>
-          <div className="absolute inset-0 bg-black/30" />
           <button
             onClick={() => setContactOpen(true)}
             className="relative z-10 px-12 py-5 bg-red-600 hover:bg-red-700 text-white font-control text-lg md:text-xl tracking-[0.25em] uppercase font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(220,38,38,0.4)]"
