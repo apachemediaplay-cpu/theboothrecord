@@ -356,7 +356,7 @@ const World = () => {
                   {f.description}
                 </p>
                 <div className="w-full mt-2">
-                  <p className={`text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light underline animate-warning-glitch-${i + 1}`}>{f.warning}</p>
+                  
                   <div className="mt-4 space-y-3">
                     <p className="text-neutral-500 text-sm italic font-mono-light">
                       {f.closing}
