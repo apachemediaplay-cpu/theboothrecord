@@ -249,9 +249,13 @@ const Home = () => {
           </h1>
         </div>
 
-        {/* Bottom oval logo */}
+        {/* Bottom logo with glitch */}
         <div className="relative z-10 pb-10 md:pb-16 flex flex-col items-center">
-          <img src={guiltyOvalLogo} alt="GUILTY" className="h-20 sm:h-24 md:h-28 w-auto" />
+          <div className="relative h-16 sm:h-20 md:h-28">
+            <img src={guiltyLogoRed} alt="GUILTY" className="h-full w-auto relative z-10" />
+            <img src={guiltyLogoRed} alt="" className="absolute inset-0 h-full w-auto opacity-70 animate-warning-glitch-1" aria-hidden="true" />
+            <img src={guiltyLogoRed} alt="" className="absolute inset-0 h-full w-auto opacity-70 animate-warning-glitch-2" aria-hidden="true" />
+          </div>
         </div>
 
         <style>{`
