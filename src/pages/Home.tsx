@@ -439,7 +439,9 @@ const Home = () => {
         </div>
 
         {/* ── Suspects Carousel ── */}
-        <SuspectsCarousel />
+        <div className="-mx-6 md:-mx-10">
+          <SuspectsCarousel />
+        </div>
 
         <div className="max-w-6xl mx-auto mt-20 md:mt-28">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
