@@ -33,11 +33,15 @@ const SuspectsCarousel = () => {
         <div className="flex">
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
-              <img
-                src={slide.src}
-                alt={slide.alt}
-                className="w-full h-[50vh] md:h-[70vh] object-cover"
-              />
+              {slide.type === "image" ? (
+                <img
+                  src={slide.src}
+                  alt={slide.alt}
+                  className="w-full h-[50vh] md:h-[70vh] object-cover"
+                />
+              ) : (
+                <div className={`w-full h-[50vh] md:h-[70vh] ${slide.color}`} />
+              )}
             </div>
           ))}
         </div>
