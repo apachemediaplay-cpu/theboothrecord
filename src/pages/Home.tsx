@@ -603,8 +603,8 @@ const Home = () => {
       </section>
 
       {/* ── From the Scene ──────────────────────────── */}
-      <section className={`${SECTION} bg-white`}>
-        <div className="max-w-5xl mx-auto">
+      <section className="bg-white px-0 py-20 md:py-28">
+        <div className="max-w-5xl mx-auto px-6 md:px-10">
           <div className="text-center mb-16 md:mb-20">
             <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               @houseofguilty
@@ -616,44 +616,51 @@ const Home = () => {
               Evidence collected. Case ongoing.
             </p>
           </div>
+        </div>
 
-          <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-6 px-6">
-            {[
-              { src: socialInterrogation, alt: "Interrogation room", caption: "Evidence recovered from the scene.", likes: "2,847", time: "3h" },
-              { src: socialPressConference, alt: "Press conference", caption: "No further questions.", likes: "4,112", time: "1d" },
-              { src: socialAirportCustoms, alt: "Airport customs", caption: "Detained at the border. Worth it.", likes: "3,291", time: "3d" },
-              { src: socialInterrogation, alt: "Interrogation room", caption: "Caught in the act.", likes: "1,923", time: "5d" },
-              { src: socialPressConference, alt: "Press conference", caption: "The evidence speaks for itself.", likes: "3,540", time: "1w" },
-              { src: socialAirportCustoms, alt: "Airport customs", caption: "Crossing lines since day one.", likes: "2,108", time: "2w" },
-            ].map((img, i) => (
-              <a
-                key={i}
-                href="https://instagram.com/houseofguilty"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-shrink-0 w-36 snap-start group"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-5 h-5 rounded-full bg-neutral-900 flex items-center justify-center">
-                    <span className="text-white text-[6px] font-bold tracking-wider">G</span>
-                  </div>
-                  <p className="text-neutral-900 text-[10px] font-bold tracking-wide">houseofguilty</p>
-                  <p className="text-neutral-400 text-[9px] font-mono-light ml-auto">{img.time}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 border-t border-neutral-200">
+          {[
+            { src: socialInterrogation, alt: "Interrogation room", caption: "Do you know this person?...", likes: "2,847", handle: "houseofguilty" },
+            { src: socialPressConference, alt: "Press conference", caption: "GUILTY of gratification...", likes: "4,112", handle: "houseofguilty" },
+            { src: socialAirportCustoms, alt: "Airport customs", caption: "EXHIBIT G: undeclared can...", likes: "3,291", handle: "houseofguilty" },
+            { src: socialInterrogation, alt: "Interrogation room", caption: "Wellness State officers...", likes: "1,923", handle: "houseofguilty" },
+            { src: socialPressConference, alt: "Press conference", caption: "The promotion of sugar is prohibited...", likes: "3,540", handle: "houseofguilty" },
+            { src: socialAirportCustoms, alt: "Airport customs", caption: "under the influence...", likes: "2,108", handle: "houseofguilty" },
+          ].map((img, i) => (
+            <a
+              key={i}
+              href="https://instagram.com/houseofguilty"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-b border-r border-neutral-200 group flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-2.5 px-4 py-3 border-b border-neutral-200">
+                <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center">
+                  <span className="text-white text-[9px] font-bold">G</span>
                 </div>
+                <p className="text-neutral-900 text-xs font-bold tracking-wide">{img.handle}</p>
+              </div>
 
-                <div className="relative aspect-[4/5] overflow-hidden rounded-sm mb-2">
-                  <img
-                    src={img.src}
-                    alt={img.alt}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                  />
-                </div>
+              {/* Image */}
+              <div className="relative aspect-square overflow-hidden bg-neutral-100">
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                />
+              </div>
 
-                <p className="text-neutral-900 text-[9px] font-bold mb-0.5">{img.likes} likes</p>
-                <p className="text-neutral-600 text-[9px] leading-relaxed line-clamp-2">{img.caption}</p>
-              </a>
-            ))}
-          </div>
+              {/* Footer */}
+              <div className="px-4 py-3">
+                <p className="text-neutral-900 text-xs font-bold mb-1">{img.likes} likes</p>
+                <p className="text-neutral-700 text-xs leading-relaxed">
+                  <span className="font-bold">{img.handle}</span>{" "}
+                  <span className="font-mono-light">{img.caption}</span>
+                </p>
+              </div>
+            </a>
+          ))}
         </div>
       </section>
 
