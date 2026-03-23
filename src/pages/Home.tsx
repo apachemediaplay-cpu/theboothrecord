@@ -161,7 +161,47 @@ const Home = () => {
     return () => { clearTimeout(startTimeout); clearTimeout(tid); };
   }, []);
 
-  // Cycle hero videos — rapid 2s clips with glitch
+  // Surveillance note typewriter — triggers on scroll into view
+  useEffect(() => {
+    const text = "INCIDENTS OF UNAUTHORISED PLEASURE ARE BEING LOGGED.";
+    const el = document.querySelector<HTMLSpanElement>(".surveillance-typewriter-text");
+    if (!el) return;
+    let started = false;
+    let i = 0;
+    let tid: number;
+
+    const typeNext = () => {
+      i++;
+      el.textContent = text.slice(0, i);
+      if (i >= text.length) {
+        setTimeout(() => el.classList.remove("hero-cursor"), 1500);
+        return;
+      }
+      let delay = 65 + Math.random() * 80;
+      const ch = text[i - 1];
+      if (ch === "." || ch === ",") delay += 300;
+      else if (ch === " ") delay += 40 + Math.random() * 60;
+      tid = window.setTimeout(typeNext, delay);
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started) {
+          started = true;
+          el.classList.add("hero-cursor");
+          tid = window.setTimeout(() => typeNext(), 400);
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    const section = el.closest("section");
+    if (section) observer.observe(section);
+
+    return () => { observer.disconnect(); clearTimeout(tid); };
+  }, []);
+
+
   useEffect(() => {
     const videos = document.querySelectorAll<HTMLVideoElement>(".hero-video");
     const glitchOverlay = document.querySelector<HTMLElement>(".hero-glitch-overlay");
