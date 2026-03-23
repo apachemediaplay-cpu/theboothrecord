@@ -55,7 +55,7 @@ const flavours = [
     technical:
       "~7.5g sugar per 100ml. Built on kola nut and lime with warm spice extracts for balance.",
     closing: "Some vices age well.",
-    notes: ["Spice", "Cola", "Lime"],
+    notes: ["Cola", "Warm spice", "Structured"],
     image: colaVice,
   },
 ];
