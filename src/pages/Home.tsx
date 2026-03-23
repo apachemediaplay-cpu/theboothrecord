@@ -389,8 +389,8 @@ const Home = () => {
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}>The Range</p>
            <h2 className={`${H2} text-center mb-4`}>
-             The Usual Suspects
-           </h2>
+              The Suspects
+            </h2>
            <p className="text-center text-muted-foreground text-sm md:text-base tracking-wide mb-20 md:mb-28">
              Three drinks. Built for flavour rather than sweetness.
            </p>
