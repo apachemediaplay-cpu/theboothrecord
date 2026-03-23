@@ -358,7 +358,7 @@ const World = () => {
                 <div className="w-full mt-2">
                   
                   <div className="mt-4 space-y-3">
-                    <p className="text-neutral-500 text-sm italic font-mono-light">
+                    <p className={`text-neutral-500 text-sm italic font-mono-light animate-warning-glitch-${i + 1}`}>
                       {f.closing}
                     </p>
                     <div className="flex flex-wrap justify-center gap-2 pt-1">
