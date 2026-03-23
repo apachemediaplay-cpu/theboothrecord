@@ -129,6 +129,23 @@ const Home = () => {
   const lastScrollY = useRef(0);
   const heroVideoIndex = useRef(0);
 
+  // Typewriter effect for hero warning text
+  useEffect(() => {
+    const text = "IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.";
+    const el = document.querySelector<HTMLSpanElement>(".hero-typewriter-text");
+    if (!el) return;
+    let i = 0;
+    const speed = 3000 / text.length;
+    const timeout = setTimeout(() => {
+      const interval = setInterval(() => {
+        i++;
+        el.textContent = text.slice(0, i);
+        if (i >= text.length) clearInterval(interval);
+      }, speed);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, []);
+
   // Cycle hero videos — rapid 2s clips with glitch
   useEffect(() => {
     const videos = document.querySelectorAll<HTMLVideoElement>(".hero-video");
@@ -242,10 +259,10 @@ const Home = () => {
           </p>
         </div>
 
-        {/* Centre warning text */}
+        {/* Centre warning text — typewriter */}
         <div className="relative z-10 flex flex-col items-center text-center px-6 md:px-20">
-          <h1 className="font-mono text-base sm:text-lg md:text-2xl lg:text-3xl font-normal tracking-[0.25em] uppercase text-white leading-[2] md:leading-[2.2] max-w-4xl" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.9)' }}>
-            IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.
+          <h1 className="font-mono text-base sm:text-lg md:text-2xl lg:text-3xl font-normal tracking-[0.25em] uppercase text-white leading-[2] md:leading-[2.2] max-w-4xl hero-typewriter" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.9)' }}>
+            <span className="hero-typewriter-text" />
           </h1>
         </div>
 
