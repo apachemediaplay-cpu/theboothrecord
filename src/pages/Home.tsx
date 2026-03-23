@@ -161,7 +161,47 @@ const Home = () => {
     return () => { clearTimeout(startTimeout); clearTimeout(tid); };
   }, []);
 
-  // Cycle hero videos — rapid 2s clips with glitch
+  // Surveillance note typewriter — triggers on scroll into view
+  useEffect(() => {
+    const text = "INCIDENTS OF UNAUTHORISED PLEASURE ARE BEING LOGGED.";
+    const el = document.querySelector<HTMLSpanElement>(".surveillance-typewriter-text");
+    if (!el) return;
+    let started = false;
+    let i = 0;
+    let tid: number;
+
+    const typeNext = () => {
+      i++;
+      el.textContent = text.slice(0, i);
+      if (i >= text.length) {
+        setTimeout(() => el.classList.remove("hero-cursor"), 1500);
+        return;
+      }
+      let delay = 65 + Math.random() * 80;
+      const ch = text[i - 1];
+      if (ch === "." || ch === ",") delay += 300;
+      else if (ch === " ") delay += 40 + Math.random() * 60;
+      tid = window.setTimeout(typeNext, delay);
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started) {
+          started = true;
+          el.classList.add("hero-cursor");
+          tid = window.setTimeout(() => typeNext(), 400);
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    const section = el.closest("section");
+    if (section) observer.observe(section);
+
+    return () => { observer.disconnect(); clearTimeout(tid); };
+  }, []);
+
+
   useEffect(() => {
     const videos = document.querySelectorAll<HTMLVideoElement>(".hero-video");
     const glitchOverlay = document.querySelector<HTMLElement>(".hero-glitch-overlay");
@@ -661,6 +701,18 @@ const Home = () => {
               </div>
             </a>
           ))}
+        </div>
+      </section>
+
+      {/* ── Surveillance Note ────────────────────────── */}
+      <section className="bg-neutral-100 px-6 md:px-10 py-24 md:py-36">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-neutral-400 text-[10px] md:text-xs tracking-[0.35em] uppercase font-mono mb-8">
+            SURVEILLANCE NOTE &nbsp;/ &nbsp;REF: 4.1 &nbsp;/ &nbsp;STATUS: RECORDING
+          </p>
+          <h2 className="font-mono text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] uppercase text-neutral-900 leading-[1.4] md:leading-[1.3]">
+            <span className="surveillance-typewriter-text" />
+          </h2>
         </div>
       </section>
 
