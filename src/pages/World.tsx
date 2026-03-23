@@ -41,7 +41,7 @@ const flavours = [
     technical:
       "~6g sugar per 100ml. Built on blood orange juice with bitter orange and juniper extracts.",
     closing: "Justice rarely tastes sweet.",
-    notes: ["Blood orange", "Ginger"],
+    notes: ["Bitter", "Dry", "Ginger"],
     image: bitterJustice,
   },
   {
