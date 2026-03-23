@@ -128,6 +128,10 @@ const Home = () => {
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
   const heroVideoIndex = useRef(0);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", venue: "", message: "" });
+  const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
+  const [contactSubmitted, setContactSubmitted] = useState(false);
 
   // Typewriter effect for hero warning text
   useEffect(() => {
