@@ -845,6 +845,94 @@ const Home = () => {
           </p>
         </div>
       </footer>
+
+      {/* ── Contact Modal ────────────────────────────── */}
+      {contactOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setContactOpen(false)} />
+          <div className="relative bg-black/90 border border-white/10 rounded-md w-full max-w-md mx-4 p-8 md:p-10 animate-fade-in">
+            <button
+              onClick={() => setContactOpen(false)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white text-lg font-mono transition-colors"
+            >
+              ✕
+            </button>
+
+            {contactSubmitted ? (
+              <div className="text-center py-8">
+                <p className="text-white/40 text-[10px] tracking-[0.35em] uppercase font-mono mb-4">Transmission Received</p>
+                <p className="text-white font-mono text-sm tracking-wide">We'll be in touch.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-white/40 text-[10px] tracking-[0.35em] uppercase font-mono mb-1">Get In Touch</p>
+                <h3 className="font-control text-xl md:text-2xl font-bold text-white mb-8">Contact</h3>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const errors: Record<string, string> = {};
+                    if (!contactForm.name.trim()) errors.name = "Required";
+                    if (!contactForm.phone.trim()) errors.phone = "Required";
+                    if (!contactForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactForm.email)) errors.email = "Valid email required";
+                    if (!contactForm.venue.trim()) errors.venue = "Required";
+                    if (Object.keys(errors).length) { setContactErrors(errors); return; }
+                    setContactErrors({});
+                    setContactSubmitted(true);
+                  }}
+                  className="space-y-5"
+                >
+                  {[
+                    { key: "name", label: "NAME", placeholder: "Your name", type: "text" },
+                    { key: "phone", label: "PHONE", placeholder: "Phone number", type: "tel" },
+                    { key: "email", label: "EMAIL", placeholder: "Email address", type: "email" },
+                    { key: "venue", label: "VENUE NAME", placeholder: "Venue name", type: "text" },
+                  ].map((field) => (
+                    <div key={field.key}>
+                      <label className="block text-white/50 text-[10px] tracking-[0.3em] uppercase font-mono mb-2">
+                        {field.label} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type={field.type}
+                        placeholder={field.placeholder}
+                        maxLength={255}
+                        value={contactForm[field.key as keyof typeof contactForm]}
+                        onChange={(e) => setContactForm((f) => ({ ...f, [field.key]: e.target.value }))}
+                        className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 text-white text-sm font-mono placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors"
+                      />
+                      {contactErrors[field.key] && (
+                        <p className="text-red-400 text-[10px] font-mono mt-1 tracking-wide">{contactErrors[field.key]}</p>
+                      )}
+                    </div>
+                  ))}
+
+                  <div>
+                    <label className="block text-white/50 text-[10px] tracking-[0.3em] uppercase font-mono mb-2">
+                      MESSAGE <span className="text-white/20">(optional)</span>
+                    </label>
+                    <textarea
+                      placeholder="Anything else..."
+                      maxLength={1000}
+                      rows={3}
+                      value={contactForm.message}
+                      onChange={(e) => setContactForm((f) => ({ ...f, message: e.target.value }))}
+                      className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 text-white text-sm font-mono placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="glitch-btn w-full bg-white text-black font-bold text-[11px] tracking-[0.25em] uppercase font-mono py-4 rounded hover:bg-white/90 transition-colors mt-2"
+                    data-text="SUBMIT"
+                  >
+                    SUBMIT
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
