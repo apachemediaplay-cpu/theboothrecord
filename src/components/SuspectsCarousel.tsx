@@ -32,13 +32,38 @@ const SuspectsCarousel = () => {
       <div ref={emblaRef} className="overflow-hidden">
         <div className="flex">
           {slides.map((slide, i) => (
-            <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
+            <div key={i} className="min-w-0 shrink-0 grow-0 basis-full relative">
               {slide.type === "image" ? (
-                <img
-                  src={slide.src}
-                  alt={slide.alt}
-                  className="w-full h-[50vh] md:h-[70vh] object-cover"
-                />
+                <>
+                  <img
+                    src={slide.src}
+                    alt={slide.alt}
+                    className="w-full h-[50vh] md:h-[70vh] object-cover"
+                  />
+                  {/* Slide 1 text overlay */}
+                  {i === 0 && (
+                    <>
+                      {/* Top-left caption */}
+                      <p className="absolute top-4 md:top-8 left-4 md:left-8 font-mono text-white text-xs md:text-sm tracking-wide" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>
+                        Carrying soda into a designated wellness facility
+                      </p>
+
+                      {/* Bottom-left product card */}
+                      <div className="absolute bottom-12 md:bottom-16 left-4 md:left-8 bg-white text-neutral-900 px-4 md:px-6 py-3 md:py-4 max-w-xs md:max-w-sm">
+                        <p className="font-mono text-xs md:text-sm font-bold tracking-wide uppercase">Citrus Confessional</p>
+                        <p className="font-mono text-[10px] md:text-xs tracking-wide uppercase mt-0.5">Lemon · Yuzu</p>
+                        <p className="font-mono text-[10px] md:text-xs mt-1 tracking-wide">Nothing to declare. Everything to confess.</p>
+                      </div>
+
+                      {/* Bottom bar */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-4 md:px-8 py-2 md:py-3">
+                        <p className="font-mono text-white text-[8px] md:text-[10px] tracking-[0.2em] uppercase">
+                          Location: International Airport Terminal • Security Screening Zone Time: 07:18 (+1 Min) Officer: Airport Security Personnel
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </>
               ) : (
                 <div className={`w-full h-[50vh] md:h-[70vh] ${slide.color}`} />
               )}
