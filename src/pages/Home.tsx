@@ -364,7 +364,13 @@ const Home = () => {
             <div key={item.target} className="flex flex-col items-center">
               <button
                 data-text={item.label}
-                onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() => {
+                  if (item.target === "contact") {
+                    setContactOpen(true);
+                  } else {
+                    document.getElementById(item.target)?.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
                  className="glitch-btn py-3 md:py-6 px-2 md:px-5 text-white font-bold text-[7px] md:text-[10px] tracking-[0.2em] md:tracking-[0.25em] uppercase transition-all hover:bg-white/10"
                 style={{ writingMode: "vertical-lr" }}
               >
