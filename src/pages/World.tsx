@@ -48,7 +48,7 @@ const flavours = [
     name: "Cola Vice",
     subtitle: "Spiced Cola",
     description:
-      "Cola with warm spice. More structured than typical cola. Vice rarely waits for permission.",
+      "Lime juice, kola nut and warm spice extracts. Cola with warm spice and a structured finish.",
     warning: "WARNING: Evidence of indulgence.",
     ingredients: ["Lime juice", "Kola nut extract", "Raw sugar", "Carbonated"],
     technical:
