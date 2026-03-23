@@ -355,11 +355,8 @@ const World = () => {
                 <p className="text-neutral-600 text-xs leading-[1.9] mb-2 font-mono-light">
                   {f.description}
                 </p>
-                <details className="group w-full mt-2">
-                  <summary className="cursor-pointer list-none flex items-center justify-center gap-1.5 text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light hover:text-neutral-600 transition-colors">
-                     <span className={`underline animate-warning-glitch-${i + 1}`}>{f.warning}</span>
-                     <span className="text-neutral-800 text-xs transition-transform group-open:rotate-180">▾</span>
-                  </summary>
+                <div className="w-full mt-2">
+                  <p className={`text-neutral-800 text-[10px] tracking-[0.2em] uppercase font-bold font-mono-light underline animate-warning-glitch-${i + 1}`}>{f.warning}</p>
                   <div className="mt-4 space-y-3">
                     <p className="text-neutral-500 text-sm italic font-mono-light">
                       {f.closing}
@@ -375,7 +372,7 @@ const World = () => {
                       ))}
                     </div>
                   </div>
-                </details>
+                </div>
               </div>
             ))}
           </div>
