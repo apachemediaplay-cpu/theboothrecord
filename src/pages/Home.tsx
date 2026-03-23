@@ -620,18 +620,21 @@ const Home = () => {
 
         {/* G-Pattern lock overlay */}
         <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden">
-          {/* SVG G pattern — animated */}
-          <svg className="absolute inset-0 w-full h-full contraband-pattern-drift" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="g-pattern" x="0" y="0" width="100" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
-                <circle cx="50" cy="60" r="28" fill="none" stroke="hsl(14, 80%, 45%)" strokeWidth="7" />
-                <line x1="50" y1="60" x2="78" y2="60" stroke="hsl(14, 80%, 45%)" strokeWidth="7" />
-                <line x1="50" y1="60" x2="50" y2="35" stroke="hsl(14, 80%, 45%)" strokeWidth="7" strokeLinecap="round" />
-              </pattern>
-            </defs>
-            <rect width="200%" height="200%" fill="hsl(0, 0%, 5%)" fillOpacity="0.7" />
-            <rect width="200%" height="200%" fill="url(#g-pattern)" opacity="0.85" className="contraband-pattern-flicker" />
-          </svg>
+          {/* Dark base */}
+          <div className="absolute inset-0 bg-neutral-950/70" />
+          {/* SVG G pattern — oversized for seamless drift */}
+          <div className="absolute contraband-pattern-drift" style={{ top: '-50%', left: '-50%', width: '200%', height: '200%' }}>
+            <svg className="w-full h-full contraband-pattern-flicker" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="g-pattern" x="0" y="0" width="100" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
+                  <circle cx="50" cy="60" r="28" fill="none" stroke="hsl(14, 80%, 45%)" strokeWidth="7" />
+                  <line x1="50" y1="60" x2="78" y2="60" stroke="hsl(14, 80%, 45%)" strokeWidth="7" />
+                  <line x1="50" y1="60" x2="50" y2="35" stroke="hsl(14, 80%, 45%)" strokeWidth="7" strokeLinecap="round" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#g-pattern)" opacity="0.85" />
+            </svg>
+          </div>
           <button
             onClick={() => setContactOpen(true)}
             className="relative z-10 px-12 py-5 bg-red-600 hover:bg-red-700 text-white font-control text-lg md:text-xl tracking-[0.25em] uppercase font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-warning-glitch-1"
