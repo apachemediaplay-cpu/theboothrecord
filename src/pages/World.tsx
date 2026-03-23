@@ -35,7 +35,7 @@ const flavours = [
     name: "Bitter Justice",
     subtitle: "Blood Orange + Ginger",
     description:
-      "Blood orange and ginger juice with bitter orange extracts. Dry bitterness with a ginger",
+      "Blood orange and ginger juice with bitter orange extracts. Dry bitterness with a ginger edge.",
     warning: "WARNING: Evidence of indulgence.",
     ingredients: ["Blood orange juice", "Ginger juice", "Raw sugar", "Carbonated"],
     technical:
