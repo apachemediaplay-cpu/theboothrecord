@@ -119,6 +119,23 @@ const fallbackConfessions: ConfessionPreview[] = [
   { confession: "I smile at people I've already decided to cut off.", verdict: "Calculated withdrawal.", verdictHidden: "The goodbye was said in silence.", confessorId: "#1831" },
 ];
 
+  // Typewriter effect for hero warning text
+  useEffect(() => {
+    const text = "IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.";
+    const el = document.querySelector<HTMLSpanElement>(".hero-typewriter-text");
+    if (!el) return;
+    let i = 0;
+    const delay = 2000; // 2s before start
+    const speed = (3000) / text.length; // type over ~3s
+    const timeout = setTimeout(() => {
+      const interval = setInterval(() => {
+        i++;
+        el.textContent = text.slice(0, i);
+        if (i >= text.length) clearInterval(interval);
+      }, speed);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, []);
 
 const Home = () => {
   const [confessions, setConfessions] = useState<ConfessionPreview[]>([]);
