@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
-import useEmblaCarousel from "embla-carousel-react";
-import Autoplay from "embla-carousel-autoplay";
+import SuspectsCarousel from "@/components/SuspectsCarousel";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyOvalLogo from "@/assets/guilty-oval-logo.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
