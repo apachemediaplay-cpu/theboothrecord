@@ -791,4 +791,4 @@ const World = () => {
   );
 };
 
-export default World;
+export default Home;
