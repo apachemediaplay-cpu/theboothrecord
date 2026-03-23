@@ -439,83 +439,54 @@ const Home = () => {
 
       {/* ── Venues ───────────────────────────────────── */}
       <section id="venues" className="px-6 md:px-10 py-16 md:py-24 bg-neutral-50">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className={`${LABEL} mb-4`}>For Trade</p>
-          <h2 className={`${H2} mb-10 md:mb-14`}>
-            Venues
-          </h2>
-
-          <p className="text-neutral-900 text-base leading-[1.8] font-mono-light mb-4">
-            Structured non-alcoholic drinks for serious menus.
-          </p>
-          <p className="text-neutral-900 text-base leading-[1.8] font-mono-light mb-10">
-            GUILTY is a range of premium non-alcoholic drinks built around balance, acidity and flavour structure rather than sweetness.
-          </p>
-
-          <hr className="border-neutral-200 mb-10" />
-
-          <details className="group mb-10">
-            <summary className="cursor-pointer list-none flex items-center justify-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
-              Drinks
-              <span className="text-neutral-400 text-sm transition-transform group-open:rotate-180">▾</span>
-            </summary>
-            <div className="space-y-6 mt-6">
-              <div>
-                <p className="text-neutral-900 text-base font-mono-light font-bold">
-                  Citrus Confessional — Lemon / Yuzu
-                </p>
-                <p className="text-neutral-600 text-base font-mono-light">
-                  Lemon and yuzu juice with citrus oils.
-                </p>
-              </div>
-              <div>
-                <p className="text-neutral-900 text-base font-mono-light font-bold">
-                  Bitter Justice — Blood Orange / Ginger
-                </p>
-                <p className="text-neutral-600 text-base font-mono-light">
-                  Blood orange and ginger juice with bitter orange extracts.
-                </p>
-              </div>
-              <div>
-                <p className="text-neutral-900 text-base font-mono-light font-bold">
-                  Cola Vice — Spiced Cola
-                </p>
-                <p className="text-neutral-600 text-base font-mono-light">
-                  Lime juice, kola nut and warm spice extracts.
-                </p>
-              </div>
-            </div>
-          </details>
-
-          <hr className="border-neutral-200 mb-10" />
-
-          <details className="group mb-10">
-            <summary className="cursor-pointer list-none flex items-center justify-center gap-2 font-control text-lg md:text-xl font-bold text-neutral-900">
-              Product Format
-              <span className="text-neutral-400 text-sm transition-transform group-open:rotate-180">▾</span>
-            </summary>
-            <div className="space-y-4 mt-6">
-              <div>
-                <p className="text-neutral-900 text-base font-mono-light">250ml slim can</p>
-                <p className="text-neutral-900 text-base font-mono-light">24 cans per carton</p>
-              </div>
-              <div>
-                <p className="text-neutral-900 text-base font-mono-light">Carbonated and ready to serve</p>
-                <p className="text-neutral-900 text-base font-mono-light">Shelf stable</p>
-              </div>
-              <p className="text-neutral-900 text-base font-mono-light">
-                Carbonation levels vary slightly between drinks.
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-neutral-300">
+            {/* Column 1 — Headline + Description */}
+            <div className="pb-8 md:pb-0 md:pr-10">
+              <h2 className="font-control text-3xl md:text-4xl font-bold text-neutral-900 mb-6">
+                For Venues
+              </h2>
+              <p className="text-neutral-600 text-sm leading-[1.9] font-mono-light max-w-xs">
+                Non-alcoholic drinks for serious menus. Built around balance, acidity and flavour.
               </p>
             </div>
-          </details>
 
-          <hr className="border-neutral-200 mb-10" />
-          <a
-            href="mailto:trade@houseofguilty.com"
-            className="inline-block px-10 py-4 bg-neutral-900 text-white font-bold text-xs tracking-[0.3em] uppercase font-mono-light transition-all hover:bg-neutral-800 hover:tracking-[0.4em]"
-          >
-            Trade Enquiries
-          </a>
+            {/* Column 2 — Format */}
+            <div className="py-8 md:py-0 md:px-10">
+              <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light mb-6">
+                Format
+              </p>
+              <div className="space-y-3">
+                <p className="text-neutral-900 text-sm font-mono-light">
+                  <span className="font-bold">250ml</span> slim can
+                </p>
+                <p className="text-neutral-900 text-sm font-mono-light">
+                  <span className="font-bold">24</span> per carton
+                </p>
+                <p className="text-neutral-900 text-sm font-mono-light">
+                  <span className="font-bold">Carbonated</span> · Shelf stable
+                </p>
+              </div>
+            </div>
+
+            {/* Column 3 — Note + Trade Enquiries */}
+            <div className="pt-8 md:pt-0 md:pl-10 flex flex-col justify-between">
+              <p className="text-neutral-500 text-xs leading-[1.8] font-mono-light italic text-center md:text-right mb-8">
+                Carbonation levels vary slightly between drinks to suit their flavour profile.
+              </p>
+              <div className="border-t border-neutral-300 pt-5">
+                <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light mb-2">
+                  Trade Enquiries
+                </p>
+                <a
+                  href="mailto:trade@houseofguilty.com"
+                  className="text-neutral-900 text-sm font-mono-light underline underline-offset-4 hover:opacity-70 transition-opacity"
+                >
+                  trade@houseofguilty.com ↗
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
