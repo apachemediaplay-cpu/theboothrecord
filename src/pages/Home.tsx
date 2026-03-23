@@ -244,9 +244,11 @@ const Home = () => {
 
         {/* Centre warning text */}
         <div className="relative z-10 flex flex-col items-center text-center px-6 md:px-20">
-          <h1 className="font-mono text-base sm:text-lg md:text-2xl lg:text-3xl font-normal tracking-[0.25em] uppercase text-white leading-[2] md:leading-[2.2] max-w-4xl">
-            IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.
-          </h1>
+          <div className="bg-black/40 backdrop-blur-[2px] px-8 py-6 md:px-14 md:py-10">
+            <h1 className="font-mono text-base sm:text-lg md:text-2xl lg:text-3xl font-normal tracking-[0.25em] uppercase text-white leading-[2] md:leading-[2.2] max-w-4xl">
+              IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.
+            </h1>
+          </div>
         </div>
 
         {/* Bottom logo with glitch */}
