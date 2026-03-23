@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import suspectsSlide1 from "@/assets/carousel/suspects-1.png";
-import suspectsSlide2 from "@/assets/carousel/suspects-2.png";
-import suspectsSlide3 from "@/assets/carousel/suspects-3.png";
 
 const slides = [
-  { src: suspectsSlide1, alt: "GUILTY lifestyle flat lay" },
-  { src: suspectsSlide2, alt: "GUILTY product arrangement" },
-  { src: suspectsSlide3, alt: "GUILTY bar moment" },
+  { type: "image" as const, src: suspectsSlide1, alt: "GUILTY lifestyle flat lay" },
+  { type: "color" as const, color: "bg-red-600" },
+  { type: "color" as const, color: "bg-black" },
 ];
 
 const SuspectsCarousel = () => {
@@ -35,11 +33,15 @@ const SuspectsCarousel = () => {
         <div className="flex">
           {slides.map((slide, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
-              <img
-                src={slide.src}
-                alt={slide.alt}
-                className="w-full h-[50vh] md:h-[70vh] object-cover"
-              />
+              {slide.type === "image" ? (
+                <img
+                  src={slide.src}
+                  alt={slide.alt}
+                  className="w-full h-[50vh] md:h-[70vh] object-cover"
+                />
+              ) : (
+                <div className={`w-full h-[50vh] md:h-[70vh] ${slide.color}`} />
+              )}
             </div>
           ))}
         </div>
