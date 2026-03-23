@@ -491,7 +491,7 @@ const Home = () => {
       </section>
 
       {/* ── Contraband ───────────────────────────────── */}
-      <section id="contraband" className={`${SECTION} bg-neutral-900`}>
+      <section id="contraband" className={`${SECTION} bg-neutral-900 relative`}>
         <div className="max-w-5xl mx-auto">
 
           {/* Contraband */}
@@ -575,6 +575,18 @@ const Home = () => {
               );
             })}
           </div>
+        </div>
+
+        {/* G-Pattern lock overlay */}
+        <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ backgroundImage: `url(${guiltyPatternImg})`, backgroundSize: '300px', backgroundRepeat: 'repeat', opacity: 0.92 }}>
+          <div className="absolute inset-0 bg-black/40" />
+          <button
+            onClick={() => setContactOpen(true)}
+            className="relative z-10 px-12 py-5 bg-red-600 hover:bg-red-700 text-white font-control text-lg md:text-xl tracking-[0.25em] uppercase font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(220,38,38,0.4)]"
+          >
+            <Lock className="inline-block mr-3 -mt-0.5" size={20} />
+            Request Access
+          </button>
         </div>
       </section>
 
