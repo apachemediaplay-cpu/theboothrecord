@@ -28,7 +28,7 @@ const flavours = [
     technical:
       "~5.5g sugar per 100ml. Built on Japanese yuzu juice with natural citrus extracts.",
     closing: "The first one rarely needs explaining.",
-    notes: ["Lemon", "Yuzu"],
+    notes: ["Citrus", "Light", "Aromatic"],
     image: citrusConfessional,
   },
   {
