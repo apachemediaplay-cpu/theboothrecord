@@ -286,6 +286,15 @@ const Home = () => {
         </div>
 
         <style>{`
+          .hero-cursor::after {
+            content: '▌';
+            animation: cursorBlink 0.7s steps(1) infinite;
+            margin-left: 2px;
+          }
+          @keyframes cursorBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+          }
           .glitch-btn {
             position: relative;
             overflow: hidden;
