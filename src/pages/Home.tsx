@@ -478,12 +478,12 @@ const Home = () => {
                 <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light mb-2">
                   Trade Enquiries
                 </p>
-                <a
-                  href="mailto:trade@houseofguilty.com"
+                <button
+                  onClick={() => setContactOpen(true)}
                   className="text-neutral-900 text-sm font-mono-light underline underline-offset-4 hover:opacity-70 transition-opacity"
                 >
                   trade@houseofguilty.com ↗
-                </a>
+                </button>
               </div>
             </div>
           </div>
