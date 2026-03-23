@@ -355,6 +355,7 @@ const Home = () => {
             { label: "VENUES", target: "venues" },
             { label: "CONTRABAND", target: "contraband" },
             { label: "THE BOOTH", target: "confessional" },
+            { label: "CONTACT", target: "contact" },
           ].map((item, i, arr) => (
             <div key={item.target} className="flex flex-col items-center">
               <button
