@@ -664,6 +664,18 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ── Surveillance Note ────────────────────────── */}
+      <section className="bg-neutral-100 px-6 md:px-10 py-24 md:py-36">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-neutral-400 text-[10px] md:text-xs tracking-[0.35em] uppercase font-mono mb-8">
+            SURVEILLANCE NOTE &nbsp;/ &nbsp;REF: 4.1 &nbsp;/ &nbsp;STATUS: RECORDING
+          </p>
+          <h2 className="font-mono text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] uppercase text-neutral-900 leading-[1.4] md:leading-[1.3]">
+            <span className="surveillance-typewriter-text" />
+          </h2>
+        </div>
+      </section>
+
       {/* ── Confessional ─────────────────────────────── */}
       <section
         id="confessional"
