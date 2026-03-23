@@ -208,7 +208,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — video-based) ──────────── */}
-      <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
+      <section className="relative h-screen flex flex-col items-center justify-between overflow-hidden">
         {/* Static fallback image — always visible behind videos */}
         <img
           src={heroCan}
@@ -232,68 +232,74 @@ const Home = () => {
         ))}
         {/* Glitch overlay — flashes on transition */}
         <div className="absolute inset-0 pointer-events-none z-[1] hero-glitch-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <div className="relative z-10 flex flex-col items-center text-center px-6 pb-16 md:pb-24">
-          <div className="relative h-16 sm:h-20 md:h-28 mb-8">
-            <img src={guiltyLogoRed} alt="GUILTY" className="h-full w-auto relative z-10" />
-            <img src={guiltyLogoRed} alt="" className="absolute inset-0 h-full w-auto opacity-70 animate-warning-glitch-1" aria-hidden="true" />
-            <img src={guiltyLogoRed} alt="" className="absolute inset-0 h-full w-auto opacity-70 animate-warning-glitch-2" aria-hidden="true" />
-          </div>
-          <h1 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-6 text-white">
-            of Indulgence.
-          </h1>
-          <p className="text-white/60 text-sm leading-[1.9] font-mono-light max-w-md mb-10 tracking-wide">
-            A world built around flavour, ritual and things that don't explain themselves.
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40" />
+
+        {/* Top notice */}
+        <div className="relative z-10 pt-10 md:pt-14">
+          <p className="text-white/80 text-[10px] md:text-xs tracking-[0.4em] uppercase font-mono text-center">
+            NOTICE &nbsp;/ &nbsp;REF: 7.4 &nbsp;/STATUS ACTIVE
           </p>
-          <style>{`
-            .glitch-btn {
-              position: relative;
-              overflow: hidden;
-            }
-            .glitch-btn::before,
-            .glitch-btn::after {
-              content: attr(data-text);
-              position: absolute;
-              inset: 0;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              background: transparent;
-              color: white;
-              opacity: 0;
-              pointer-events: none;
-            }
-            .glitch-btn:hover::before {
-              opacity: 1;
-              animation: glitchSlice1 200ms infinite;
-              clip-path: inset(20% 0 50% 0);
-              text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
-            }
-            .glitch-btn:hover::after {
-              opacity: 1;
-              animation: glitchSlice2 200ms infinite;
-              clip-path: inset(60% 0 10% 0);
-              text-shadow: -2px 0 #ff0000, 2px 0 #00ffff;
-            }
-            @keyframes glitchSlice1 {
-              0% { transform: translateX(0); }
-              20% { transform: translateX(-4px); }
-              40% { transform: translateX(6px); }
-              60% { transform: translateX(-2px); }
-              80% { transform: translateX(4px); }
-              100% { transform: translateX(0); }
-            }
-            @keyframes glitchSlice2 {
-              0% { transform: translateX(0); }
-              20% { transform: translateX(5px); }
-              40% { transform: translateX(-3px); }
-              60% { transform: translateX(4px); }
-              80% { transform: translateX(-6px); }
-              100% { transform: translateX(0); }
-            }
-          `}</style>
         </div>
 
+        {/* Centre warning text */}
+        <div className="relative z-10 flex flex-col items-center text-center px-6 md:px-20">
+          <h1 className="font-mono text-base sm:text-lg md:text-2xl lg:text-3xl font-normal tracking-[0.25em] uppercase text-white leading-[2] md:leading-[2.2] max-w-4xl">
+            IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.
+          </h1>
+        </div>
+
+        {/* Bottom oval logo */}
+        <div className="relative z-10 pb-10 md:pb-16 flex flex-col items-center">
+          <img src={guiltyOvalLogo} alt="GUILTY" className="h-20 sm:h-24 md:h-28 w-auto" />
+        </div>
+
+        <style>{`
+          .glitch-btn {
+            position: relative;
+            overflow: hidden;
+          }
+          .glitch-btn::before,
+          .glitch-btn::after {
+            content: attr(data-text);
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: white;
+            opacity: 0;
+            pointer-events: none;
+          }
+          .glitch-btn:hover::before {
+            opacity: 1;
+            animation: glitchSlice1 200ms infinite;
+            clip-path: inset(20% 0 50% 0);
+            text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+          }
+          .glitch-btn:hover::after {
+            opacity: 1;
+            animation: glitchSlice2 200ms infinite;
+            clip-path: inset(60% 0 10% 0);
+            text-shadow: -2px 0 #ff0000, 2px 0 #00ffff;
+          }
+          @keyframes glitchSlice1 {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-2px); }
+            80% { transform: translateX(4px); }
+            100% { transform: translateX(0); }
+          }
+          @keyframes glitchSlice2 {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(5px); }
+            40% { transform: translateX(-3px); }
+            60% { transform: translateX(4px); }
+            80% { transform: translateX(-6px); }
+            100% { transform: translateX(0); }
+          }
+        `}</style>
       </section>
 
       {/* Vertical nav – fixed left side, visible across all sections */}
