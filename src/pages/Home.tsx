@@ -129,6 +129,23 @@ const Home = () => {
   const lastScrollY = useRef(0);
   const heroVideoIndex = useRef(0);
 
+  // Typewriter effect for hero warning text
+  useEffect(() => {
+    const text = "IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.";
+    const el = document.querySelector<HTMLSpanElement>(".hero-typewriter-text");
+    if (!el) return;
+    let i = 0;
+    const speed = 3000 / text.length;
+    const timeout = setTimeout(() => {
+      const interval = setInterval(() => {
+        i++;
+        el.textContent = text.slice(0, i);
+        if (i >= text.length) clearInterval(interval);
+      }, speed);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, []);
+
   // Cycle hero videos — rapid 2s clips with glitch
   useEffect(() => {
     const videos = document.querySelectorAll<HTMLVideoElement>(".hero-video");
