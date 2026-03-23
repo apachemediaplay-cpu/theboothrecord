@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyOvalLogo from "@/assets/guilty-oval-logo.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
@@ -13,6 +15,9 @@ import contextRetail from "@/assets/retail/context-retail.png";
 import contextSpirits from "@/assets/retail/context-spirits.png";
 import contextStudio from "@/assets/retail/context-studio.png";
 import socialInterrogation from "@/assets/social/interrogation.png";
+import suspectsSlide1 from "@/assets/carousel/suspects-1.png";
+import suspectsSlide2 from "@/assets/carousel/suspects-2.png";
+import suspectsSlide3 from "@/assets/carousel/suspects-3.png";
 
 import socialPressConference from "@/assets/social/press-conference.png";
 import socialAirportCustoms from "@/assets/social/airport-customs.png";
