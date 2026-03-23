@@ -323,3 +323,25 @@
 .contraband-pulse {
   animation: contrabandPulse 2.5s ease-in-out infinite;
 }
+
+/* Slow diagonal drift for the G-pattern overlay */
+@keyframes contrabandDrift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-100px, -120px); }
+}
+
+.contraband-pattern-drift {
+  animation: contrabandDrift 12s linear infinite;
+}
+
+/* Intermittent flicker on the pattern */
+@keyframes contrabandFlicker {
+  0%, 92%, 94%, 96%, 100% { opacity: 0.85; }
+  93% { opacity: 0.4; }
+  95% { opacity: 0.95; }
+  97% { opacity: 0.55; }
+}
+
+.contraband-pattern-flicker {
+  animation: contrabandFlicker 4s ease-in-out infinite;
+}
