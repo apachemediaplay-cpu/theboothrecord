@@ -620,8 +620,8 @@ const Home = () => {
 
         {/* G-Pattern lock overlay */}
         <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden">
-          {/* SVG G pattern */}
-          <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          {/* SVG G pattern — animated */}
+          <svg className="absolute inset-0 w-full h-full contraband-pattern-drift" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="g-pattern" x="0" y="0" width="100" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
                 <circle cx="50" cy="60" r="28" fill="none" stroke="hsl(14, 80%, 45%)" strokeWidth="7" />
@@ -629,8 +629,8 @@ const Home = () => {
                 <line x1="50" y1="60" x2="50" y2="35" stroke="hsl(14, 80%, 45%)" strokeWidth="7" strokeLinecap="round" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="hsl(0, 0%, 5%)" fillOpacity="0.7" />
-            <rect width="100%" height="100%" fill="url(#g-pattern)" opacity="0.85" />
+            <rect width="200%" height="200%" fill="hsl(0, 0%, 5%)" fillOpacity="0.7" />
+            <rect width="200%" height="200%" fill="url(#g-pattern)" opacity="0.85" className="contraband-pattern-flicker" />
           </svg>
           <button
             onClick={() => setContactOpen(true)}
