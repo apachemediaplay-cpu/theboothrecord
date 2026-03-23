@@ -134,16 +134,26 @@ const Home = () => {
     const text = "IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.";
     const el = document.querySelector<HTMLSpanElement>(".hero-typewriter-text");
     if (!el) return;
+    el.classList.add("hero-cursor");
     let i = 0;
-    const speed = 3000 / text.length;
-    const timeout = setTimeout(() => {
-      const interval = setInterval(() => {
-        i++;
-        el.textContent = text.slice(0, i);
-        if (i >= text.length) clearInterval(interval);
-      }, speed);
-    }, 2000);
-    return () => clearTimeout(timeout);
+    let tid: number;
+    const typeNext = () => {
+      i++;
+      el.textContent = text.slice(0, i);
+      if (i >= text.length) {
+        // Remove cursor after a beat
+        setTimeout(() => el.classList.remove("hero-cursor"), 1500);
+        return;
+      }
+      // Human-like variable speed: base 65ms + random 0-80ms + pause after punctuation/spaces
+      let delay = 65 + Math.random() * 80;
+      const ch = text[i - 1];
+      if (ch === "." || ch === ",") delay += 300;
+      else if (ch === " ") delay += 40 + Math.random() * 60;
+      tid = window.setTimeout(typeNext, delay);
+    };
+    const startTimeout = setTimeout(() => typeNext(), 2000);
+    return () => { clearTimeout(startTimeout); clearTimeout(tid); };
   }, []);
 
   // Cycle hero videos — rapid 2s clips with glitch
@@ -276,6 +286,15 @@ const Home = () => {
         </div>
 
         <style>{`
+          .hero-cursor::after {
+            content: '▌';
+            animation: cursorBlink 0.7s steps(1) infinite;
+            margin-left: 2px;
+          }
+          @keyframes cursorBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+          }
           .glitch-btn {
             position: relative;
             overflow: hidden;
