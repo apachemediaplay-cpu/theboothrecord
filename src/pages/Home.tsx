@@ -119,7 +119,7 @@ const fallbackConfessions: ConfessionPreview[] = [
 ];
 
 
-const World = () => {
+const Home = () => {
   const [confessions, setConfessions] = useState<ConfessionPreview[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [confessionCount, setConfessionCount] = useState(1842);
