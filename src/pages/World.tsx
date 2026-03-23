@@ -334,7 +334,7 @@ const World = () => {
               The Suspects
             </h2>
            <p className="text-center text-muted-foreground text-sm md:text-base tracking-wide mb-20 md:mb-28">
-             Three drinks. Built for flavour rather than sweetness.
+             Three drinks. All changed.
            </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
             {flavours.map((f, i) => (
