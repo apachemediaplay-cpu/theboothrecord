@@ -315,8 +315,8 @@ const Home = () => {
         </div>
 
         {/* Centre warning text — typewriter */}
-        <div className="relative z-10 flex flex-col items-center text-center px-6 md:px-20">
-          <h1 className="font-mono text-base sm:text-lg md:text-2xl lg:text-3xl font-normal tracking-[0.25em] uppercase text-white leading-[2] md:leading-[2.2] max-w-4xl hero-typewriter" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.9)' }}>
+        <div className="relative z-10 flex flex-col items-start text-left px-6 md:px-20 w-full max-w-5xl">
+          <h1 className="font-mono text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] uppercase text-white leading-[1.4] md:leading-[1.3] hero-typewriter" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.9)' }}>
             <span className="hero-typewriter-text" />
           </h1>
         </div>
