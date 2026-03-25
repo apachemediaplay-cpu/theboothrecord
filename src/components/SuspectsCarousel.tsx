@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import suspectsSlide1 from "@/assets/carousel/suspects-1.png";
+import guiltyGOrange from "@/assets/guilty-g-orange.svg";
 
 const slides = [
   { type: "image" as const, src: suspectsSlide1, alt: "GUILTY lifestyle flat lay" },
@@ -47,6 +48,9 @@ const SuspectsCarousel = () => {
                       <p className="absolute top-4 md:top-8 left-4 md:left-8 font-mono text-white text-xs md:text-sm tracking-wide" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>
                         Carrying soda into a designated wellness facility
                       </p>
+
+                      {/* G icon above product card */}
+                      <img src={guiltyGOrange} alt="GUILTY G" className="absolute bottom-[calc(3rem+4.5rem)] md:bottom-[calc(4rem+5.5rem)] left-4 md:left-8 w-10 h-10 md:w-14 md:h-14" />
 
                       {/* Bottom-left product card */}
                       <div className="absolute bottom-12 md:bottom-16 left-4 md:left-8 bg-white text-neutral-900 px-4 md:px-6 py-3 md:py-4 max-w-xs md:max-w-sm">
