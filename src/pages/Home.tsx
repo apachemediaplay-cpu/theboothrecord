@@ -614,7 +614,7 @@ const Home = () => {
                     {/* Request Access button */}
                     <a
                       href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
-                      className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:border-red-500/60 hover:text-red-400 hover:bg-red-500/5"
+                      className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:border-guilty/60 hover:text-guilty-400 hover:bg-guilty/5"
                     >
                       <Lock size={10} className="opacity-60" />
                       <span className="group-hover/btn:hidden">Request Access</span>
