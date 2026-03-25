@@ -295,7 +295,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — video-based) ──────────── */}
-      <section className="relative h-screen flex flex-col items-center justify-between overflow-hidden">
+      <section className="scroll-stack relative h-screen flex flex-col items-center justify-between overflow-hidden" style={{ zIndex: 1 }}>
         {/* Static fallback image — always visible behind videos */}
         <img
           src={heroCan}
@@ -440,7 +440,7 @@ const Home = () => {
       </div>
 
       {/* ── The Drinks ───────────────────────────────── */}
-      <section id="drinks" className={`${SECTION} bg-white`}>
+      <section id="drinks" className={`scroll-stack ${SECTION} bg-white`} style={{ zIndex: 2 }}>
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}><p className={`${LABEL} text-center mb-4`}>The Drinks</p></p>
            <h2 className={`${H2} text-center mb-4`}>
@@ -501,7 +501,7 @@ const Home = () => {
       </section>
 
       {/* ── Venues ───────────────────────────────────── */}
-      <section id="venues" className="px-6 md:px-10 py-16 md:py-24 bg-neutral-50">
+      <section id="venues" className="scroll-stack px-6 md:px-10 py-16 md:py-24 bg-neutral-50" style={{ zIndex: 3 }}>
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-neutral-300">
             {/* Column 1 — Headline + Description */}
@@ -556,7 +556,8 @@ const Home = () => {
       {/* ── Contraband ───────────────────────────────── */}
       <section
         id="contraband"
-        className={`${SECTION} bg-neutral-900 relative overflow-hidden`}
+        className={`scroll-stack ${SECTION} bg-neutral-900 relative overflow-hidden`}
+        style={{ zIndex: 4 }}
         ref={contrabandRef}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
@@ -740,7 +741,7 @@ const Home = () => {
       </section>
 
       {/* ── From the Scene ──────────────────────────── */}
-      <section className="bg-white px-0 py-20 md:py-28">
+      <section className="scroll-stack bg-white px-0 py-20 md:py-28" style={{ zIndex: 5 }}>
         <div className="max-w-5xl mx-auto px-6 md:px-10">
           <div className="text-center mb-16 md:mb-20">
             <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
@@ -802,7 +803,7 @@ const Home = () => {
       </section>
 
       {/* ── Surveillance Note ────────────────────────── */}
-      <section className="bg-neutral-100 px-6 md:px-10 py-24 md:py-36">
+      <section className="scroll-stack bg-neutral-100 px-6 md:px-10 py-24 md:py-36" style={{ zIndex: 6 }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-neutral-400 text-[10px] md:text-xs tracking-[0.35em] uppercase font-mono mb-8">
             SURVEILLANCE NOTE &nbsp;/ &nbsp;REF: 4.1 &nbsp;/ &nbsp;STATUS: RECORDING
@@ -817,7 +818,8 @@ const Home = () => {
       <section
         id="confessional"
         ref={scanRef}
-        className="relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
+        className="scroll-stack relative px-6 md:px-10 py-28 md:py-40 bg-neutral-950 overflow-hidden"
+        style={{ zIndex: 7 }}
       >
         {/* Background confession stream */}
         {(() => {
@@ -985,7 +987,7 @@ const Home = () => {
       </section>
 
       {/* ── Footer ───────────────────────────────────── */}
-      <footer className="px-6 py-14 border-t border-neutral-100 bg-white">
+      <footer className="scroll-stack px-6 py-14 border-t border-neutral-100 bg-white" style={{ zIndex: 8 }}>
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-4">
           
           <p className="text-neutral-400 text-[10px] tracking-[0.35em] uppercase font-mono-light">

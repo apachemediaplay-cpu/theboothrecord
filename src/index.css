@@ -164,6 +164,25 @@
 }
 
 @layer utilities {
+  /* ── Scroll stacking parallax ─────────────────────── */
+  .scroll-stack {
+    position: sticky;
+    top: 0;
+    will-change: transform;
+    box-shadow: 0 -20px 60px -10px rgba(0, 0, 0, 0.15);
+  }
+
+  .scroll-stack:first-child {
+    box-shadow: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-stack {
+      position: relative;
+      box-shadow: none;
+    }
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
