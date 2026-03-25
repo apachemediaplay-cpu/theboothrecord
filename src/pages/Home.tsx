@@ -295,7 +295,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — video-based) ──────────── */}
-      <section className="relative h-screen flex flex-col items-center justify-between overflow-hidden">
+      <section className="scroll-stack relative h-screen flex flex-col items-center justify-between overflow-hidden" style={{ zIndex: 1 }}>
         {/* Static fallback image — always visible behind videos */}
         <img
           src={heroCan}
