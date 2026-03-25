@@ -345,3 +345,49 @@
 .contraband-pattern-flicker {
   animation: contrabandFlicker 4s ease-in-out infinite;
 }
+
+/* ── Contraband CTA always-active glitch ─────────────── */
+
+.contraband-cta-glitch {
+  position: relative;
+}
+
+.contraband-cta-glitch::before,
+.contraband-cta-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: hsl(var(--primary-foreground));
+  pointer-events: none;
+}
+
+.contraband-cta-glitch::before {
+  animation: ctaGlitchSlice1 4s ease-in-out infinite;
+  clip-path: inset(20% 0 50% 0);
+  text-shadow: 2px 0 #ff4800, -2px 0 #00ffff;
+}
+
+.contraband-cta-glitch::after {
+  animation: ctaGlitchSlice2 4s ease-in-out infinite;
+  clip-path: inset(60% 0 10% 0);
+  text-shadow: -2px 0 #ff4800, 2px 0 #00ffff;
+}
+
+@keyframes ctaGlitchSlice1 {
+  0%, 92%, 96%, 100% { opacity: 0; transform: translateX(0); }
+  93% { opacity: 1; transform: translateX(-4px); }
+  94% { opacity: 1; transform: translateX(6px); }
+  95% { opacity: 1; transform: translateX(-2px); }
+}
+
+@keyframes ctaGlitchSlice2 {
+  0%, 90%, 95%, 100% { opacity: 0; transform: translateX(0); }
+  91% { opacity: 1; transform: translateX(5px); }
+  92% { opacity: 1; transform: translateX(-3px); }
+  93% { opacity: 1; transform: translateX(4px); }
+  94% { opacity: 1; transform: translateX(-6px); }
+}
