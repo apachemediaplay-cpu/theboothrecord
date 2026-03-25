@@ -1013,10 +1013,11 @@ const Home = () => {
 
                   <button
                     type="submit"
-                    className="glitch-btn w-full bg-white text-black font-bold text-[11px] tracking-[0.25em] uppercase font-mono py-4 rounded hover:bg-white/90 transition-colors mt-2"
-                    data-text="SUBMIT"
+                    disabled={contactSending}
+                    className="glitch-btn w-full bg-white text-black font-bold text-[11px] tracking-[0.25em] uppercase font-mono py-4 rounded hover:bg-white/90 transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-text={contactSending ? "SENDING..." : "SUBMIT"}
                   >
-                    SUBMIT
+                    {contactSending ? "SENDING..." : "SUBMIT"}
                   </button>
                 </form>
               </>
