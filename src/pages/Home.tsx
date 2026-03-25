@@ -246,6 +246,14 @@ const Home = () => {
       const currentY = window.scrollY;
       setNavVisible(currentY < 10 || currentY < lastScrollY.current);
       lastScrollY.current = currentY;
+
+      // Contraband parallax
+      if (contrabandRef.current) {
+        const rect = contrabandRef.current.getBoundingClientRect();
+        const sectionCenter = rect.top + rect.height / 2;
+        const viewCenter = window.innerHeight / 2;
+        setContrabandParallax(viewCenter - sectionCenter);
+      }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
