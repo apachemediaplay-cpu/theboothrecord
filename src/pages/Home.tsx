@@ -803,7 +803,7 @@ const Home = () => {
       </section>
 
       {/* ── Surveillance Note ────────────────────────── */}
-      <section className="bg-neutral-100 px-6 md:px-10 py-24 md:py-36">
+      <section className="scroll-stack bg-neutral-100 px-6 md:px-10 py-24 md:py-36" style={{ zIndex: 6 }}>
         <div className="max-w-4xl mx-auto">
           <p className="text-neutral-400 text-[10px] md:text-xs tracking-[0.35em] uppercase font-mono mb-8">
             SURVEILLANCE NOTE &nbsp;/ &nbsp;REF: 4.1 &nbsp;/ &nbsp;STATUS: RECORDING
