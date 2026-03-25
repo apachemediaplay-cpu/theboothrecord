@@ -987,7 +987,7 @@ const Home = () => {
       </section>
 
       {/* ── Footer ───────────────────────────────────── */}
-      <footer className="px-6 py-14 border-t border-neutral-100 bg-white">
+      <footer className="scroll-stack px-6 py-14 border-t border-neutral-100 bg-white" style={{ zIndex: 8 }}>
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-4">
           
           <p className="text-neutral-400 text-[10px] tracking-[0.35em] uppercase font-mono-light">
