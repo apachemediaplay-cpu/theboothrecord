@@ -741,7 +741,7 @@ const Home = () => {
       </section>
 
       {/* ── From the Scene ──────────────────────────── */}
-      <section className="bg-white px-0 py-20 md:py-28" style={{ zIndex: 5 }}>
+      <section className="relative bg-white px-0 py-20 md:py-28" style={{ zIndex: 5 }}>
         <div className="max-w-5xl mx-auto px-6 md:px-10">
           <div className="text-center mb-16 md:mb-20">
             <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
