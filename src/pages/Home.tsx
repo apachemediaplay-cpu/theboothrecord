@@ -134,6 +134,8 @@ const Home = () => {
   const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", venue: "", message: "" });
   const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [contrabandEmail, setContrabandEmail] = useState("");
+  const [contrabandSubmitted, setContrabandSubmitted] = useState(false);
 
   // Typewriter effect for hero warning text
   useEffect(() => {
@@ -644,13 +646,34 @@ const Home = () => {
               <rect width="100%" height="100%" fill="url(#g-pattern)" />
             </svg>
           </div>
-          <button
-            onClick={() => setContactOpen(true)}
-            className="relative z-10 inline-block px-12 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em]"
-          >
-            <Lock className="inline-block mr-3 -mt-0.5" size={14} />
-            Request Access
-          </button>
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            {contrabandSubmitted ? (
+              <p className="text-white font-mono text-xs tracking-[0.3em] uppercase">Request Logged</p>
+            ) : (
+              <>
+                <div className="flex items-stretch">
+                  <input
+                    type="email"
+                    placeholder="Enter email"
+                    value={contrabandEmail}
+                    onChange={(e) => setContrabandEmail(e.target.value)}
+                    className="px-4 py-4 bg-white text-neutral-900 text-xs font-mono tracking-wide outline-none w-56 md:w-72 placeholder:text-neutral-400"
+                  />
+                  <button
+                    onClick={() => {
+                      if (contrabandEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contrabandEmail)) {
+                        setContrabandSubmitted(true);
+                      }
+                    }}
+                    className="px-6 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase border-l border-neutral-200 transition-all hover:opacity-90 hover:tracking-[0.4em] whitespace-nowrap"
+                  >
+                    <Lock className="inline-block mr-2 -mt-0.5" size={14} />
+                    Request Access
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </section>
 
