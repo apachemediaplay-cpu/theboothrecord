@@ -362,7 +362,7 @@ const Home = () => {
             opacity: 1;
             animation: glitchSlice1 200ms infinite;
             clip-path: inset(20% 0 50% 0);
-            text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+            text-shadow: 2px 0 #ff4800, -2px 0 #00ffff;
           }
           .glitch-btn:hover::after {
             opacity: 1;
