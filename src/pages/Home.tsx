@@ -136,6 +136,9 @@ const Home = () => {
   const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [contactSending, setContactSending] = useState(false);
+  const [contrabandMouse, setContrabandMouse] = useState<{ x: number; y: number } | null>(null);
+  const [contrabandParallax, setContrabandParallax] = useState(0);
+  const contrabandRef = useRef<HTMLElement>(null);
 
   // Typewriter effect for hero warning text
   useEffect(() => {
