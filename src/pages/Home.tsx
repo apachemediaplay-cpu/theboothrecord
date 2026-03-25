@@ -602,7 +602,7 @@ const Home = () => {
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${dotColor} contraband-pulse`} />
-                        <span className="text-red-500/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                        <span className="text-guilty/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
                           {drop.status}
                         </span>
                       </span>
