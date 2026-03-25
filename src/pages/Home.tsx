@@ -431,7 +431,7 @@ const Home = () => {
       {/* ── The Drinks ───────────────────────────────── */}
       <section id="drinks" className={`${SECTION} bg-white`}>
         <div className="max-w-6xl mx-auto">
-          <p className={`${LABEL} text-center mb-4`}>The Range</p>
+          <p className={`${LABEL} text-center mb-4`}><p className={`${LABEL} text-center mb-4`}>The Drinks</p></p>
            <h2 className={`${H2} text-center mb-4`}>
               The Suspects
             </h2>

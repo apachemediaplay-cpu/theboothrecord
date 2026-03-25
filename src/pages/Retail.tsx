@@ -203,7 +203,7 @@ const Retail = () => {
       {/* ── Flavour Block ────────────────────────────── */}
       <section className="px-6 md:px-10 py-28 md:py-40 bg-white text-neutral-900">
         <div className="max-w-6xl mx-auto">
-          <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light text-center mb-4">The Range</p>
+          <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light text-center mb-4"><p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light text-center mb-4">The Drinks</p></p>
           <h2 className="font-control text-3xl md:text-5xl font-bold text-neutral-900 text-center mb-20 md:mb-28">
             Three Signature Flavours
           </h2>
