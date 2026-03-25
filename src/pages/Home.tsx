@@ -646,7 +646,7 @@ const Home = () => {
           </div>
           <button
             onClick={() => setContactOpen(true)}
-            className="relative z-10 px-12 py-5 bg-red-600 hover:bg-red-700 text-white font-control text-lg md:text-xl tracking-[0.25em] uppercase font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-warning-glitch-1"
+            className="relative z-10 px-12 py-5 bg-guilty-600 hover:bg-guilty-700 text-white font-control text-lg md:text-xl tracking-[0.25em] uppercase font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(255,72,0,0.4)] animate-warning-glitch-1"
           >
             <Lock className="inline-block mr-3 -mt-0.5" size={20} />
             Request Access
