@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import suspectsSlide1 from "@/assets/carousel/suspects-1.png";
+import guiltyGOrange from "@/assets/guilty-g-orange.svg";
 
 const slides = [
   { type: "image" as const, src: suspectsSlide1, alt: "GUILTY lifestyle flat lay" },
