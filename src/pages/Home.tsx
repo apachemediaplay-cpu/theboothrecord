@@ -564,7 +564,7 @@ const Home = () => {
             {contrabandDrops.map((drop) => {
               const dotColor =
                 drop.status === "RESTRICTED"
-                  ? "bg-red-500"
+                  ? "bg-guilty"
                   : drop.status === "REFORMED"
                   ? "bg-amber-500"
                   : "bg-neutral-500";
