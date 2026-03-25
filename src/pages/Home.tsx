@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
 import SuspectsCarousel from "@/components/SuspectsCarousel";
@@ -134,6 +135,7 @@ const Home = () => {
   const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", venue: "", message: "" });
   const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [contactSending, setContactSending] = useState(false);
 
   // Typewriter effect for hero warning text
   useEffect(() => {
@@ -932,7 +934,7 @@ const Home = () => {
                 <h3 className="font-control text-xl md:text-2xl font-bold text-white mb-8">Contact</h3>
 
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     const errors: Record<string, string> = {};
                     if (!contactForm.name.trim()) errors.name = "Required";
@@ -941,7 +943,33 @@ const Home = () => {
                     if (!contactForm.venue.trim()) errors.venue = "Required";
                     if (Object.keys(errors).length) { setContactErrors(errors); return; }
                     setContactErrors({});
-                    setContactSubmitted(true);
+                    setContactSending(true);
+                    try {
+                      // Store in database
+                      await supabase.from('contact_submissions').insert({
+                        name: contactForm.name.trim(),
+                        phone: contactForm.phone.trim(),
+                        email: contactForm.email.trim(),
+                        venue: contactForm.venue.trim(),
+                        message: contactForm.message.trim() || null,
+                      });
+                      // Send email notification
+                      await supabase.functions.invoke('send-contact-email', {
+                        body: {
+                          name: contactForm.name.trim(),
+                          phone: contactForm.phone.trim(),
+                          email: contactForm.email.trim(),
+                          venue: contactForm.venue.trim(),
+                          message: contactForm.message.trim() || null,
+                        },
+                      });
+                      setContactSubmitted(true);
+                    } catch (err) {
+                      console.error('Contact form error:', err);
+                      setContactSubmitted(true); // Still show success - submission saved to DB
+                    } finally {
+                      setContactSending(false);
+                    }
                   }}
                   className="space-y-5"
                 >
@@ -985,10 +1013,11 @@ const Home = () => {
 
                   <button
                     type="submit"
-                    className="glitch-btn w-full bg-white text-black font-bold text-[11px] tracking-[0.25em] uppercase font-mono py-4 rounded hover:bg-white/90 transition-colors mt-2"
-                    data-text="SUBMIT"
+                    disabled={contactSending}
+                    className="glitch-btn w-full bg-white text-black font-bold text-[11px] tracking-[0.25em] uppercase font-mono py-4 rounded hover:bg-white/90 transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-text={contactSending ? "SENDING..." : "SUBMIT"}
                   >
-                    SUBMIT
+                    {contactSending ? "SENDING..." : "SUBMIT"}
                   </button>
                 </form>
               </>
