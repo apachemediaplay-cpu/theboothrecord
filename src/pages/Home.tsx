@@ -362,13 +362,13 @@ const Home = () => {
             opacity: 1;
             animation: glitchSlice1 200ms infinite;
             clip-path: inset(20% 0 50% 0);
-            text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+            text-shadow: 2px 0 #ff4800, -2px 0 #00ffff;
           }
           .glitch-btn:hover::after {
             opacity: 1;
             animation: glitchSlice2 200ms infinite;
             clip-path: inset(60% 0 10% 0);
-            text-shadow: -2px 0 #ff0000, 2px 0 #00ffff;
+            text-shadow: -2px 0 #ff4800, 2px 0 #00ffff;
           }
           @keyframes glitchSlice1 {
             0% { transform: translateX(0); }
@@ -546,7 +546,7 @@ const Home = () => {
 
           {/* Contraband */}
           <div className="text-center mb-16 md:mb-24">
-            <p className="text-red-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
+            <p className="text-guilty text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               ⬤ Restricted Access
             </p>
             <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
@@ -564,7 +564,7 @@ const Home = () => {
             {contrabandDrops.map((drop) => {
               const dotColor =
                 drop.status === "RESTRICTED"
-                  ? "bg-red-500"
+                  ? "bg-guilty"
                   : drop.status === "REFORMED"
                   ? "bg-amber-500"
                   : "bg-neutral-500";
@@ -576,7 +576,7 @@ const Home = () => {
                 >
                   {/* Scan-line overlay */}
                   <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="contraband-scanline absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                    <div className="contraband-scanline absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-guilty/40 to-transparent" />
                   </div>
 
                   {/* Static noise overlay */}
@@ -602,7 +602,7 @@ const Home = () => {
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${dotColor} contraband-pulse`} />
-                        <span className="text-red-500/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                        <span className="text-guilty/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
                           {drop.status}
                         </span>
                       </span>
@@ -614,7 +614,7 @@ const Home = () => {
                     {/* Request Access button */}
                     <a
                       href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
-                      className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:border-red-500/60 hover:text-red-400 hover:bg-red-500/5"
+                      className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:border-guilty/60 hover:text-guilty-400 hover:bg-guilty/5"
                     >
                       <Lock size={10} className="opacity-60" />
                       <span className="group-hover/btn:hidden">Request Access</span>
@@ -646,7 +646,7 @@ const Home = () => {
           </div>
           <button
             onClick={() => setContactOpen(true)}
-            className="relative z-10 px-12 py-5 bg-red-600 hover:bg-red-700 text-white font-control text-lg md:text-xl tracking-[0.25em] uppercase font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(220,38,38,0.4)] animate-warning-glitch-1"
+            className="relative z-10 px-12 py-5 bg-guilty-600 hover:bg-guilty-700 text-white font-control text-lg md:text-xl tracking-[0.25em] uppercase font-bold transition-all duration-300 hover:scale-105 shadow-[0_0_40px_rgba(255,72,0,0.4)] animate-warning-glitch-1"
           >
             <Lock className="inline-block mr-3 -mt-0.5" size={20} />
             Request Access
@@ -688,7 +688,7 @@ const Home = () => {
             >
               {/* Header */}
               <div className="flex items-center gap-2.5 px-4 py-3 border-b border-neutral-200">
-                <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-full bg-guilty-600 flex items-center justify-center">
                   <span className="text-white text-[9px] font-bold">G</span>
                 </div>
                 <p className="text-neutral-900 text-xs font-bold tracking-wide">{img.handle}</p>
@@ -953,7 +953,7 @@ const Home = () => {
                   ].map((field) => (
                     <div key={field.key}>
                       <label className="block text-white/50 text-[10px] tracking-[0.3em] uppercase font-mono mb-2">
-                        {field.label} <span className="text-red-500">*</span>
+                        {field.label} <span className="text-guilty">*</span>
                       </label>
                       <input
                         type={field.type}
@@ -964,7 +964,7 @@ const Home = () => {
                         className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 text-white text-sm font-mono placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors"
                       />
                       {contactErrors[field.key] && (
-                        <p className="text-red-400 text-[10px] font-mono mt-1 tracking-wide">{contactErrors[field.key]}</p>
+                        <p className="text-guilty-400 text-[10px] font-mono mt-1 tracking-wide">{contactErrors[field.key]}</p>
                       )}
                     </div>
                   ))}

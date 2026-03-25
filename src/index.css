@@ -228,23 +228,23 @@
 
 @keyframes warningGlitch1 {
   0%, 94%, 98%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
-  95% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
-  96% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: inset(30% 0 40% 0); }
-  97% { transform: translate(-1px, 0); text-shadow: 1px 0 #ff0000, -1px 0 #00ffff; clip-path: none; }
+  95% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff4800, -2px 0 #00ffff; clip-path: none; }
+  96% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff4800, 2px 0 #00ffff; clip-path: inset(30% 0 40% 0); }
+  97% { transform: translate(-1px, 0); text-shadow: 1px 0 #ff4800, -1px 0 #00ffff; clip-path: none; }
 }
 
 @keyframes warningGlitch2 {
   0%, 88%, 93%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
-  89% { transform: translate(3px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: none; }
-  90% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: inset(55% 0 15% 0); }
-  91% { transform: translate(1px, 0); text-shadow: -1px 0 #ff0000, 1px 0 #00ffff; clip-path: none; }
-  92% { transform: translate(-1px, -1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: none; }
+  89% { transform: translate(3px, -1px); text-shadow: -2px 0 #ff4800, 2px 0 #00ffff; clip-path: none; }
+  90% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff4800, -2px 0 #00ffff; clip-path: inset(55% 0 15% 0); }
+  91% { transform: translate(1px, 0); text-shadow: -1px 0 #ff4800, 1px 0 #00ffff; clip-path: none; }
+  92% { transform: translate(-1px, -1px); text-shadow: 2px 0 #ff4800, -2px 0 #00ffff; clip-path: none; }
 }
 
 @keyframes warningGlitch3 {
   0%, 96%, 99%, 100% { transform: translate(0); text-shadow: none; clip-path: none; }
-  97% { transform: translate(-3px, 1px); text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; clip-path: inset(20% 0 50% 0); }
-  98% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; clip-path: none; }
+  97% { transform: translate(-3px, 1px); text-shadow: 2px 0 #ff4800, -2px 0 #00ffff; clip-path: inset(20% 0 50% 0); }
+  98% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff4800, 2px 0 #00ffff; clip-path: none; }
 }
 
 .animate-warning-glitch-1 {
@@ -312,8 +312,8 @@
 }
 
 .contraband-card:hover {
-  border-color: hsl(0 60% 50% / 0.3);
-  box-shadow: 0 0 25px hsl(0 70% 50% / 0.1), inset 0 0 30px hsl(0 70% 50% / 0.03);
+  border-color: hsl(18 100% 50% / 0.3);
+  box-shadow: 0 0 25px hsl(18 100% 50% / 0.1), inset 0 0 30px hsl(18 100% 50% / 0.03);
 }
 
 .contraband-scanline {

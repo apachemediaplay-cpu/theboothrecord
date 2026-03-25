@@ -14,6 +14,17 @@ export default {
     },
     extend: {
       colors: {
+        guilty: {
+          DEFAULT: "#FF4800",
+          50: "#FFF0E6",
+          100: "#FFD6B3",
+          200: "#FFAB66",
+          300: "#FF7F33",
+          400: "#FF6419",
+          500: "#FF4800",
+          600: "#E04000",
+          700: "#B33300",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
