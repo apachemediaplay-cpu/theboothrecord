@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
 import SuspectsCarousel from "@/components/SuspectsCarousel";
