@@ -731,7 +731,7 @@ const Home = () => {
           <button
             onClick={() => setContactOpen(true)}
             data-text="Request Access"
-            className="glitch-btn pointer-events-auto relative inline-block px-12 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em] shadow-[0_0_60px_rgba(255,255,255,0.15)]"
+            className="contraband-cta-glitch pointer-events-auto relative inline-block px-12 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em] shadow-[0_0_60px_rgba(255,255,255,0.15)] overflow-hidden"
           >
             <Lock className="inline-block mr-3 -mt-0.5" size={14} />
             Request Access
