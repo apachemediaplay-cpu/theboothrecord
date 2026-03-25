@@ -688,7 +688,7 @@ const Home = () => {
             >
               {/* Header */}
               <div className="flex items-center gap-2.5 px-4 py-3 border-b border-neutral-200">
-                <div className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-full bg-guilty-600 flex items-center justify-center">
                   <span className="text-white text-[9px] font-bold">G</span>
                 </div>
                 <p className="text-neutral-900 text-xs font-bold tracking-wide">{img.handle}</p>
