@@ -501,7 +501,7 @@ const Home = () => {
       </section>
 
       {/* ── Venues ───────────────────────────────────── */}
-      <section id="venues" className="px-6 md:px-10 py-16 md:py-24 bg-neutral-50">
+      <section id="venues" className="scroll-stack px-6 md:px-10 py-16 md:py-24 bg-neutral-50" style={{ zIndex: 3 }}>
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-neutral-300">
             {/* Column 1 — Headline + Description */}
