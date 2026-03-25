@@ -556,7 +556,8 @@ const Home = () => {
       {/* ── Contraband ───────────────────────────────── */}
       <section
         id="contraband"
-        className={`${SECTION} bg-neutral-900 relative overflow-hidden`}
+        className={`scroll-stack ${SECTION} bg-neutral-900 relative overflow-hidden`}
+        style={{ zIndex: 4 }}
         ref={contrabandRef}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
