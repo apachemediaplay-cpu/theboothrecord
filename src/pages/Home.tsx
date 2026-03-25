@@ -964,7 +964,7 @@ const Home = () => {
                         className="w-full bg-white/5 border border-white/10 rounded px-4 py-3 text-white text-sm font-mono placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors"
                       />
                       {contactErrors[field.key] && (
-                        <p className="text-red-400 text-[10px] font-mono mt-1 tracking-wide">{contactErrors[field.key]}</p>
+                        <p className="text-guilty-400 text-[10px] font-mono mt-1 tracking-wide">{contactErrors[field.key]}</p>
                       )}
                     </div>
                   ))}
