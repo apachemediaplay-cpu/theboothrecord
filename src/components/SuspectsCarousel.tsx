@@ -50,7 +50,7 @@ const SuspectsCarousel = () => {
                       </p>
 
                       {/* G icon above product card */}
-                      <img src={guiltyGOrange} alt="GUILTY G" className="absolute bottom-[calc(3rem+4.5rem)] md:bottom-[calc(4rem+5.5rem)] left-4 md:left-8 w-10 h-10 md:w-14 md:h-14" />
+                      <img src={guiltyGOrange} alt="GUILTY G" className="absolute bottom-[calc(3rem+5.5rem)] md:bottom-[calc(4rem+6.5rem)] left-4 md:left-8 w-10 h-10 md:w-14 md:h-14" />
 
                       {/* Bottom-left product card */}
                       <div className="absolute bottom-12 md:bottom-16 left-4 md:left-8 bg-white text-neutral-900 px-4 md:px-6 py-3 md:py-4 max-w-xs md:max-w-sm">
