@@ -543,10 +543,18 @@ const Home = () => {
       </section>
 
       {/* ── Contraband ───────────────────────────────── */}
-      <section id="contraband" className={`${SECTION} bg-neutral-900 relative`}>
-        <div className="max-w-5xl mx-auto">
-
-          {/* Contraband */}
+      <section
+        id="contraband"
+        className={`${SECTION} bg-neutral-900 relative overflow-hidden`}
+        ref={contrabandRef}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setContrabandMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        }}
+        onMouseLeave={() => setContrabandMouse(null)}
+      >
+        {/* Content layer — headings at z-30 above overlay */}
+        <div className="max-w-5xl mx-auto relative z-30">
           <div className="text-center mb-16 md:mb-24">
             <p className="text-guilty text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               ⬤ Restricted Access
@@ -561,7 +569,10 @@ const Home = () => {
               Some are monitored. Some are reformed. Some quietly disappear.
             </p>
           </div>
+        </div>
 
+        {/* Cards layer — z-10 so overlay sits partially on top */}
+        <div className="max-w-5xl mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
             {contrabandDrops.map((drop) => {
               const dotColor =
@@ -629,26 +640,86 @@ const Home = () => {
           </div>
         </div>
 
-        {/* G-Pattern lock overlay */}
-        <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden">
-          {/* Dark base */}
-          <div className="absolute inset-0 bg-neutral-950/70" />
-          {/* SVG G pattern — oversized for seamless drift */}
-          <div className="absolute contraband-pattern-drift" style={{ top: '-50%', left: '-50%', width: '200%', height: '200%' }}>
-            <svg className="w-full h-full contraband-pattern-flicker" xmlns="http://www.w3.org/2000/svg">
+        {/* ── Branded Blanket Overlay ── z-20: between headings (z-30) and cards (z-10) */}
+        <div
+          className="absolute inset-0 z-20 pointer-events-none overflow-hidden"
+          style={{
+            // Gradient mask: lighter in center/top, heavier at edges and bottom
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 30%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%), radial-gradient(ellipse 60% 50% at 50% 35%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%)',
+            maskComposite: 'intersect',
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 30%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%)',
+            WebkitMaskComposite: 'source-in',
+          }}
+        >
+          {/* Grain / noise texture */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: '128px 128px',
+              opacity: 0.4,
+            }}
+          />
+
+          {/* SVG G pattern — with blur, parallax transform, and reduced opacity */}
+          <div
+            className="absolute contraband-pattern-drift"
+            style={{
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              filter: 'blur(1.5px)',
+              transform: `translateY(${contrabandParallax * -0.15}px)`,
+              willChange: 'transform',
+            }}
+          >
+            <svg className="w-full h-full contraband-pattern-flicker" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.12 }}>
               <defs>
-                <pattern id="g-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
-                  <svg viewBox="0 0 2000 2000" width="40" height="40" x="10" y="10" opacity="0.4">
+                <pattern id="g-pattern-v2" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
+                  {/* Main icon */}
+                  <svg viewBox="0 0 2000 2000" width="36" height="36" x="22" y="22" opacity="0.7">
+                    <path fill="#ff4800" d="M1616.319,213.027L580.102,1249.369l189.08,189.08,841.902-841.896c76.702,115.79,121.518,254.457,121.518,403.447,0,403.958-328.644,732.602-732.602,732.602s-732.602-328.644-732.602-732.602S596.042,267.398,1000,267.398c74.667,0,146.734,11.293,214.656,32.15l206.431-206.43C1293.029,33.419,1150.354,0,1000,0,448.601,0,0,448.601,0,1000s448.601,1000,1000,1000,1000-448.601,1000-1000c0-319.091-150.237-603.748-383.681-786.973Z"/>
+                  </svg>
+                </pattern>
+                {/* Second pattern layer with slight variation */}
+                <pattern id="g-pattern-v2b" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-10) scale(1.08)">
+                  <svg viewBox="0 0 2000 2000" width="32" height="32" x="44" y="44" opacity="0.35">
                     <path fill="#ff4800" d="M1616.319,213.027L580.102,1249.369l189.08,189.08,841.902-841.896c76.702,115.79,121.518,254.457,121.518,403.447,0,403.958-328.644,732.602-732.602,732.602s-732.602-328.644-732.602-732.602S596.042,267.398,1000,267.398c74.667,0,146.734,11.293,214.656,32.15l206.431-206.43C1293.029,33.419,1150.354,0,1000,0,448.601,0,0,448.601,0,1000s448.601,1000,1000,1000,1000-448.601,1000-1000c0-319.091-150.237-603.748-383.681-786.973Z"/>
                   </svg>
                 </pattern>
               </defs>
-              <rect width="100%" height="100%" fill="url(#g-pattern)" />
+              <rect width="100%" height="100%" fill="url(#g-pattern-v2)" />
+              <rect width="100%" height="100%" fill="url(#g-pattern-v2b)" />
             </svg>
           </div>
+
+          {/* Hover reveal — radial fade around cursor */}
+          {contrabandMouse && (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `radial-gradient(200px circle at ${contrabandMouse.x}px ${contrabandMouse.y}px, rgba(23,23,23,0.95) 0%, transparent 100%)`,
+                transition: 'background 0.15s ease-out',
+              }}
+            />
+          )}
+
+          {/* Dark vignette to enhance edge heaviness */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse 70% 60% at 50% 40%, transparent 0%, rgba(10,10,10,0.5) 100%)',
+            }}
+          />
+        </div>
+
+        {/* ── CTA — z-40, highest layer, no overlay interference ── */}
+        <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
           <button
             onClick={() => setContactOpen(true)}
-            className="relative z-10 inline-block px-12 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em]"
+            className="pointer-events-auto relative inline-block px-12 py-4 bg-white text-neutral-900 font-bold text-xs tracking-[0.3em] uppercase transition-all hover:opacity-90 hover:tracking-[0.4em] shadow-[0_0_60px_rgba(255,255,255,0.15)]"
           >
             <Lock className="inline-block mr-3 -mt-0.5" size={14} />
             Request Access
