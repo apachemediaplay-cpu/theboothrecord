@@ -546,7 +546,7 @@ const Home = () => {
 
           {/* Contraband */}
           <div className="text-center mb-16 md:mb-24">
-            <p className="text-red-500 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
+            <p className="text-guilty text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
               ⬤ Restricted Access
             </p>
             <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
