@@ -635,13 +635,13 @@ const Home = () => {
           <div className="absolute contraband-pattern-drift" style={{ top: '-50%', left: '-50%', width: '200%', height: '200%' }}>
             <svg className="w-full h-full contraband-pattern-flicker" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <pattern id="g-pattern" x="0" y="0" width="100" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
-                  <circle cx="50" cy="60" r="28" fill="none" stroke="hsl(14, 80%, 45%)" strokeWidth="7" />
-                  <line x1="50" y1="60" x2="78" y2="60" stroke="hsl(14, 80%, 45%)" strokeWidth="7" />
-                  <line x1="50" y1="60" x2="50" y2="35" stroke="hsl(14, 80%, 45%)" strokeWidth="7" strokeLinecap="round" />
+                <pattern id="g-pattern" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
+                  <svg viewBox="0 0 2000 2000" width="80" height="80" x="20" y="20" opacity="0.85">
+                    <path fill="#ff4800" d="M1616.319,213.027L580.102,1249.369l189.08,189.08,841.902-841.896c76.702,115.79,121.518,254.457,121.518,403.447,0,403.958-328.644,732.602-732.602,732.602s-732.602-328.644-732.602-732.602S596.042,267.398,1000,267.398c74.667,0,146.734,11.293,214.656,32.15l206.431-206.43C1293.029,33.419,1150.354,0,1000,0,448.601,0,0,448.601,0,1000s448.601,1000,1000,1000,1000-448.601,1000-1000c0-319.091-150.237-603.748-383.681-786.973Z"/>
+                  </svg>
                 </pattern>
               </defs>
-              <rect width="100%" height="100%" fill="url(#g-pattern)" opacity="0.85" />
+              <rect width="100%" height="100%" fill="url(#g-pattern)" />
             </svg>
           </div>
           <button
