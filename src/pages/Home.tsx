@@ -576,7 +576,7 @@ const Home = () => {
                 >
                   {/* Scan-line overlay */}
                   <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="contraband-scanline absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
+                    <div className="contraband-scanline absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-guilty/40 to-transparent" />
                   </div>
 
                   {/* Static noise overlay */}
