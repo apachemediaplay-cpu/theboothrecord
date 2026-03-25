@@ -440,7 +440,7 @@ const Home = () => {
       </div>
 
       {/* ── The Drinks ───────────────────────────────── */}
-      <section id="drinks" className={`scroll-stack ${SECTION} bg-white`} style={{ zIndex: 2 }}>
+      <section id="drinks" className={`${SECTION} bg-white`} style={{ zIndex: 2 }}>
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}><p className={`${LABEL} text-center mb-4`}>The Drinks</p></p>
            <h2 className={`${H2} text-center mb-4`}>
@@ -741,7 +741,7 @@ const Home = () => {
       </section>
 
       {/* ── From the Scene ──────────────────────────── */}
-      <section className="scroll-stack bg-white px-0 py-20 md:py-28" style={{ zIndex: 5 }}>
+      <section className="bg-white px-0 py-20 md:py-28" style={{ zIndex: 5 }}>
         <div className="max-w-5xl mx-auto px-6 md:px-10">
           <div className="text-center mb-16 md:mb-20">
             <p className="text-neutral-400 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-4">
