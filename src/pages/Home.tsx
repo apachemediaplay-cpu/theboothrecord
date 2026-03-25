@@ -311,7 +311,7 @@ const Home = () => {
         {/* Top notice */}
         <div className="relative z-10 pt-10 md:pt-14">
           <p className="text-white/80 text-[10px] md:text-xs tracking-[0.4em] uppercase font-mono text-center">
-            NOTICE &nbsp;/ &nbsp;REF: 7.4 &nbsp;/STATUS ACTIVE
+            NOTICE &nbsp;/ &nbsp;REF: 7.4 &nbsp;/ <span className="inline-flex items-center gap-1.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_6px_2px_rgba(239,68,68,0.6)]" />STATUS ACTIVE</span>
           </p>
         </div>
 
