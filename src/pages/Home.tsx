@@ -368,7 +368,7 @@ const Home = () => {
             opacity: 1;
             animation: glitchSlice2 200ms infinite;
             clip-path: inset(60% 0 10% 0);
-            text-shadow: -2px 0 #ff0000, 2px 0 #00ffff;
+            text-shadow: -2px 0 #ff4800, 2px 0 #00ffff;
           }
           @keyframes glitchSlice1 {
             0% { transform: translateX(0); }
