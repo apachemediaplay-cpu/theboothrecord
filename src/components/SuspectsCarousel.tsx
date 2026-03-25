@@ -6,7 +6,7 @@ import guiltyGOrange from "@/assets/guilty-g-orange.svg";
 
 const slides = [
   { type: "image" as const, src: suspectsSlide1, alt: "GUILTY lifestyle flat lay" },
-  { type: "color" as const, color: "bg-red-600" },
+  { type: "color" as const, color: "bg-guilty" },
   { type: "color" as const, color: "bg-black" },
 ];
 
