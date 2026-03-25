@@ -135,6 +135,7 @@ const Home = () => {
   const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", venue: "", message: "" });
   const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [contactSending, setContactSending] = useState(false);
 
   // Typewriter effect for hero warning text
   useEffect(() => {
