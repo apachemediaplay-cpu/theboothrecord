@@ -440,7 +440,7 @@ const Home = () => {
       </div>
 
       {/* ── The Drinks ───────────────────────────────── */}
-      <section id="drinks" className={`scroll-stack ${SECTION} bg-white`} style={{ zIndex: 2 }}>
+      <section id="drinks" className={`${SECTION} bg-white`} style={{ zIndex: 2 }}>
         <div className="max-w-6xl mx-auto">
           <p className={`${LABEL} text-center mb-4`}><p className={`${LABEL} text-center mb-4`}>The Drinks</p></p>
            <h2 className={`${H2} text-center mb-4`}>
