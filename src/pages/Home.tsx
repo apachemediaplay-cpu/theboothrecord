@@ -953,7 +953,7 @@ const Home = () => {
                   ].map((field) => (
                     <div key={field.key}>
                       <label className="block text-white/50 text-[10px] tracking-[0.3em] uppercase font-mono mb-2">
-                        {field.label} <span className="text-red-500">*</span>
+                        {field.label} <span className="text-guilty">*</span>
                       </label>
                       <input
                         type={field.type}
