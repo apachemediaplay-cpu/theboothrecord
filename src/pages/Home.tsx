@@ -78,6 +78,7 @@ const contrabandDrops = [
     teaser: "Dark roast. Smoke and sacrament. Never meant for general release.",
     status: "RESTRICTED" as const,
     lastSeen: "Last sighted: 14.02.26",
+    finished: true,
   },
   {
     code: "DROP-002",
@@ -610,10 +611,10 @@ const Home = () => {
 
                   {/* Redacted name area */}
                   <div className="min-h-[80px] flex flex-col justify-center mb-4 relative z-10">
-                    <p className="font-control text-lg md:text-xl font-bold text-white/90 tracking-wide leading-tight mb-2">
+                    <p className={`font-control text-lg md:text-xl font-bold text-white/90 tracking-wide leading-tight mb-2 ${drop.finished ? 'line-through opacity-40' : ''}`}>
                       {drop.redactedName}
                     </p>
-                    <p className="text-neutral-500 text-[10px] leading-[1.7] font-mono-light">
+                    <p className={`text-neutral-500 text-[10px] leading-[1.7] font-mono-light ${drop.finished ? 'line-through opacity-40' : ''}`}>
                       {drop.teaser}
                     </p>
                   </div>
