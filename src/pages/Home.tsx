@@ -624,28 +624,29 @@ const Home = () => {
                   </div>
 
                   {/* Status + metadata */}
-                  <div className="border-t border-neutral-700/30 pt-4 space-y-4 relative z-10">
+                  <div className={`border-t pt-4 space-y-4 relative z-10 ${isMain ? 'border-neutral-300' : 'border-neutral-700/30'}`}>
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${dotColor} contraband-pulse`} />
-                        <span className="text-guilty/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                        <span className={`text-[9px] tracking-[0.3em] uppercase font-mono-light ${isMain ? 'text-neutral-500' : 'text-guilty/70'}`}>
                           {drop.status}
                         </span>
                       </span>
-                      <span className="text-neutral-600 text-[9px] font-mono-light italic">
+                      <span className={`text-[9px] font-mono-light italic ${isMain ? 'text-neutral-400' : 'text-neutral-600'}`}>
                         {drop.lastSeen}
                       </span>
                     </div>
 
-                    {/* Request Access button */}
-                    <a
-                      href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
-                      className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:border-guilty/60 hover:text-guilty-400 hover:bg-guilty/5"
-                    >
-                      <Lock size={10} className="opacity-60" />
-                      <span className="group-hover/btn:hidden">Request Access</span>
-                      <span className="hidden group-hover/btn:inline">Submit Request ›</span>
-                    </a>
+                    {isMain && (
+                      <a
+                        href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
+                        className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-800 text-neutral-800 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:bg-black hover:text-white"
+                      >
+                        <Lock size={10} className="opacity-60" />
+                        <span className="group-hover/btn:hidden">Request Access</span>
+                        <span className="hidden group-hover/btn:inline">Submit Request ›</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               );
