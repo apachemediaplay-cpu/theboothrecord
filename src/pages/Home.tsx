@@ -537,7 +537,7 @@ const Home = () => {
             {/* Column 3 — Note + Trade Enquiries */}
             <div className="pt-8 md:pt-0 md:pl-10 flex flex-col justify-between">
               <p className="text-neutral-500 text-xs leading-[1.8] font-mono-light italic text-left mb-8">
-                Carbonation levels vary slightly between drinks to suit their flavour profile.
+                Carbonation levels vary slightly between drinks to suit their flavour.
               </p>
               <div className="border-t border-neutral-300 pt-5">
                 <p className="text-neutral-500 text-[10px] tracking-[0.35em] uppercase font-mono-light mb-2">
