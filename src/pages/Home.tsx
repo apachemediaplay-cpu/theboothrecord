@@ -590,6 +590,8 @@ const Home = () => {
                   ? "bg-guilty"
                   : drop.status === "REFORMED"
                   ? "bg-amber-500"
+                  : drop.status === "CLASSIFIED"
+                  ? "bg-neutral-600 animate-pulse"
                   : "bg-neutral-500";
 
               return (
