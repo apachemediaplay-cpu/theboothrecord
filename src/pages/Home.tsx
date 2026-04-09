@@ -893,7 +893,7 @@ const Home = () => {
               </span>
             </div>
             <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
-              The Confessional
+              The Booth
             </h2>
             <p className="text-neutral-500 text-sm leading-[1.9] font-mono-light max-w-md mx-auto">
               Anonymous confessions. Some truths don't disappear.
