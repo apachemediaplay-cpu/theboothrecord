@@ -598,7 +598,7 @@ const Home = () => {
               return (
                 <div
                   key={drop.code}
-                  className={`contraband-card border border-neutral-700/40 relative overflow-hidden group transition-all duration-300 ${isMain ? 'p-6 md:p-8 scale-100' : 'p-4 md:p-6 scale-90 opacity-60'}`}
+                  className={`contraband-card border relative overflow-hidden group transition-all duration-300 ${isMain ? 'p-6 md:p-8 scale-100 bg-white border-white/20' : 'p-4 md:p-6 scale-90 opacity-60 border-neutral-700/40'}`}
                 >
                   {/* Scan-line overlay */}
                   <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -609,43 +609,44 @@ const Home = () => {
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" />
 
                   {/* Code label */}
-                  <p className={`text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10 ${drop.unrevealed ? 'blur-[2px]' : ''}`}>
+                  <p className={`text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10 ${drop.unrevealed ? 'blur-[2px]' : ''} ${isMain ? 'text-neutral-400' : 'text-neutral-600'}`}>
                     {drop.unrevealed ? '███-███' : drop.code}
                   </p>
 
                   {/* Redacted name area */}
                   <div className="min-h-[80px] flex flex-col justify-center mb-4 relative z-10">
-                    <p className={`font-control text-lg md:text-xl font-bold text-white/90 tracking-wide leading-tight mb-2 ${drop.finished ? 'line-through opacity-40' : ''}`}>
+                    <p className={`font-control text-lg md:text-xl font-bold tracking-wide leading-tight mb-2 ${isMain ? 'text-black' : 'text-white/90'} ${drop.finished ? 'line-through opacity-40' : ''}`}>
                       {drop.redactedName}
                     </p>
-                    <p className={`text-neutral-500 text-[10px] leading-[1.7] font-mono-light ${drop.finished ? 'line-through opacity-40' : ''}`}>
+                    <p className={`text-[10px] leading-[1.7] font-mono-light ${isMain ? 'text-neutral-600' : 'text-neutral-500'} ${drop.finished ? 'line-through opacity-40' : ''}`}>
                       {drop.teaser}
                     </p>
                   </div>
 
                   {/* Status + metadata */}
-                  <div className="border-t border-neutral-700/30 pt-4 space-y-4 relative z-10">
+                  <div className={`border-t pt-4 space-y-4 relative z-10 ${isMain ? 'border-neutral-300' : 'border-neutral-700/30'}`}>
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         <span className={`w-1.5 h-1.5 rounded-full ${dotColor} contraband-pulse`} />
-                        <span className="text-guilty/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                        <span className={`text-[9px] tracking-[0.3em] uppercase font-mono-light ${isMain ? 'text-neutral-500' : 'text-guilty/70'}`}>
                           {drop.status}
                         </span>
                       </span>
-                      <span className="text-neutral-600 text-[9px] font-mono-light italic">
+                      <span className={`text-[9px] font-mono-light italic ${isMain ? 'text-neutral-400' : 'text-neutral-600'}`}>
                         {drop.lastSeen}
                       </span>
                     </div>
 
-                    {/* Request Access button */}
-                    <a
-                      href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
-                      className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-600 text-neutral-400 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:border-guilty/60 hover:text-guilty-400 hover:bg-guilty/5"
-                    >
-                      <Lock size={10} className="opacity-60" />
-                      <span className="group-hover/btn:hidden">Request Access</span>
-                      <span className="hidden group-hover/btn:inline">Submit Request ›</span>
-                    </a>
+                    {isMain && (
+                      <a
+                        href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
+                        className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-800 text-neutral-800 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:bg-black hover:text-white"
+                      >
+                        <Lock size={10} className="opacity-60" />
+                        <span className="group-hover/btn:hidden">Request Access</span>
+                        <span className="hidden group-hover/btn:inline">Submit Request ›</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               );
