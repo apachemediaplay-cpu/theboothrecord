@@ -608,8 +608,8 @@ const Home = () => {
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" />
 
                   {/* Code label */}
-                  <p className="text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10">
-                    {drop.code}
+                  <p className={`text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10 ${drop.unrevealed ? 'blur-[2px]' : ''}`}>
+                    {drop.unrevealed ? '███-███' : drop.code}
                   </p>
 
                   {/* Redacted name area */}
