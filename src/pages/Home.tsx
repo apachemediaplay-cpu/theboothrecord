@@ -573,9 +573,6 @@ const Home = () => {
             <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
               Contraband
             </h2>
-            <p className="text-neutral-400 text-sm leading-[1.9] font-mono-light max-w-md mx-auto mb-3">
-              Limited drops. Restricted material. Outside the current range.
-            </p>
             <p className="text-neutral-500 text-xs font-mono-light italic">
               Some are monitored. Some are reformed. Some quietly disappear.
             </p>
