@@ -1047,7 +1047,7 @@ const Home = () => {
               </div>
             ) : (
               <>
-                <p className="text-white/40 text-[10px] tracking-[0.35em] uppercase font-mono mb-1">Get In Touch</p>
+                
                 <h3 className="font-control text-xl md:text-2xl font-bold text-white mb-8">Contact</h3>
 
                 <form
