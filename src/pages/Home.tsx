@@ -91,10 +91,11 @@ const contrabandDrops = [
   {
     code: "DROP-003",
     name: "EXHIBIT R — NIGHT COUNSEL",
-    redactedName: "EXHIBIT R — ████ ████████",
-    teaser: "Whispered about. Never confirmed. Some things stay off the record.",
-    status: "DISAPPEARED" as const,
-    lastSeen: "Last sighted: Unknown",
+    redactedName: "████████ █ — ████ ████████",
+    teaser: "██████████ ██████. ██████ █████████. ████ ██████ ████ ███ ███ ██████.",
+    status: "CLASSIFIED" as const,
+    lastSeen: "Date: ██.██.██",
+    unrevealed: true,
   },
 ];
 
@@ -589,6 +590,8 @@ const Home = () => {
                   ? "bg-guilty"
                   : drop.status === "REFORMED"
                   ? "bg-amber-500"
+                  : drop.status === "CLASSIFIED"
+                  ? "bg-neutral-600 animate-pulse"
                   : "bg-neutral-500";
 
               return (
@@ -605,8 +608,8 @@ const Home = () => {
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" />
 
                   {/* Code label */}
-                  <p className="text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10">
-                    {drop.code}
+                  <p className={`text-neutral-600 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10 ${drop.unrevealed ? 'blur-[2px]' : ''}`}>
+                    {drop.unrevealed ? '███-███' : drop.code}
                   </p>
 
                   {/* Redacted name area */}
