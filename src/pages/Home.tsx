@@ -638,14 +638,14 @@ const Home = () => {
                     </div>
 
                     {isMain && (
-                      <a
-                        href={`mailto:contraband@houseofguilty.com?subject=Access%20Request%20—%20${drop.code}`}
-                        className="contraband-btn group/btn flex items-center justify-center gap-2 w-full py-2.5 border border-neutral-800 text-neutral-800 text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 hover:bg-black hover:text-white"
+                      <button
+                        onClick={() => setContactOpen(true)}
+                        data-text="Request Access"
+                        className="contraband-cta-glitch relative flex items-center justify-center gap-2 w-full py-3 bg-black text-white font-bold text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 overflow-hidden"
                       >
                         <Lock size={10} className="opacity-60" />
-                        <span className="group-hover/btn:hidden">Request Access</span>
-                        <span className="hidden group-hover/btn:inline">Submit Request ›</span>
-                      </a>
+                        Request Access
+                      </button>
                     )}
                   </div>
                 </div>
