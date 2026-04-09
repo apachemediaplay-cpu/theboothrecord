@@ -452,7 +452,7 @@ const Home = () => {
               The Suspects
             </h2>
            <p className="text-center text-muted-foreground text-sm md:text-base tracking-wide mb-12 md:mb-16">
-             Three drinks. All changed.
+             Three drinks. All charged.
            </p>
         </div>
 
