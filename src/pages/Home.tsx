@@ -583,8 +583,8 @@ const Home = () => {
 
         {/* Cards layer — z-10 so overlay sits partially on top */}
         <div className="max-w-5xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            {contrabandDrops.map((drop) => {
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1.3fr_1fr] gap-4 max-w-4xl mx-auto items-center">
+            {contrabandDrops.map((drop, idx) => {
               const dotColor =
                 drop.status === "RESTRICTED"
                   ? "bg-guilty"
@@ -593,11 +593,12 @@ const Home = () => {
                   : drop.status === "CLASSIFIED"
                   ? "bg-neutral-600 animate-pulse"
                   : "bg-neutral-500";
+              const isMain = idx === 1;
 
               return (
                 <div
                   key={drop.code}
-                  className="contraband-card border border-neutral-700/40 p-6 md:p-8 relative overflow-hidden group transition-all duration-300"
+                  className={`contraband-card border border-neutral-700/40 relative overflow-hidden group transition-all duration-300 ${isMain ? 'p-6 md:p-8 scale-100' : 'p-4 md:p-6 scale-90 opacity-60'}`}
                 >
                   {/* Scan-line overlay */}
                   <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
