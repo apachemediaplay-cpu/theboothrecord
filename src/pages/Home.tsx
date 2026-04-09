@@ -611,9 +611,9 @@ const Home = () => {
                   {isMain ? (
                     <>
                       {/* DROP-002 detailed card */}
-                      <p className="text-neutral-400 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-2 relative z-10">
+                      <h3 className="font-control text-base md:text-lg font-bold text-black tracking-[0.15em] uppercase mb-4 relative z-10">
                         DROP–002 · LIMITED TO 1,000 · NO RESTOCK
-                      </p>
+                      </h3>
                       <p className="text-neutral-500 text-[10px] leading-[1.7] font-mono-light mb-6 relative z-10">
                         One of each. Twice. Everything you need to form an opinion and very little you need to feel good about it.
                       </p>
