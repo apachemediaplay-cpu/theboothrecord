@@ -154,6 +154,11 @@ const Home = () => {
       if (i >= text.length) {
         // Remove cursor after a beat
         setTimeout(() => el.classList.remove("hero-cursor"), 1500);
+        // Fade out the text 2 seconds after typing completes
+        setTimeout(() => {
+          el.style.transition = 'opacity 1s ease-out';
+          el.style.opacity = '0';
+        }, 2000);
         return;
       }
       // Human-like variable speed: base 65ms + random 0-80ms + pause after punctuation/spaces
