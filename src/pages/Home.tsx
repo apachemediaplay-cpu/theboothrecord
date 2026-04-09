@@ -512,7 +512,7 @@ const Home = () => {
                 For Venues
               </h2>
               <p className="text-neutral-600 text-sm leading-[1.9] font-mono-light max-w-xs">
-                Non-alcoholic drinks for serious menus. Built around balance, acidity and flavour.
+                Structured drinks for serious menus. Built around balance, acidity and flavour.
               </p>
             </div>
 
