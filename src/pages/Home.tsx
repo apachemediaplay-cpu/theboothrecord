@@ -91,10 +91,11 @@ const contrabandDrops = [
   {
     code: "DROP-003",
     name: "EXHIBIT R — NIGHT COUNSEL",
-    redactedName: "EXHIBIT R — ████ ████████",
-    teaser: "Whispered about. Never confirmed. Some things stay off the record.",
-    status: "DISAPPEARED" as const,
-    lastSeen: "Last sighted: Unknown",
+    redactedName: "████████ █ — ████ ████████",
+    teaser: "██████████ ██████. ██████ █████████. ████ ██████ ████ ███ ███ ██████.",
+    status: "CLASSIFIED" as const,
+    lastSeen: "Date: ██.██.██",
+    unrevealed: true,
   },
 ];
 
