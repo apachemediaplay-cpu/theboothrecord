@@ -78,6 +78,7 @@ const contrabandDrops = [
     teaser: "Dark roast. Smoke and sacrament. Never meant for general release.",
     status: "RESTRICTED" as const,
     lastSeen: "Last sighted: 14.02.26",
+    finished: true,
   },
   {
     code: "DROP-002",
