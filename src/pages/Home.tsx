@@ -608,46 +608,84 @@ const Home = () => {
                   {/* Static noise overlay */}
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.08)_2px,rgba(255,255,255,0.08)_4px)]" />
 
-                  {/* Code label */}
-                  <p className={`text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10 ${drop.unrevealed ? 'blur-[2px]' : ''} ${isMain ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                    {drop.unrevealed ? '███-███' : drop.code}
-                  </p>
+                  {isMain ? (
+                    <>
+                      {/* DROP-002 detailed card */}
+                      <p className="text-neutral-400 text-[9px] tracking-[0.5em] uppercase font-mono-light mb-2 relative z-10">
+                        DROP–002 · LIMITED TO 1,000 · NO RESTOCK
+                      </p>
+                      <p className="text-neutral-500 text-[10px] leading-[1.7] font-mono-light mb-6 relative z-10">
+                        One of each. Twice. Everything you need to form an opinion and very little you need to feel good about it.
+                      </p>
 
-                  {/* Redacted name area */}
-                  <div className="min-h-[80px] flex flex-col justify-center mb-4 relative z-10">
-                    <p className={`font-control text-lg md:text-xl font-bold tracking-wide leading-tight mb-2 ${isMain ? 'text-black' : 'text-white/90'} ${drop.finished ? 'line-through opacity-40' : ''}`}>
-                      {drop.redactedName}
-                    </p>
-                    <p className={`text-[10px] leading-[1.7] font-mono-light ${isMain ? 'text-neutral-600' : 'text-neutral-500'} ${drop.finished ? 'line-through opacity-40' : ''}`}>
-                      {drop.teaser}
-                    </p>
-                  </div>
+                      <div className="space-y-3 mb-6 relative z-10">
+                        <div>
+                          <p className="font-control text-sm font-bold text-black tracking-wide">CITRUS CONFESSIONAL</p>
+                          <p className="text-neutral-500 text-[10px] font-mono-light">Lemon Yuzu · ×2</p>
+                        </div>
+                        <div>
+                          <p className="font-control text-sm font-bold text-black tracking-wide">BITTER JUSTICE</p>
+                          <p className="text-neutral-500 text-[10px] font-mono-light">Blood Orange Ginger · ×2</p>
+                        </div>
+                        <div>
+                          <p className="font-control text-sm font-bold text-black tracking-wide">COLA VICE</p>
+                          <p className="text-neutral-500 text-[10px] font-mono-light">Spiced Cola · ×2</p>
+                        </div>
+                      </div>
 
-                  {/* Status + metadata */}
-                  <div className={`border-t pt-4 space-y-4 relative z-10 ${isMain ? 'border-neutral-300' : 'border-neutral-700/30'}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} contraband-pulse`} />
-                        <span className={`text-[9px] tracking-[0.3em] uppercase font-mono-light ${isMain ? 'text-neutral-500' : 'text-guilty/70'}`}>
-                          {drop.status}
-                        </span>
-                      </span>
-                      <span className={`text-[9px] font-mono-light italic ${isMain ? 'text-neutral-400' : 'text-neutral-600'}`}>
-                        {drop.lastSeen}
-                      </span>
-                    </div>
+                      <div className="border-t border-neutral-300 pt-4 mb-4 relative z-10">
+                        <p className="text-neutral-400 text-[9px] font-mono-light leading-[1.8]">
+                          Declared volume: 250ml per unit.<br />
+                          Declared value: $80 per issue.
+                        </p>
+                      </div>
 
-                    {isMain && (
+                      <p className="text-neutral-500 text-[10px] font-mono-light italic mb-6 relative z-10">
+                        Against your better judgement, as intended. Open guilty.
+                      </p>
+
                       <button
                         onClick={() => setContactOpen(true)}
                         data-text="Request Access"
-                        className="contraband-cta-glitch relative flex items-center justify-center gap-2 w-full py-3 bg-black text-white font-bold text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 overflow-hidden"
+                        className="contraband-cta-glitch relative flex items-center justify-center gap-2 w-full py-3 bg-black text-white font-bold text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 overflow-hidden z-10"
                       >
                         <Lock size={10} className="opacity-60" />
                         Request Access
                       </button>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Code label */}
+                      <p className={`text-[9px] tracking-[0.5em] uppercase font-mono-light mb-4 relative z-10 ${drop.unrevealed ? 'blur-[2px]' : ''} text-neutral-600`}>
+                        {drop.unrevealed ? '███-███' : drop.code}
+                      </p>
+
+                      {/* Redacted name area */}
+                      <div className="min-h-[80px] flex flex-col justify-center mb-4 relative z-10">
+                        <p className={`font-control text-lg md:text-xl font-bold text-white/90 tracking-wide leading-tight mb-2 ${drop.finished ? 'line-through opacity-40' : ''}`}>
+                          {drop.redactedName}
+                        </p>
+                        <p className={`text-neutral-500 text-[10px] leading-[1.7] font-mono-light ${drop.finished ? 'line-through opacity-40' : ''}`}>
+                          {drop.teaser}
+                        </p>
+                      </div>
+
+                      {/* Status + metadata */}
+                      <div className="border-t border-neutral-700/30 pt-4 space-y-4 relative z-10">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <span className={`w-1.5 h-1.5 rounded-full ${dotColor} contraband-pulse`} />
+                            <span className="text-guilty/70 text-[9px] tracking-[0.3em] uppercase font-mono-light">
+                              {drop.status}
+                            </span>
+                          </span>
+                          <span className="text-neutral-600 text-[9px] font-mono-light italic">
+                            {drop.lastSeen}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })}
