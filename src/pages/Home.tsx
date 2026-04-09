@@ -560,7 +560,7 @@ const Home = () => {
       {/* ── Contraband ───────────────────────────────── */}
       <section
         id="contraband"
-        className={`scroll-stack ${SECTION} bg-neutral-900 relative overflow-hidden`}
+        className={`relative ${SECTION} bg-neutral-900 relative overflow-hidden`}
         style={{ zIndex: 4 }}
         ref={contrabandRef}
         onMouseMove={(e) => {
