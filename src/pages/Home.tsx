@@ -598,7 +598,7 @@ const Home = () => {
               return (
                 <div
                   key={drop.code}
-                  className={`contraband-card border border-neutral-700/40 relative overflow-hidden group transition-all duration-300 ${isMain ? 'p-6 md:p-8 scale-100' : 'p-4 md:p-6 scale-90 opacity-60'}`}
+                  className={`contraband-card border relative overflow-hidden group transition-all duration-300 ${isMain ? 'p-6 md:p-8 scale-100 bg-white border-white/20' : 'p-4 md:p-6 scale-90 opacity-60 border-neutral-700/40'}`}
                 >
                   {/* Scan-line overlay */}
                   <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
