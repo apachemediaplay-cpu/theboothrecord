@@ -154,6 +154,11 @@ const Home = () => {
       if (i >= text.length) {
         // Remove cursor after a beat
         setTimeout(() => el.classList.remove("hero-cursor"), 1500);
+        // Fade out the text 2 seconds after typing completes
+        setTimeout(() => {
+          el.style.transition = 'opacity 1s ease-out';
+          el.style.opacity = '0';
+        }, 2000);
         return;
       }
       // Human-like variable speed: base 65ms + random 0-80ms + pause after punctuation/spaces
@@ -330,7 +335,7 @@ const Home = () => {
 
         {/* Centre warning text — typewriter */}
         <div className="relative z-10 flex flex-col items-start text-left px-6 md:px-20 w-full max-w-5xl">
-          <h1 className="font-mono text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold tracking-[0.15em] uppercase text-white leading-[1.4] md:leading-[1.3] hero-typewriter" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.9)' }}>
+          <h1 className="font-mono text-base sm:text-lg md:text-2xl lg:text-3xl font-bold tracking-[0.15em] uppercase text-white leading-[1.4] md:leading-[1.3] hero-typewriter" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.9)' }}>
             <span className="hero-typewriter-text" />
           </h1>
         </div>
