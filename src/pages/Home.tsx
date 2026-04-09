@@ -26,7 +26,7 @@ const flavours = [
     name: "Citrus Confessional",
     subtitle: "Lemon + Yuzu",
     description:
-      "Lemon and yuzu juice with citrus oils. Bright citrus acidity with a clean",
+      "Lemon and yuzu juice with citrus oils. Bright citrus acidity with a clean finish.",
     warning: "WARNING: Evidence of indulgence.",
     ingredients: ["Lemon juice", "Yuzu juice", "Raw sugar", "Carbonated"],
     technical:
