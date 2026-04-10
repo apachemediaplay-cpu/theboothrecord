@@ -68,6 +68,25 @@ const SuspectsCarousel = () => {
                       </div>
                     </>
                   )}
+                  {/* Slide 2 text overlay */}
+                  {i === 1 && (
+                    <>
+                      <p className="absolute top-4 md:top-8 left-4 md:left-8 font-mono text-white text-xs md:text-sm tracking-wide" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>
+                        Attempting to promote soda on state channels without a handle
+                      </p>
+                      <img src={guiltyGOrange} alt="GUILTY G" className="absolute bottom-[calc(3rem+5.5rem)] md:bottom-[calc(4rem+6.5rem)] left-4 md:left-8 w-10 h-10 md:w-14 md:h-14" />
+                      <div className="absolute bottom-12 md:bottom-16 left-4 md:left-8 bg-white text-neutral-900 px-4 md:px-6 py-3 md:py-4 max-w-xs md:max-w-sm">
+                        <p className="font-mono text-xs md:text-sm font-bold tracking-wide uppercase">Bitter Justice</p>
+                        <p className="font-mono text-[10px] md:text-xs tracking-wide uppercase mt-0.5">Blood Orange · Ginger</p>
+                        <p className="font-mono text-[10px] md:text-xs mt-1 tracking-wide">Justice rarely tastes sweet.</p>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-4 md:px-8 py-2 md:py-3">
+                        <p className="font-mono text-white text-[8px] md:text-[10px] tracking-[0.2em] uppercase">
+                          Location: Federal Courthouse Steps • Press Zone Time: 14:32 (+3 Min) Officer: Media Liaison
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <div className={`w-full h-[50vh] md:h-[70vh] ${slide.color}`} />
