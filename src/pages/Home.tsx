@@ -303,27 +303,17 @@ const Home = () => {
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — video-based) ──────────── */}
       <section className="scroll-stack relative h-screen flex flex-col items-center justify-between overflow-hidden" style={{ zIndex: 1 }}>
-        {/* Static fallback image — always visible behind videos */}
-        <img
-          src={heroCan}
-          alt="GUILTY Soda"
+        {/* Hero video background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
           className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* Multi-video background with glitch transitions */}
-        {["/videos/hero-loop.mp4", "/videos/hero-loop-2.mp4", "/videos/hero-loop-3.mp4"].map((src, i) => (
-          <video
-            key={src}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            className={`absolute inset-0 w-full h-full object-cover hero-video ${i === 0 ? "hero-video-active" : ""}`}
-            data-hero-index={i}
-          >
-            <source src={src} type="video/mp4" />
-          </video>
-        ))}
+        >
+          <source src="/videos/hero-loop.mp4" type="video/mp4" />
+        </video>
         {/* Glitch overlay — flashes on transition */}
         <div className="absolute inset-0 pointer-events-none z-[1] hero-glitch-overlay" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/40" />
