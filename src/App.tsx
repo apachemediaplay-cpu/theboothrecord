@@ -13,7 +13,7 @@ import Return from "./pages/Return";
 import Summon from "./pages/Summon";
 import Answer from "./pages/Answer";
 import Landing from "./pages/Landing";
-import Retail from "./pages/Retail";
+
 
 import Home from "./pages/Home";
 import TheWall from "./pages/TheWall";
@@ -37,7 +37,7 @@ const App = () => (
           <Route path="/summon" element={<Summon />} />
           <Route path="/answer" element={<Answer />} />
           <Route path="/landing" element={<Landing />} />
-          <Route path="/retail" element={<Retail />} />
+          
           
           <Route path="/home" element={<Home />} />
           <Route path="/thewall" element={<TheWall />} />
