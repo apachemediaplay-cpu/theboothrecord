@@ -647,25 +647,29 @@ const Home = () => {
                           </div>
                         </div>
 
-                        <div className="border-t border-neutral-200 pt-4 mb-4">
-                          <p className="text-neutral-400 text-[9px] font-mono-light leading-[1.8]">
-                            Declared volume: 250ml per unit.<br />
-                            Declared value: $80 per issue.
+                        <div className="border-t border-neutral-200 pt-4 mb-5">
+                          <div className="flex items-baseline justify-between mb-1">
+                            <span className="font-control text-2xl font-bold text-black tracking-tight">$80</span>
+                            <span className="text-neutral-400 text-[9px] font-mono-light tracking-wider uppercase">per issue · 6 × 250ml</span>
+                          </div>
+                          <p className="text-neutral-400 text-[9px] font-mono-light leading-[1.6]">
+                            Free shipping · Limited to 1,000 issues
                           </p>
                         </div>
 
-                        <p className="text-neutral-400 text-[10px] font-mono-light italic mb-6">
+                        <p className="text-neutral-400 text-[10px] font-mono-light italic mb-5">
                           Against your better judgement, as intended. Open guilty.
                         </p>
 
                         <button
                           onClick={() => setContactOpen(true)}
-                          data-text="Request Access"
-                          className="contraband-cta-glitch relative flex items-center justify-center gap-2 w-full py-3.5 bg-black text-white font-bold text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 overflow-hidden hover:bg-neutral-900"
+                          className="relative flex items-center justify-center gap-2 w-full py-4 bg-guilty text-white font-bold text-xs tracking-[0.2em] uppercase font-control transition-all duration-300 overflow-hidden hover:bg-guilty/90 active:scale-[0.98]"
                         >
-                          <Lock size={10} className="opacity-60" />
-                          Request Access
+                          Buy Now — $80
                         </button>
+                        <p className="text-center text-neutral-400 text-[8px] font-mono-light mt-2 tracking-wider">
+                          SECURE CHECKOUT · SHIPS WORLDWIDE
+                        </p>
                       </div>
                     </>
                   ) : (
