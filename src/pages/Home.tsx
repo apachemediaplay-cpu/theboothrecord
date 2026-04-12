@@ -608,8 +608,8 @@ const Home = () => {
 
                   {isMain ? (
                     <>
-                      {/* DROP-002 preview video */}
-                      <div className="relative w-full mb-4 overflow-hidden rounded z-10">
+                      {/* Full-bleed video */}
+                      <div className="relative w-full overflow-hidden">
                         <video
                           autoPlay
                           loop
@@ -619,51 +619,54 @@ const Home = () => {
                           src={drop002Video}
                         />
                       </div>
-                      {/* DROP-002 detailed card */}
-                      <h3 className="font-control text-xl md:text-2xl font-bold text-black tracking-[0.15em] uppercase mb-1 relative z-10">
-                        DROP–002
-                      </h3>
-                      <p className="font-control text-[10px] md:text-xs text-neutral-500 tracking-[0.25em] uppercase mb-4 relative z-10">
-                        LIMITED TO 1,000 · NO RESTOCK
-                      </p>
-                      <p className="text-neutral-500 text-[10px] leading-[1.7] font-mono-light mb-6 relative z-10">
-                        One of each. Twice. Everything you need to form an opinion and very little you need to feel good about it.
-                      </p>
 
-                      <div className="space-y-3 mb-6 relative z-10">
-                        <div>
-                          <p className="font-control text-sm font-bold text-black tracking-wide">CITRUS CONFESSIONAL</p>
-                          <p className="text-neutral-500 text-[10px] font-mono-light">Lemon Yuzu · ×2</p>
-                        </div>
-                        <div>
-                          <p className="font-control text-sm font-bold text-black tracking-wide">BITTER JUSTICE</p>
-                          <p className="text-neutral-500 text-[10px] font-mono-light">Blood Orange Ginger · ×2</p>
-                        </div>
-                        <div>
-                          <p className="font-control text-sm font-bold text-black tracking-wide">COLA VICE</p>
-                          <p className="text-neutral-500 text-[10px] font-mono-light">Spiced Cola · ×2</p>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-neutral-300 pt-4 mb-4 relative z-10">
-                        <p className="text-neutral-400 text-[9px] font-mono-light leading-[1.8]">
-                          Declared volume: 250ml per unit.<br />
-                          Declared value: $80 per issue.
+                      {/* Card content with padding */}
+                      <div className="px-6 md:px-8 pt-6 md:pt-8 pb-6 md:pb-8">
+                        <h3 className="font-control text-xl md:text-2xl font-bold text-black tracking-[0.15em] uppercase mb-1">
+                          DROP–002
+                        </h3>
+                        <p className="font-control text-[10px] md:text-xs text-neutral-400 tracking-[0.25em] uppercase mb-5">
+                          LIMITED TO 1,000 · NO RESTOCK
                         </p>
+                        <p className="text-neutral-500 text-[10px] leading-[1.8] font-mono-light mb-6">
+                          One of each. Twice. Everything you need to form an opinion and very little you need to feel good about it.
+                        </p>
+
+                        <div className="space-y-3 mb-6">
+                          <div>
+                            <p className="font-control text-sm font-bold text-black tracking-wide">CITRUS CONFESSIONAL</p>
+                            <p className="text-neutral-400 text-[10px] font-mono-light">Lemon Yuzu · ×2</p>
+                          </div>
+                          <div>
+                            <p className="font-control text-sm font-bold text-black tracking-wide">BITTER JUSTICE</p>
+                            <p className="text-neutral-400 text-[10px] font-mono-light">Blood Orange Ginger · ×2</p>
+                          </div>
+                          <div>
+                            <p className="font-control text-sm font-bold text-black tracking-wide">COLA VICE</p>
+                            <p className="text-neutral-400 text-[10px] font-mono-light">Spiced Cola · ×2</p>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-neutral-200 pt-4 mb-4">
+                          <p className="text-neutral-400 text-[9px] font-mono-light leading-[1.8]">
+                            Declared volume: 250ml per unit.<br />
+                            Declared value: $80 per issue.
+                          </p>
+                        </div>
+
+                        <p className="text-neutral-400 text-[10px] font-mono-light italic mb-6">
+                          Against your better judgement, as intended. Open guilty.
+                        </p>
+
+                        <button
+                          onClick={() => setContactOpen(true)}
+                          data-text="Request Access"
+                          className="contraband-cta-glitch relative flex items-center justify-center gap-2 w-full py-3.5 bg-black text-white font-bold text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 overflow-hidden hover:bg-neutral-900"
+                        >
+                          <Lock size={10} className="opacity-60" />
+                          Request Access
+                        </button>
                       </div>
-
-                      <p className="text-neutral-500 text-[10px] font-mono-light italic mb-6 relative z-10">
-                        Against your better judgement, as intended. Open guilty.
-                      </p>
-
-                      <button
-                        onClick={() => setContactOpen(true)}
-                        data-text="Request Access"
-                        className="contraband-cta-glitch relative flex items-center justify-center gap-2 w-full py-3 bg-black text-white font-bold text-[9px] tracking-[0.3em] uppercase font-mono-light transition-all duration-300 overflow-hidden z-10"
-                      >
-                        <Lock size={10} className="opacity-60" />
-                        Request Access
-                      </button>
                     </>
                   ) : (
                     <>
