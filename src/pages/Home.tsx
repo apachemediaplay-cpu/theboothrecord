@@ -628,7 +628,7 @@ const Home = () => {
                         <p className="font-control text-[10px] md:text-xs text-neutral-400 tracking-[0.25em] uppercase mb-5">
                           LIMITED TO 1,000 · NO RESTOCK
                         </p>
-                        <p className="text-neutral-400 text-[10px] font-mono-light tracking-wider uppercase mb-6">
+                        <p className="text-neutral-600 text-xs font-control font-semibold tracking-[0.15em] uppercase mb-6">
                           6 × 250ml · 3 blends
                         </p>
 
