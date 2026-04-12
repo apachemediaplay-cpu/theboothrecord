@@ -91,7 +91,7 @@ const SuspectsCarousel = () => {
                     </p>
                   </div>
                 </>
-              )
+              )}
             </div>
           ))}
         </div>
