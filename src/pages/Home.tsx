@@ -6,7 +6,7 @@ import SuspectsCarousel from "@/components/SuspectsCarousel";
 import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyOvalLogo from "@/assets/guilty-oval-logo.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
-import heroCan from "@/assets/retail/hero-can.png";
+import heroFallback from "@/assets/hero-fallback.webp";
 import colaVice from "@/assets/retail/cola-vice.png";
 import citrusConfessional from "@/assets/retail/citrus-confessional.png";
 import bitterJustice from "@/assets/retail/bitter-justice.png";
@@ -303,6 +303,12 @@ const Home = () => {
     <div className="min-h-screen bg-white text-neutral-900">
       {/* ── Hero (stays dark — video-based) ──────────── */}
       <section className="scroll-stack relative h-screen flex flex-col items-center justify-between overflow-hidden" style={{ zIndex: 1 }}>
+        {/* Fallback image — visible while video loads */}
+        <img
+          src={heroFallback}
+          alt="GUILTY Soda"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
         {/* Hero video background */}
         <video
           autoPlay
@@ -311,6 +317,7 @@ const Home = () => {
           playsInline
           preload="auto"
           className="absolute inset-0 w-full h-full object-cover"
+          poster={heroFallback}
         >
           <source src="/videos/hero-loop.mp4" type="video/mp4" />
         </video>
