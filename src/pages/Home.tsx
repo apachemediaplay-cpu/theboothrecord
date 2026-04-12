@@ -628,38 +628,13 @@ const Home = () => {
                         <p className="font-control text-[10px] md:text-xs text-neutral-400 tracking-[0.25em] uppercase mb-5">
                           LIMITED TO 1,000 · NO RESTOCK
                         </p>
-                        <p className="text-neutral-500 text-[10px] leading-[1.8] font-mono-light mb-6">
-                          One of each. Twice. Everything you need to form an opinion and very little you need to feel good about it.
+                        <p className="text-neutral-400 text-[10px] font-mono-light tracking-wider uppercase mb-6">
+                          6 × 250ml · 3 blends
                         </p>
 
-                        <div className="space-y-3 mb-6">
-                          <div>
-                            <p className="font-control text-sm font-bold text-black tracking-wide">CITRUS CONFESSIONAL</p>
-                            <p className="text-neutral-400 text-[10px] font-mono-light">Lemon Yuzu · ×2</p>
-                          </div>
-                          <div>
-                            <p className="font-control text-sm font-bold text-black tracking-wide">BITTER JUSTICE</p>
-                            <p className="text-neutral-400 text-[10px] font-mono-light">Blood Orange Ginger · ×2</p>
-                          </div>
-                          <div>
-                            <p className="font-control text-sm font-bold text-black tracking-wide">COLA VICE</p>
-                            <p className="text-neutral-400 text-[10px] font-mono-light">Spiced Cola · ×2</p>
-                          </div>
+                        <div className="flex items-baseline justify-between mb-6">
+                          <span className="font-control text-2xl font-bold text-black tracking-tight">$80</span>
                         </div>
-
-                        <div className="border-t border-neutral-200 pt-4 mb-5">
-                          <div className="flex items-baseline justify-between mb-1">
-                            <span className="font-control text-2xl font-bold text-black tracking-tight">$80</span>
-                            <span className="text-neutral-400 text-[9px] font-mono-light tracking-wider uppercase">per issue · 6 × 250ml</span>
-                          </div>
-                          <p className="text-neutral-400 text-[9px] font-mono-light leading-[1.6]">
-                            Free shipping · Limited to 1,000 issues
-                          </p>
-                        </div>
-
-                        <p className="text-neutral-400 text-[10px] font-mono-light italic mb-5">
-                          Against your better judgement, as intended. Open guilty.
-                        </p>
 
                         <button
                           onClick={() => setContactOpen(true)}
@@ -667,9 +642,6 @@ const Home = () => {
                         >
                           Order Now — $80
                         </button>
-                        <p className="text-center text-neutral-400 text-[8px] font-mono-light mt-2 tracking-wider">
-                          SECURE CHECKOUT · SHIPS WORLDWIDE
-                        </p>
                       </div>
                     </>
                   ) : (
