@@ -7,6 +7,7 @@ import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyOvalLogo from "@/assets/guilty-oval-logo.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroFallback from "@/assets/hero-fallback.webp";
+import drop002Video from "@/assets/drop-002-preview.mp4";
 import colaVice from "@/assets/retail/cola-vice.png";
 import citrusConfessional from "@/assets/retail/citrus-confessional.png";
 import bitterJustice from "@/assets/retail/bitter-justice.png";
