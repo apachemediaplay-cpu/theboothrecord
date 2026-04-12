@@ -632,9 +632,6 @@ const Home = () => {
                           6 × 250ml · 3 blends
                         </p>
 
-                        <div className="flex items-baseline justify-between mb-6">
-                          <span className="font-control text-2xl font-bold text-black tracking-tight">$80</span>
-                        </div>
 
                         <button
                           onClick={() => setContactOpen(true)}
