@@ -7,6 +7,7 @@ import guiltyLogoRed from "@/assets/guilty-logo-red.svg";
 import guiltyOvalLogo from "@/assets/guilty-oval-logo.svg";
 import guiltyLogoWhite from "@/assets/guilty-logo-white.svg";
 import heroFallback from "@/assets/hero-fallback.webp";
+import drop002Video from "@/assets/drop-002-preview.mp4";
 import colaVice from "@/assets/retail/cola-vice.png";
 import citrusConfessional from "@/assets/retail/citrus-confessional.png";
 import bitterJustice from "@/assets/retail/bitter-justice.png";
@@ -607,6 +608,17 @@ const Home = () => {
 
                   {isMain ? (
                     <>
+                      {/* DROP-002 preview video */}
+                      <div className="relative w-full mb-4 overflow-hidden rounded z-10">
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-auto object-cover"
+                          src={drop002Video}
+                        />
+                      </div>
                       {/* DROP-002 detailed card */}
                       <h3 className="font-control text-xl md:text-2xl font-bold text-black tracking-[0.15em] uppercase mb-1 relative z-10">
                         DROP–002
