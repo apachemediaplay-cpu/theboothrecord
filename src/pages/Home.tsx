@@ -665,7 +665,7 @@ const Home = () => {
                           onClick={() => setContactOpen(true)}
                           className="relative flex items-center justify-center gap-2 w-full py-4 bg-guilty text-white font-bold text-xs tracking-[0.2em] uppercase font-control transition-all duration-300 overflow-hidden hover:bg-guilty/90 active:scale-[0.98]"
                         >
-                          Buy Now — $80
+                          Order Now — $80
                         </button>
                         <p className="text-center text-neutral-400 text-[8px] font-mono-light mt-2 tracking-wider">
                           SECURE CHECKOUT · SHIPS WORLDWIDE
