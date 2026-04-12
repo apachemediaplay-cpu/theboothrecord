@@ -579,8 +579,8 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Cards layer — z-10 so overlay sits partially on top */}
-        <div className="max-w-5xl mx-auto relative z-10">
+        {/* Cards layer — z-30 so main card sits above the branded overlay */}
+        <div className="max-w-5xl mx-auto relative z-30">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_1.3fr_1fr] gap-4 max-w-4xl mx-auto items-center">
             {contrabandDrops.map((drop, idx) => {
               const dotColor =
