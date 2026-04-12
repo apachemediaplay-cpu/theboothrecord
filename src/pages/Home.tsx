@@ -607,6 +607,17 @@ const Home = () => {
 
                   {isMain ? (
                     <>
+                      {/* DROP-002 preview video */}
+                      <div className="relative w-full mb-4 overflow-hidden rounded z-10">
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-auto object-cover"
+                          src={drop002Video}
+                        />
+                      </div>
                       {/* DROP-002 detailed card */}
                       <h3 className="font-control text-xl md:text-2xl font-bold text-black tracking-[0.15em] uppercase mb-1 relative z-10">
                         DROP–002
