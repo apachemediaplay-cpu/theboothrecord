@@ -622,22 +622,21 @@ const Home = () => {
 
                       {/* Card content with padding */}
                       <div className="px-6 md:px-8 pt-6 md:pt-8 pb-6 md:pb-8">
-                        <h3 className="font-control text-xl md:text-2xl font-bold text-black tracking-[0.15em] uppercase mb-1">
-                          DROP–002
-                        </h3>
                         <p className="font-control text-[10px] md:text-xs text-neutral-400 tracking-[0.25em] uppercase mb-5">
-                          LIMITED TO 1,000 · NO RESTOCK
+                          DROP 002 · LIMITED TO 1,000 · NO RESTOCK
+                        </p>
+                        <p className="text-neutral-700 text-sm font-control leading-relaxed mb-5">
+                          One of each. Twice. Enough to decide. Very little to justify it.
                         </p>
                         <p className="text-neutral-600 text-xs font-control font-semibold tracking-[0.15em] uppercase mb-6">
-                          6 × 250ml · 3 blends
+                          6 × 250ML
                         </p>
-
 
                         <button
                           onClick={() => setContactOpen(true)}
                           className="relative flex items-center justify-center gap-2 w-full py-4 bg-guilty text-white font-bold text-xs tracking-[0.2em] uppercase font-control transition-all duration-300 overflow-hidden hover:bg-guilty/90 active:scale-[0.98]"
                         >
-                          Order Now — $80
+                          ORDER NOW — $80
                         </button>
                       </div>
                     </>
