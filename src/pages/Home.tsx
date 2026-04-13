@@ -622,7 +622,7 @@ const Home = () => {
 
                       {/* Card content with padding */}
                       <div className="px-6 md:px-8 pt-6 md:pt-8 pb-6 md:pb-8">
-                        <p className="font-control text-[10px] md:text-xs text-neutral-400 tracking-[0.25em] uppercase mb-5">
+                        <p className="font-control text-[10px] md:text-xs text-neutral-400 tracking-[0.25em] uppercase mb-5 font-bold">
                           DROP 002 · LIMITED TO 1,000 · NO RESTOCK
                         </p>
                         <p className="text-neutral-700 text-sm font-control leading-relaxed mb-5">
