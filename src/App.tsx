@@ -13,6 +13,7 @@ import Return from "./pages/Return";
 import Summon from "./pages/Summon";
 import Answer from "./pages/Answer";
 import Landing from "./pages/Landing";
+import PasswordGate from "./components/PasswordGate";
 
 
 import Home from "./pages/Home";
