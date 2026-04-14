@@ -13,6 +13,7 @@ import Return from "./pages/Return";
 import Summon from "./pages/Summon";
 import Answer from "./pages/Answer";
 import Landing from "./pages/Landing";
+import PasswordGate from "./components/PasswordGate";
 
 
 import Home from "./pages/Home";
@@ -28,7 +29,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<PasswordGate><Home /></PasswordGate>} />
           <Route path="/booth" element={<Index />} />
           <Route path="/confidentiality" element={<Confidentiality />} />
           <Route path="/confess" element={<Confess />} />
