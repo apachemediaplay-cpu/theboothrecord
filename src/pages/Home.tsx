@@ -905,9 +905,9 @@ const Home = () => {
               <span className="text-ritual text-[10px] tracking-[0.5em] uppercase font-mono-light">
                 Live Feed
               </span>
-              <span className="text-neutral-600 text-[10px] font-mono-light">
+              {/* <span className="text-neutral-600 text-[10px] font-mono-light">
                 — {confessionCount.toLocaleString()} confessions logged
-              </span>
+              </span> */}
             </div>
             <h2 className="font-control text-2xl sm:text-3xl md:text-5xl font-bold text-white mb-6">
               The Booth
@@ -932,9 +932,9 @@ const Home = () => {
                   <p className="text-neutral-500 text-[9px] tracking-[0.4em] uppercase font-mono-light">
                     Confessor {confessions[activeIndex]?.confessorId}
                   </p>
-                  <span className="text-neutral-700 text-[9px] font-mono-light">
+                  {/* <span className="text-neutral-700 text-[9px] font-mono-light">
                     just now
-                  </span>
+                  </span> */}
                 </div>
                 <p className="text-neutral-100 text-sm md:text-base font-mono-light leading-[1.7] mb-4 max-w-[550px]">
                   {confessions[activeIndex]?.confession}
