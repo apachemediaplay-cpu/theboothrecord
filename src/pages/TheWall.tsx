@@ -24,7 +24,6 @@ const TheWall = () => {
     fetch(`${baseUrl}/v1/confessions`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("API response:", JSON.stringify(data).substring(0, 500), "Total confessions:", data?.data?.confessions?.length);
         const apiConfessions: ConfessionEntry[] = (data?.data?.confessions || []).map(
           (c: { _id: string; createdAt: string; content: string; response: string }, i: number) => {
             const date = new Date(c.createdAt);
