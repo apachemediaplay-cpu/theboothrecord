@@ -272,9 +272,7 @@ const Home = () => {
     fetch(`${baseUrl}/v1/confessions`)
       .then((res) => res.json())
       .then((data) => {
-        const items = (data?.data?.confessions || [])
-          .slice(0, 6)
-          .map(
+        const items = (data?.data?.confessions || []).map(
             (c: { content: string; response: string }, i: number) => {
               const sentences = c.response.split(/(?<=\.)\s+/);
               return {
