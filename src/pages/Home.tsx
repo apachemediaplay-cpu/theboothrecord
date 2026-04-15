@@ -273,7 +273,7 @@ const Home = () => {
       .then((res) => res.json())
       .then((data) => {
         const items = (data?.data?.confessions || [])
-          .slice(0, 6)
+          .map(
           .map(
             (c: { content: string; response: string }, i: number) => {
               const sentences = c.response.split(/(?<=\.)\s+/);
