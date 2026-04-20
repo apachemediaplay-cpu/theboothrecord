@@ -4,14 +4,14 @@
     "guilty-dev-829ae": {
       "hosting": {
         "frontend": [
-          "guilty-dev-829ae"
+          "guilty-booth-dev"
         ]
       }
     },
     "guilty-prod": {
       "hosting": {
         "frontend": [
-          "guilty-prod"
+          "guilty-booth-prod"
         ]
       }
     }
