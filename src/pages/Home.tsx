@@ -145,7 +145,7 @@ const Home = () => {
 
   // Typewriter effect for hero warning text
   useEffect(() => {
-    const text = "IF YOU WITNESS ANY PERSON IN POSITION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.";
+    const text = "IF YOU WITNESS ANY PERSON IN POSSESSION OF UNAUTHORISED BEVERAGES REPORT THE SUSPECT IMMEDIATELY.";
     const el = document.querySelector<HTMLSpanElement>(".hero-typewriter-text");
     if (!el) return;
     el.classList.add("hero-cursor");
