@@ -67,11 +67,15 @@ const SuspectsCarousel = () => {
               {/* Slide 2 text overlay */}
               {i === 1 && (
                 <>
-                  <img src={guiltyGOrange} alt="GUILTY G" className="absolute bottom-[calc(3rem+5.5rem)] md:bottom-[calc(4rem+6.5rem)] right-4 md:right-8 w-10 h-10 md:w-14 md:h-14" />
                   <div className="absolute bottom-12 md:bottom-16 right-4 md:right-8 bg-white text-neutral-900 px-4 md:px-6 py-3 md:py-4 max-w-xs md:max-w-sm">
-                    <p className="font-mono text-xs md:text-sm font-bold tracking-wide uppercase">Bitter Justice</p>
-                    <p className="font-mono text-[10px] md:text-xs tracking-wide uppercase mt-0.5">Blood Orange · Ginger</p>
-                    <p className="font-mono text-[10px] md:text-xs mt-1 tracking-wide">Justice rarely tastes sweet.</p>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <p className="font-mono text-xs md:text-sm font-bold tracking-wide uppercase">Bitter Justice</p>
+                        <p className="font-mono text-[10px] md:text-xs tracking-wide uppercase mt-0.5">Blood Orange · Ginger</p>
+                        <p className="font-mono text-[10px] md:text-xs mt-1 tracking-wide">Justice rarely tastes sweet.</p>
+                      </div>
+                      <img src={guiltyGOrange} alt="GUILTY G" className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
+                    </div>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-4 md:px-8 py-2 md:py-3">
                     <p className="font-mono text-white text-[8px] md:text-[10px] tracking-[0.2em] uppercase">
@@ -83,11 +87,15 @@ const SuspectsCarousel = () => {
               {/* Slide 3 text overlay */}
               {i === 2 && (
                 <>
-                  <img src={guiltyGOrange} alt="GUILTY G" className="absolute bottom-[calc(3rem+5.5rem)] md:bottom-[calc(4rem+6.5rem)] left-4 md:left-8 w-10 h-10 md:w-14 md:h-14" />
                   <div className="absolute bottom-12 md:bottom-16 left-4 md:left-8 bg-white text-neutral-900 px-4 md:px-6 py-3 md:py-4 max-w-xs md:max-w-sm">
-                    <p className="font-mono text-xs md:text-sm font-bold tracking-wide uppercase">Cola Vice</p>
-                    <p className="font-mono text-[10px] md:text-xs tracking-wide uppercase mt-0.5">Spiced Cola</p>
-                    <p className="font-mono text-[10px] md:text-xs mt-1 tracking-wide">Some habits never get acquitted.</p>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <p className="font-mono text-xs md:text-sm font-bold tracking-wide uppercase">Cola Vice</p>
+                        <p className="font-mono text-[10px] md:text-xs tracking-wide uppercase mt-0.5">Spiced Cola</p>
+                        <p className="font-mono text-[10px] md:text-xs mt-1 tracking-wide">Some habits never get acquitted.</p>
+                      </div>
+                      <img src={guiltyGOrange} alt="GUILTY G" className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
+                    </div>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-4 md:px-8 py-2 md:py-3">
                     <p className="font-mono text-white text-[8px] md:text-[10px] tracking-[0.2em] uppercase">
