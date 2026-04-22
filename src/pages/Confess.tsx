@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 import { Camera } from "lucide-react";
 import micButtonSvg from "@/assets/mic-button.svg";
@@ -131,8 +130,6 @@ const Confess = () => {
 
   return (
     <div className="screen-container animate-fade-in">
-      <BoothHeader />
-      
       <div className="flex-1 flex flex-col justify-center">
         <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
           Confess

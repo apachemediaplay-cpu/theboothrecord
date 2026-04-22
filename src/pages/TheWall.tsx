@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
@@ -86,23 +85,6 @@ const TheWall = () => {
 
   return (
     <div className="min-h-[100dvh] bg-background relative overflow-hidden">
-      <BoothHeader />
-
-      {/* Sound toggle */}
-      <button
-        onClick={toggleSound}
-        className="fixed top-5 right-5 z-20 flex items-center gap-2 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors duration-300"
-      >
-        <span className="text-[9px] tracking-[0.3em] uppercase font-mono-light">
-          SOUND
-        </span>
-        <span
-          className={`inline-block w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
-            soundEnabled ? "bg-ritual" : "bg-muted-foreground/30"
-          }`}
-        />
-      </button>
-
       {/* Ambient scan line */}
       <div
         className="pointer-events-none fixed inset-0 z-10"
@@ -126,23 +108,13 @@ const TheWall = () => {
       {/* Header */}
       <div className="pt-16 pb-4 md:pt-20 md:pb-6 text-center px-6">
         <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide mb-2">
-          THE WALL
+          THE PUBLIC RECORD
         </h1>
-        <p className="text-muted-foreground/40 text-[10px] md:text-xs font-mono-light tracking-[0.2em] leading-relaxed">
-          Some truths don't disappear.
-        </p>
-      </div>
-
-      {/* Confession counter */}
-      <div className="text-center pb-3">
-        <span className="text-muted-foreground/25 text-[10px] tracking-[0.4em] uppercase font-mono-light">
-          {confessionCount.toLocaleString()} CONFESSIONS RECORDED
-        </span>
       </div>
 
       {/* Live indicator */}
       <div className="flex items-center justify-center gap-2 pb-6 md:pb-8">
-        <span className="text-muted-foreground/30 text-[9px] tracking-[0.5em] uppercase font-mono-light">
+        <span className="text-muted-foreground/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
           LIVE CONFESSIONS
         </span>
         <span
@@ -157,13 +129,13 @@ const TheWall = () => {
       <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-16">
         {loading ? (
           <div className="text-center py-20">
-            <span className="text-muted-foreground/30 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
+            <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
               LOADING CONFESSIONS...
             </span>
           </div>
         ) : confessions.length === 0 ? (
           <div className="text-center py-20">
-            <span className="text-muted-foreground/30 text-[10px] tracking-[0.4em] uppercase font-mono-light">
+            <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light">
               NO CONFESSIONS YET
             </span>
           </div>

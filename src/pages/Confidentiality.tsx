@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 
 const Confidentiality = () => {
@@ -36,8 +35,6 @@ const Confidentiality = () => {
 
   return (
     <div className="screen-container animate-fade-in">
-      <BoothHeader />
-      
       <div className="flex-1 flex flex-col justify-center">
         <h1 className="font-control text-3xl md:text-6xl font-bold leading-tight text-foreground mb-8">
           Confessions. Anonymous. Unfiltered. No judgement.

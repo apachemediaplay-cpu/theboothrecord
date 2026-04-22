@@ -1,7 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import BoothHeader from "@/components/BoothHeader";
-import BoothFooter from "@/components/BoothFooter";
 
 const Verdict = () => {
   const navigate = useNavigate();
@@ -131,8 +129,6 @@ const Verdict = () => {
 
   return (
     <div className="screen-container animate-fade-in">
-      <BoothHeader />
-      
       <div className="flex-1 flex flex-col justify-center items-start text-left pb-48">
         <p className="text-ritual text-xl font-mono-light tracking-wide mb-6 min-h-[1.75rem] relative">
           <span className="relative inline-block">
@@ -212,17 +208,19 @@ const Verdict = () => {
             )}
           </span>
         </button>
-        
-        
         <button 
           onClick={() => navigate("/summon")}
           className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
         >
           SUMMON SOMEONE
         </button>
+        {verdictResponse !== 'Entry withheld' && <button 
+          onClick={() => navigate("/thewall")}
+          className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
+        >
+          THE PUBLIC RECORD
+        </button>}
       </div>
-      
-      <BoothFooter />
     </div>
   );
 };

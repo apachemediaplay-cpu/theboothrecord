@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 
 const Receiving = () => {
@@ -49,8 +48,6 @@ const Receiving = () => {
 
   return (
     <div className="screen-container animate-fade-in">
-      <BoothHeader />
-      
       <div className="flex-1 flex items-center justify-center">
         <p className={`text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem] ${isThinking ? 'animate-[pulse_2s_ease-in-out_infinite]' : ''}`}>
           {typedText}

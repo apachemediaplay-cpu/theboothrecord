@@ -65,11 +65,11 @@ const ConfessionCard = ({
       style={{ opacity: visible ? opacityFactor : 0 }}
     >
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-muted-foreground/30 text-[9px] tracking-[0.4em] uppercase font-mono-light">
-          CONFESSOR {entry.confessorId}
+        <span className="text-muted-foreground/80 text-[9px] tracking-[0.4em] uppercase font-mono-light">
+          SUBJECT {entry.confessorId}
         </span>
         <span className="text-muted-foreground/20 text-[9px]">·</span>
-        <span className="text-muted-foreground/30 text-[9px] tracking-[0.2em] font-mono-light">
+        <span className="text-muted-foreground/80 text-[9px] tracking-[0.2em] font-mono-light">
           {displayTime}
         </span>
       </div>
@@ -79,9 +79,6 @@ const ConfessionCard = ({
       </p>
 
       <div className="max-w-[600px]">
-        <p className="text-muted-foreground/30 text-[8px] tracking-[0.5em] uppercase font-mono-light mb-2">
-          VERDICT
-        </p>
         <p className="text-ritual text-xs font-mono-light tracking-wide mb-1 opacity-80">
           {entry.verdict}
         </p>
