@@ -21,9 +21,9 @@ const Confidentiality = () => {
         setShowCursor(false);
         
         // Auto-navigate after 2 seconds
-        setTimeout(() => {
-          navigate("/confess");
-        }, 3500);
+        // setTimeout(() => {
+        //   navigate("/confess");
+        // }, 3500);
       }
     }, 60);
 

@@ -47,9 +47,9 @@ const Answer = () => {
               }, 1200);
               
               // Auto-navigate after 5 seconds
-              setTimeout(() => {
-                navigate("/confidentiality");
-              }, 5000);
+              // setTimeout(() => {
+              //   navigate("/confidentiality");
+              // }, 5000);
             }
           }, 60);
         }, 400);

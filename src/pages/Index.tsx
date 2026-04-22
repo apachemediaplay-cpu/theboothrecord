@@ -47,9 +47,9 @@ const Index = () => {
               }, 1200);
               
               // Auto-navigate after 2 seconds
-              setTimeout(() => {
-                navigate("/confidentiality");
-              }, 2000);
+              // setTimeout(() => {
+              //   navigate("/confidentiality");
+              // }, 2000);
             }
           }, 60);
         }, 400);
