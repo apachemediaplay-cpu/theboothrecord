@@ -145,6 +145,7 @@ const Confess = () => {
         <div className="relative min-h-[120px]">
           <textarea
             ref={textareaRef}
+            maxLength={300}
             value={confession + (interimText ? (confession ? ' ' : '') + interimText : '')}
             onChange={(e) => {
               if (!isRecording) {
@@ -171,7 +172,7 @@ const Confess = () => {
       <div className="fixed bottom-32 left-0 right-0 px-6">
         <div className="flex items-center justify-between">
           <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
-            <Camera className="w-6 h-6" />
+            {/* <Camera className="w-6 h-6" /> */}
           </button>
           
           {confession.trim() ? (
