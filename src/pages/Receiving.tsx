@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
+import { supabase } from "@/integrations/supabase/client";
 
 const Receiving = () => {
   const navigate = useNavigate();
@@ -19,19 +20,19 @@ const Receiving = () => {
       } else {
         clearInterval(typeInterval);
         setIsThinking(true);
-        
-        // Call the confession API
+
+        // Generate the verdict via our own Supabase Edge Function.
+        // (The confession is persisted to Supabase later, at the verdict stage,
+        //  so it can be saved together with the source tag and optional email.)
         const confession = sessionStorage.getItem("confession") || "";
-        const baseUrl = import.meta.env.VITE_BASE_URL;
-        
-        fetch(`${baseUrl}/v1/confessions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ confession }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            sessionStorage.setItem("verdictResponse", data.data.response);
+
+        supabase.functions
+          .invoke("generate-verdict", { body: { confession } })
+          .then(({ data, error }) => {
+            if (error || !data?.verdict) {
+              throw error ?? new Error("No verdict returned");
+            }
+            sessionStorage.setItem("verdictResponse", data.verdict);
             setShowCursor(false);
             navigate("/verdict");
           })

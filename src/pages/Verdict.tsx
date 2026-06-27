@@ -1,5 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+// The client-side fallback shown when verdict generation fails — never persisted.
+const FALLBACK_VERDICT = "The booth could not process your confession. Try again.";
 
 const Verdict = () => {
   const navigate = useNavigate();
@@ -20,6 +24,54 @@ const Verdict = () => {
   
   const verdictResponse = sessionStorage.getItem("verdictResponse") || "";
   const fullText = "The booth noticed.";
+
+  // Feature 2: optional, skippable email capture ("claim your case").
+  const [email, setEmail] = useState("");
+  const [claimState, setClaimState] = useState<"idle" | "saving" | "claimed" | "skipped">("idle");
+  const hasSavedRef = useRef(false);
+
+  // Single Supabase insert for the whole flow (anon INSERT only; no later UPDATE).
+  // Persists confession + verdict + venue source + optional email in one row.
+  const saveConfession = async (emailValue: string | null) => {
+    if (hasSavedRef.current) return;
+    const confession = (sessionStorage.getItem("confession") || "").trim();
+    const verdict = sessionStorage.getItem("verdictResponse") || "";
+    // Don't persist empty confessions or the client-side error fallback.
+    if (!confession || !verdict || verdict === FALLBACK_VERDICT) return;
+    hasSavedRef.current = true;
+
+    const source = (sessionStorage.getItem("source") || "direct").trim() || "direct";
+    const { error } = await supabase.from("confessions").insert({
+      confession_text: confession,
+      verdict_text: verdict,
+      source,
+      email: emailValue || null,
+      // status defaults to 'pending' and subject_number is assigned server-side.
+    });
+    if (error) {
+      // Allow a retry if the write failed.
+      hasSavedRef.current = false;
+      throw error;
+    }
+  };
+
+  const handleClaim = async () => {
+    const value = email.trim();
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    if (!valid) return;
+    setClaimState("saving");
+    try {
+      await saveConfession(value);
+      setClaimState("claimed");
+    } catch {
+      setClaimState("idle");
+    }
+  };
+
+  const handleSkipEmail = () => {
+    void saveConfession(null);
+    setClaimState("skipped");
+  };
 
   const triggerGlitch = () => {
     const offset = (Math.random() > 0.5 ? 1 : -1) * (6 + Math.random() * 8);
@@ -122,7 +174,23 @@ const Verdict = () => {
     }
   };
 
-  const handleConfessAgain = () => {
+  // Save (as an implicit skip) before navigating away, so the confession is
+  // recorded even if the user ignores the email step.
+  const handleNavigate = async (path: string) => {
+    try {
+      await saveConfession(null);
+    } catch {
+      /* best-effort; navigation should not be blocked by a write failure */
+    }
+    navigate(path);
+  };
+
+  const handleConfessAgain = async () => {
+    try {
+      await saveConfession(null);
+    } catch {
+      /* best-effort */
+    }
     sessionStorage.removeItem("confession");
     navigate("/return");
   };
@@ -172,7 +240,45 @@ const Verdict = () => {
       </div>
       
       <div className="fixed bottom-20 left-0 right-0 px-6 flex flex-col items-center gap-6">
-        <button 
+        {/* Feature 2: optional, skippable "claim your case" email capture */}
+        {claimState === "claimed" ? (
+          <p className="text-ritual text-sm font-mono-light tracking-wide text-center max-w-xs">
+            Your case is on file. The booth knows where to find you.
+          </p>
+        ) : claimState !== "skipped" ? (
+          <div className="w-full max-w-xs flex flex-col items-center gap-3">
+            <p className="text-muted-foreground text-xs font-mono-light tracking-wide text-center">
+              Claim your case. Leave a way to be reached.
+            </p>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleClaim();
+              }}
+              placeholder="your@email.com"
+              className="w-full bg-transparent border-b border-border/40 text-center text-ritual text-base font-mono-light tracking-wide py-1 outline-none focus:border-ritual/60 transition-colors"
+            />
+            <div className="flex items-center gap-6">
+              <button
+                onClick={handleClaim}
+                disabled={claimState === "saving"}
+                className="text-sm text-foreground underline underline-offset-4 hover:text-ritual transition-colors tracking-wide disabled:opacity-50"
+              >
+                {claimState === "saving" ? "FILING…" : "CLAIM YOUR CASE"}
+              </button>
+              <button
+                onClick={handleSkipEmail}
+                className="text-sm text-muted-foreground/60 hover:text-muted-foreground transition-colors tracking-wide"
+              >
+                NOT NOW
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <button
           onClick={handleConfessAgain}
           className="btn-booth relative overflow-hidden"
         >
@@ -208,14 +314,14 @@ const Verdict = () => {
             )}
           </span>
         </button>
-        <button 
-          onClick={() => navigate("/summon")}
+        <button
+          onClick={() => handleNavigate("/summon")}
           className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
         >
           SUMMON SOMEONE
         </button>
-        {verdictResponse !== 'Entry withheld' && <button 
-          onClick={() => navigate("/thewall")}
+        {verdictResponse !== 'Entry withheld' && <button
+          onClick={() => handleNavigate("/thewall")}
           className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
         >
           THE PUBLIC RECORD

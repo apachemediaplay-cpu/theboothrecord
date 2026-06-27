@@ -19,6 +19,16 @@ const Index = () => {
   const fullText1 = "Once you begin, you can't take it back.";
   const fullText2 = "That's the point.";
 
+  // Feature 1: capture venue attribution (?source= or ?venue=) on landing and
+  // persist it for the whole confession flow. Defaults to "direct" at insert time.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const src = (params.get("source") || params.get("venue") || "").trim();
+    if (src) {
+      sessionStorage.setItem("source", src.slice(0, 100));
+    }
+  }, []);
+
   useEffect(() => {
     let index = 0;
     const typeText1 = setInterval(() => {

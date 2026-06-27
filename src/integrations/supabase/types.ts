@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      confessions: {
+        Row: {
+          confession_text: string
+          created_at: string
+          email: string | null
+          id: string
+          source: string
+          status: string
+          subject_number: number
+          verdict_text: string | null
+        }
+        Insert: {
+          confession_text: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          source?: string
+          status?: string
+          subject_number?: number
+          verdict_text?: string | null
+        }
+        Update: {
+          confession_text?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          source?: string
+          status?: string
+          subject_number?: number
+          verdict_text?: string | null
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           created_at: string
