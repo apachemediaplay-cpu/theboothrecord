@@ -1,61 +1,177 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { supabase } from "@/integrations/supabase/client";
 
+// Three-beat loader copy. Each beat types out, then holds on cycling dots.
+// Beat 1 ≈5s total (≈3.4s hold), beat 2 ≈6s total (≈4.7s hold) → beat 3 at ≈11s.
+// Beat 3 is the terminal hold — no fixed duration; it waits for the verdict.
+const BEATS = [
+  // Beat 1 uses a HARD line break (rendered via whitespace-pre-line) so it is always
+  // exactly two lines on mobile — it never flickers between 1 and 2 lines as dots cycle.
+  { text: "Your sin is being\nreceived.", hold: 3400 },
+  { text: "The booth is deciding.", hold: 4700 },
+  { text: "Your verdict is coming.", hold: Number.POSITIVE_INFINITY },
+] as const;
+const CHAR_MS = 60; // typewriter feel
+const DOT_MS = 430; // cycling-dots frame
+
 const Receiving = () => {
   const navigate = useNavigate();
-  const [typedText, setTypedText] = useState("");
-  const [showCursor, setShowCursor] = useState(true);
-  const [isThinking, setIsThinking] = useState(false);
-  
-  const fullText = "Your sin is being received.";
+  const [errored, setErrored] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [dots, setDots] = useState("");
+  const startedRef = useRef(false);
 
-  useEffect(() => {
-    let index = 0;
-    const typeInterval = setInterval(() => {
-      if (index < fullText.length) {
-        setTypedText(fullText.slice(0, index + 1));
-        index++;
-      } else {
-        clearInterval(typeInterval);
-        setIsThinking(true);
+  // Call the gatekeeper→verdict Edge Function and route on the response contract:
+  //   ok → /verdict · blocked → /blocked · held → /held · error → inline retry
+  // Fire the verdict request and route on the response contract:
+  //   ok → /verdict · blocked → /blocked · held → /held · error → inline retry
+  const run = useCallback(async () => {
+    setErrored(false);
 
-        // Generate the verdict via our own Supabase Edge Function.
-        // (The confession is persisted to Supabase later, at the verdict stage,
-        //  so it can be saved together with the source tag and optional email.)
-        const confession = sessionStorage.getItem("confession") || "";
+    const confession = sessionStorage.getItem("confession") || "";
+    const source = sessionStorage.getItem("source") || "direct";
 
-        supabase.functions
-          .invoke("generate-verdict", { body: { confession } })
-          .then(({ data, error }) => {
-            if (error || !data?.verdict) {
-              throw error ?? new Error("No verdict returned");
-            }
-            sessionStorage.setItem("verdictResponse", data.verdict);
-            setShowCursor(false);
-            navigate("/verdict");
-          })
-          .catch(() => {
-            sessionStorage.setItem("verdictResponse", "The booth could not process your confession. Try again.");
-            setShowCursor(false);
-            navigate("/verdict");
-          });
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-verdict", {
+        body: { confession, source },
+      });
+      if (error || !data) throw error ?? new Error("No response");
+
+      switch (data.status) {
+        case "ok":
+          sessionStorage.setItem("verdictResponse", data.verdict || "");
+          if (data.subject_number != null) {
+            sessionStorage.setItem("subjectNumber", String(data.subject_number));
+          } else {
+            sessionStorage.removeItem("subjectNumber");
+          }
+          // The share card's FILED AT reads THIS (the source persisted to the row,
+          // as returned by the function), never the client-captured source.
+          sessionStorage.setItem("verdictSource", typeof data.source === "string" ? data.source : "");
+          navigate("/verdict");
+          break;
+        case "blocked":
+          navigate("/blocked");
+          break;
+        case "held":
+          navigate("/held");
+          break;
+        default:
+          // "error" (verdict failed / rate-limited / invalid) → offer a retry, no held/crisis state.
+          setErrored(true);
       }
-    }, 60);
-
-    return () => clearInterval(typeInterval);
+    } catch {
+      setErrored(true);
+    }
   }, [navigate]);
+
+  // HARD RULE 1: fire the request ONCE on mount, decoupled from the copy pacing —
+  // the typewriter must never gate the network call.
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    run();
+  }, [run]);
+
+  // Three-beat loader, independent of the request. Each beat types out char-by-char,
+  // then HOLDS on cycling dots (HARD RULE 2: every hold animates, incl. the terminal one).
+  // Advances once (no loop); beat 3 holds open until the verdict lands and we navigate away.
+  useEffect(() => {
+    if (errored) return;
+
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let dotTimer: ReturnType<typeof setInterval> | null = null;
+
+    const clearDots = () => {
+      if (dotTimer) {
+        clearInterval(dotTimer);
+        dotTimer = null;
+      }
+    };
+
+    const startDots = () => {
+      clearDots();
+      let d = 0;
+      setDots("");
+      dotTimer = setInterval(() => {
+        d = (d + 1) % 4; // "" → "." → ".." → "..."
+        setDots(".".repeat(d));
+      }, DOT_MS);
+    };
+
+    const typeBeat = (i: number) => {
+      if (cancelled) return;
+      clearDots();
+      setDots("");
+      setTyped("");
+      const text = BEATS[i].text;
+      let ch = 0;
+      const typeTimer = setInterval(() => {
+        if (cancelled) {
+          clearInterval(typeTimer);
+          return;
+        }
+        ch++;
+        setTyped(text.slice(0, ch));
+        if (ch >= text.length) {
+          clearInterval(typeTimer);
+          startDots(); // hold on cycling dots
+          const { hold } = BEATS[i];
+          if (Number.isFinite(hold) && i < BEATS.length - 1) {
+            timers.push(setTimeout(() => typeBeat(i + 1), hold));
+          }
+          // terminal beat: dots keep cycling, no timeout — waits for navigation
+        }
+      }, CHAR_MS);
+      timers.push(typeTimer);
+    };
+
+    typeBeat(0);
+
+    return () => {
+      cancelled = true;
+      timers.forEach((id) => {
+        clearTimeout(id);
+        clearInterval(id);
+      });
+      clearDots();
+    };
+  }, [errored]);
+
+  const handleRetry = () => {
+    startedRef.current = true;
+    run();
+  };
 
   return (
     <div className="screen-container animate-fade-in">
-      <div className="flex-1 flex items-center justify-center">
-        <p className={`text-ritual text-xl font-mono-light tracking-wide min-h-[1.75rem] ${isThinking ? 'animate-[pulse_2s_ease-in-out_infinite]' : ''}`}>
-          {typedText}
-          {showCursor && <span className="animate-pulse">|</span>}
-        </p>
+      <div className="flex-1 flex flex-col items-center justify-center gap-6">
+        {!errored ? (
+          <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[3.5rem] self-start text-left whitespace-pre-line">
+            {typed}
+            {dots}
+          </p>
+        ) : (
+          <>
+            <p className="text-ritual text-lg font-mono-light tracking-wide text-center">
+              Something went wrong — try again.
+            </p>
+            <button onClick={handleRetry} className="btn-booth">
+              TRY AGAIN
+            </button>
+            <button
+              onClick={() => navigate("/confess")}
+              className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
+            >
+              BACK
+            </button>
+          </>
+        )}
       </div>
-      
+
       <BoothFooter />
     </div>
   );

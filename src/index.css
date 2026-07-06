@@ -16,6 +16,16 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Söhne Mono';
+  src: url('/fonts/soehne-mono-kraftig.woff2') format('woff2');
+  /* Only the Kräftig (medium) weight is supplied; cover the requested range
+     so the single face is used for all mono weights without faux rendering. */
+  font-weight: 300 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -102,7 +112,7 @@
   }
 
   .font-mono-light {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Söhne Mono', 'JetBrains Mono', monospace;
     font-weight: 300;
   }
 
