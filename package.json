@@ -10,8 +10,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy:dev": "vite build --mode development && firebase deploy --project guilty-dev-829ae",
-    "deploy:prod": "vite build --mode production && firebase deploy --project guilty-prod"
+    "deploy:dev": "vite build --mode development && firebase deploy --project theboothrecord",
+    "deploy:prod": "vite build --mode production && firebase deploy --project theboothrecord"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

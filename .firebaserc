@@ -1,20 +1,5 @@
 {
-  "projects": {},
-  "targets": {
-    "guilty-dev-829ae": {
-      "hosting": {
-        "frontend": [
-          "guilty-booth-dev"
-        ]
-      }
-    },
-    "guilty-prod": {
-      "hosting": {
-        "frontend": [
-          "guilty-booth-prod"
-        ]
-      }
-    }
-  },
-  "etags": {}
+  "projects": {
+    "default": "theboothrecord"
+  }
 }
