@@ -113,16 +113,19 @@ const TheWall = () => {
         </h1>
       </div>
 
-      {/* Live indicator */}
-      <div className="flex items-center justify-center gap-2 pb-6 md:pb-8">
-        <span className="text-muted-foreground/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
-          LIVE CONFESSIONS
-        </span>
-        <span
-          className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
-          style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
-        />
-      </div>
+      {/* Live indicator — populated view ONLY. A manually-gated wall has no real-time
+          status, so this is suppressed on the empty state (it would misrepresent it). */}
+      {confessions.length > 0 && (
+        <div className="flex items-center justify-center gap-2 pb-6 md:pb-8">
+          <span className="text-muted-foreground/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
+            LIVE CONFESSIONS
+          </span>
+          <span
+            className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
+            style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
+          />
+        </div>
+      )}
 
 
 
