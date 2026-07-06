@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
 import SuspectsCarousel from "@/components/SuspectsCarousel";
@@ -265,27 +264,6 @@ const Home = () => {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const baseUrl = import.meta.env.VITE_BASE_URL;
-    fetch(`${baseUrl}/v1/confessions`)
-      .then((res) => res.json())
-      .then((data) => {
-        const items = (data?.data?.confessions || []).map(
-            (c: { content: string; response: string }, i: number) => {
-              const sentences = c.response.split(/(?<=\.)\s+/);
-              return {
-                confession: c.content,
-                verdict: sentences[0] || "Verdict rendered.",
-                verdictHidden: sentences.slice(1).join(" ") || "",
-                confessorId: `#${1842 - i}`,
-              };
-            }
-          );
-        setConfessions(items);
-      })
-      .catch(() => {});
   }, []);
 
   // Cycle through confessions to simulate live feed
@@ -1046,32 +1024,10 @@ const Home = () => {
                     if (Object.keys(errors).length) { setContactErrors(errors); return; }
                     setContactErrors({});
                     setContactSending(true);
-                    try {
-                      // Store in database
-                      await supabase.from('contact_submissions').insert({
-                        name: contactForm.name.trim(),
-                        phone: contactForm.phone.trim(),
-                        email: contactForm.email.trim(),
-                        venue: contactForm.venue.trim(),
-                        message: contactForm.message.trim() || null,
-                      });
-                      // Send email notification
-                      await supabase.functions.invoke('send-contact-email', {
-                        body: {
-                          name: contactForm.name.trim(),
-                          phone: contactForm.phone.trim(),
-                          email: contactForm.email.trim(),
-                          venue: contactForm.venue.trim(),
-                          message: contactForm.message.trim() || null,
-                        },
-                      });
-                      setContactSubmitted(true);
-                    } catch (err) {
-                      console.error('Contact form error:', err);
-                      setContactSubmitted(true); // Still show success - submission saved to DB
-                    } finally {
-                      setContactSending(false);
-                    }
+                    // Contact backend (old Supabase table + email function) removed during
+                    // migration. Home is currently unrouted — re-wire when this page returns.
+                    setContactSubmitted(true);
+                    setContactSending(false);
                   }}
                   className="space-y-5"
                 >
