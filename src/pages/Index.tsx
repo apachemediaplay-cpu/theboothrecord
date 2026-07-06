@@ -1,10 +1,11 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [consent, setConsent] = useState(false);
   const [text1, setText1] = useState("");
   const [text2, setText2] = useState("");
   const [showCursor1, setShowCursor1] = useState(true);
@@ -19,15 +20,7 @@ const Index = () => {
   const fullText1 = "Once you begin, you can't take it back.";
   const fullText2 = "That's the point.";
 
-  // Feature 1: capture venue attribution (?source= or ?venue=) on landing and
-  // persist it for the whole confession flow. Defaults to "direct" at insert time.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const src = (params.get("source") || params.get("venue") || "").trim();
-    if (src) {
-      sessionStorage.setItem("source", src.slice(0, 100));
-    }
-  }, []);
+  // (Venue ?source= capture now happens globally in App.tsx on every load.)
 
   useEffect(() => {
     let index = 0;
@@ -111,6 +104,7 @@ const Index = () => {
   }, [text2]);
 
   const handleEnter = () => {
+    if (!consent) return; // consent gate — ENTER blocked until ticked
     navigate("/confidentiality");
   };
 
@@ -163,16 +157,48 @@ const Index = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-36 left-0 right-0 flex justify-center px-6">
-        <button 
+      <div className="fixed bottom-32 left-0 right-0 flex flex-col items-center gap-5 px-6">
+        <div className="flex items-start gap-3 max-w-xs">
+          <input
+            type="checkbox"
+            id="consent"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-[2px] h-4 w-4 shrink-0 accent-[hsl(var(--ritual-green))] cursor-pointer"
+          />
+          <label
+            htmlFor="consent"
+            className="text-muted-foreground text-[11px] leading-snug font-mono-light cursor-pointer select-none"
+          >
+            I'm 18+. No names, no harm, no illegal stuff. I've read the{" "}
+            <Link
+              to="/privacy"
+              onClick={(e) => e.stopPropagation()}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Privacy
+            </Link>{" "}
+            &amp;{" "}
+            <Link
+              to="/terms"
+              onClick={(e) => e.stopPropagation()}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Terms
+            </Link>
+            .
+          </label>
+        </div>
+        <button
           onClick={handleEnter}
-          className="btn-booth"
+          disabled={!consent}
+          className="btn-booth disabled:opacity-40 disabled:cursor-not-allowed"
         >
           ENTER
         </button>
       </div>
-      
-      <BoothFooter showConsent />
+
+      <BoothFooter />
     </div>
   );
 };

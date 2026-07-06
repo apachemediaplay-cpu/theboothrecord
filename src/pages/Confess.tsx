@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { Camera } from "lucide-react";
 import micButtonSvg from "@/assets/mic-button.svg";
@@ -167,6 +167,12 @@ const Confess = () => {
       </div>
       
       <div className="fixed bottom-32 left-0 right-0 px-6">
+        <p className="text-muted-foreground/70 text-[10px] font-mono-light text-center mb-3">
+          18+ only. By confessing you agree to the{" "}
+          <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
+          {" "}&amp;{" "}
+          <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy</Link>.
+        </p>
         <div className="flex items-center justify-between">
           <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
             {/* <Camera className="w-6 h-6" /> */}

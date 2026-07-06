@@ -55,7 +55,7 @@ const Confidentiality = () => {
         </button>
       </div>
       
-      <BoothFooter showConsent />
+      <BoothFooter />
     </div>
   );
 };

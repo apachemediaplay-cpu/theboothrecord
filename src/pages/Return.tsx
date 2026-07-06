@@ -55,7 +55,7 @@ const Return = () => {
         </button>
       </div>
       
-      <BoothFooter showConsent />
+      <BoothFooter />
     </div>
   );
 };

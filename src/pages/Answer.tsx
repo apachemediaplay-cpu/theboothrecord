@@ -159,7 +159,7 @@ const Answer = () => {
         </button>
       </div>
       
-      <BoothFooter showConsent />
+      <BoothFooter />
     </div>
   );
 };
