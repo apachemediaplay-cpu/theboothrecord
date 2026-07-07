@@ -225,6 +225,24 @@
     60% { transform: translateX(-4px); }
     80% { transform: translateX(4px); }
   }
+
+  /* Thin blinking caret for the /receiving three-beat loader. Width is always
+     reserved (only opacity animates) so the line never twitches; CSS-only so the
+     blink can't freeze. Height ≈ the text cap height, sitting on the baseline. */
+  .type-caret {
+    display: inline-block;
+    width: 2px;
+    height: 0.72em;
+    margin-left: 0.15em;
+    vertical-align: baseline;
+    background-color: hsl(var(--ritual-green));
+    animation: caretBlink 1.06s steps(1, end) infinite;
+  }
+
+  @keyframes caretBlink {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
+  }
 }
 
 @keyframes pageFlicker {

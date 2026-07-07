@@ -3,24 +3,22 @@ import { useNavigate } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { supabase } from "@/integrations/supabase/client";
 
-// Three-beat loader copy. Each beat types out, then holds on cycling dots.
+// Three-beat loader copy. Each beat types out, then holds while a thin caret blinks.
 // Beat 1 ≈5s total (≈3.4s hold), beat 2 ≈6s total (≈4.7s hold) → beat 3 at ≈11s.
 // Beat 3 is the terminal hold — no fixed duration; it waits for the verdict.
 const BEATS = [
   // Beat 1 uses a HARD line break (rendered via whitespace-pre-line) so it is always
-  // exactly two lines on mobile — it never flickers between 1 and 2 lines as dots cycle.
+  // exactly two lines on mobile — it never flickers between 1 and 2 lines as it types.
   { text: "Your sin is being\nreceived.", hold: 3400 },
   { text: "The booth is deciding.", hold: 4700 },
   { text: "Your verdict is coming.", hold: Number.POSITIVE_INFINITY },
 ] as const;
 const CHAR_MS = 60; // typewriter feel
-const DOT_MS = 430; // cycling-dots frame
 
 const Receiving = () => {
   const navigate = useNavigate();
   const [errored, setErrored] = useState(false);
   const [typed, setTyped] = useState("");
-  const [dots, setDots] = useState("");
   const startedRef = useRef(false);
 
   // Call the gatekeeper→verdict Edge Function and route on the response contract:
@@ -76,36 +74,16 @@ const Receiving = () => {
   }, [run]);
 
   // Three-beat loader, independent of the request. Each beat types out char-by-char,
-  // then HOLDS on cycling dots (HARD RULE 2: every hold animates, incl. the terminal one).
-  // Advances once (no loop); beat 3 holds open until the verdict lands and we navigate away.
+  // then HOLDS while the blinking caret (CSS-only) keeps animating. Advances once (no
+  // loop); beat 3 holds open until the verdict lands and we navigate away.
   useEffect(() => {
     if (errored) return;
 
     let cancelled = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
-    let dotTimer: ReturnType<typeof setInterval> | null = null;
-
-    const clearDots = () => {
-      if (dotTimer) {
-        clearInterval(dotTimer);
-        dotTimer = null;
-      }
-    };
-
-    const startDots = () => {
-      clearDots();
-      let d = 0;
-      setDots("");
-      dotTimer = setInterval(() => {
-        d = (d + 1) % 4; // "" → "." → ".." → "..."
-        setDots(".".repeat(d));
-      }, DOT_MS);
-    };
 
     const typeBeat = (i: number) => {
       if (cancelled) return;
-      clearDots();
-      setDots("");
       setTyped("");
       const text = BEATS[i].text;
       let ch = 0;
@@ -118,12 +96,11 @@ const Receiving = () => {
         setTyped(text.slice(0, ch));
         if (ch >= text.length) {
           clearInterval(typeTimer);
-          startDots(); // hold on cycling dots
           const { hold } = BEATS[i];
           if (Number.isFinite(hold) && i < BEATS.length - 1) {
             timers.push(setTimeout(() => typeBeat(i + 1), hold));
           }
-          // terminal beat: dots keep cycling, no timeout — waits for navigation
+          // terminal beat: no timeout — the caret keeps blinking until navigation
         }
       }, CHAR_MS);
       timers.push(typeTimer);
@@ -137,7 +114,6 @@ const Receiving = () => {
         clearTimeout(id);
         clearInterval(id);
       });
-      clearDots();
     };
   }, [errored]);
 
@@ -152,7 +128,7 @@ const Receiving = () => {
         {!errored ? (
           <p className="text-ritual text-xl font-mono-light tracking-wide min-h-[3.5rem] self-start text-left whitespace-pre-line">
             {typed}
-            {dots}
+            <span className="type-caret" aria-hidden="true" />
           </p>
         ) : (
           <>
