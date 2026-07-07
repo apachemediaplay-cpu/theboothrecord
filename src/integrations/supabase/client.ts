@@ -13,5 +13,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    // The public flow is anon-only (create_confession + "reads approved only" are
+    // granted to anon). Never let this client consume the magic-link token off the
+    // /moderate redirect URL — that lives in ./moderation-client with its own
+    // storageKey. Keeping this false prevents an admin session leaking into the
+    // public confess/wall requests.
+    detectSessionInUrl: false,
   }
 });
