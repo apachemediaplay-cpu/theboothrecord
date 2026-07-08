@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { Camera } from "lucide-react";
 import micButtonSvg from "@/assets/mic-button.svg";
 import enterArrowSvg from "@/assets/enter-arrow.svg";
 import { useToast } from "@/hooks/use-toast";
+import { getPrompt } from "@/lib/source";
 
 const Confess = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  // Per-venue prompt from the ?source= slug (read-only — no capture, no submit change).
+  const prompt = getPrompt(searchParams.get("source"));
   const [confession, setConfession] = useState("");
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -132,12 +136,14 @@ const Confess = () => {
     <div className="screen-container animate-fade-in">
       <div className="flex-1 flex flex-col justify-center">
         <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
-          Confess
+          {prompt.headline}
         </h2>
-        
-        <p className="text-muted-foreground text-lg mb-4">
-          What did you do?
-        </p>
+
+        {prompt.guidance ? (
+          <p className="text-muted-foreground text-lg mb-4">
+            {prompt.guidance}
+          </p>
+        ) : null}
         
         <div className="relative min-h-[120px]">
           <textarea

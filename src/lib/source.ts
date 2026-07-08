@@ -33,12 +33,47 @@ export function captureSourceFromUrl(search: string = window.location.search): s
   return sessionStorage.getItem("source");
 }
 
-// Frozen venue table — used ONLY for legacy source-only links (no venue= present).
-// seoultiger's display name is "Seoul Tiger 1988".
-const VENUE_DISPLAY_NAMES: Record<string, string> = {
-  frenchie: "Frenchie",
-  seoultiger: "Seoul Tiger 1988",
+// Single slug-keyed venue table — the ONE source of truth for both the share-card
+// display name AND the on-screen /confess prompt. Slugs MUST match the QR and the DB
+// `source` column exactly. Live approved rows use `seoultiger1988` / `frenchiecbdb`;
+// the old bare "seoultiger"/"frenchie" keys were a slug mismatch (never in the DB) and
+// have been renamed/replaced here so source-only links resolve instead of falling through.
+export type Venue = { displayName: string; headline: string; guidance?: string };
+
+const VENUES: Record<string, Venue> = {
+  seoultiger1988: {
+    displayName: "Seoul Tiger 1988",
+    headline: "Confess your most guilty order.",
+    guidance: "The one you'd never admit to.",
+  },
+  frenchiecbda: {
+    displayName: "Frenchie",
+    headline: "Everyone here is guilty.",
+    guidance: "Yours first.",
+  },
+  frenchiecbdb: {
+    displayName: "Frenchie",
+    headline: "We already know.",
+    guidance: "Say it anyway.",
+  },
+  frenchiecbd: {
+    displayName: "Frenchie",
+    headline: "Everyone here is guilty.",
+    guidance: "Yours first.",
+  },
 };
+
+// Confess-page prompt resolution. Unknown or absent source → headline only, no guidance.
+type Prompt = { headline: string; guidance?: string };
+const DEFAULT_PROMPT: Prompt = { headline: "Confess something." };
+
+export function getPrompt(source?: string | null): Prompt {
+  // Lowercase to match venueDisplayName()'s lookup casing — slugs are canonically
+  // lowercase, so a mixed-case source still resolves to the same venue.
+  const s = (source || "").trim().toLowerCase();
+  if (!s) return DEFAULT_PROMPT;
+  return VENUES[s] ?? DEFAULT_PROMPT;
+}
 
 // Resolve the share-card display name in strict priority order:
 //   1. an explicit venue= captured from the URL → use it directly.
@@ -53,7 +88,7 @@ export function venueDisplayName(
   if (v) return v; // priority 1
 
   const s = (source || "").trim().toLowerCase();
-  if (s && s !== "direct" && VENUE_DISPLAY_NAMES[s]) return VENUE_DISPLAY_NAMES[s]; // priority 2
+  if (s && s !== "direct" && VENUES[s]) return VENUES[s].displayName; // priority 2
 
   return ""; // priority 3 → LOCATION WITHHELD (never the raw slug)
 }
