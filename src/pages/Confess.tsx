@@ -1,18 +1,22 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { Camera } from "lucide-react";
 import micButtonSvg from "@/assets/mic-button.svg";
 import enterArrowSvg from "@/assets/enter-arrow.svg";
 import { useToast } from "@/hooks/use-toast";
-import { getPrompt } from "@/lib/source";
+import { captureSourceFromUrl, getPrompt } from "@/lib/source";
 
 const Confess = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  // Per-venue prompt from the ?source= slug (read-only — no capture, no submit change).
-  const prompt = getPrompt(searchParams.get("source"));
+  // Resolve the venue from stored session state, NOT the live URL: capture once on
+  // arrival (?source= present), then fall back to the stored value on repeat
+  // confessions ("go deeper"), whose URL has no ?source=. This keeps BOTH the venue
+  // prompt and the source persisted to the row correct across repeats — the same
+  // stored source Receiving.tsx writes to every insert.
+  const [source] = useState(() => captureSourceFromUrl());
+  const prompt = getPrompt(source);
   const [confession, setConfession] = useState("");
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
