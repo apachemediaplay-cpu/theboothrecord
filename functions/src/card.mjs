@@ -1,0 +1,102 @@
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import React from "react";
+import satori from "satori";
+import { Resvg } from "@resvg/resvg-js";
+
+const __dir = dirname(fileURLToPath(import.meta.url));
+const h = React.createElement;
+
+const [sohne, controlBold, controlReg, wordmarkPng] = await Promise.all([
+  readFile(join(__dir, "fonts/soehne-mono-kraftig.ttf")),
+  readFile(join(__dir, "../../public/fonts/ControlUpright-Bold.otf")),
+  readFile(join(__dir, "../../public/fonts/ControlUpright-Regular.otf")),
+  readFile(join(__dir, "assets/wordmark.png")),
+]);
+const wordmarkDataUri = "data:image/png;base64," + wordmarkPng.toString("base64");
+
+const RITUAL = "rgb(0,255,30)";
+const MUTED = "rgb(135,130,120)";
+const VERDICT = "#F4F0EA";
+
+// Dynamic verdict sizing: normal verdicts render at 70px (matches the client canvas);
+// long ones shrink in buckets so they never clip. lineHeight ~1.2.
+function verdictSize(text) {
+  const n = text.length;
+  if (n <= 200) return 70;   // client parity — client always draws 70px
+  if (n <= 290) return 58;   // shrink only where 70px would clip the card
+  return 46;
+}
+function confessionSize(text) {
+  return text.length <= 120 ? 42 : 36;
+}
+
+function ShareCard({ confession, verdict, venue, subjectNumber }) {
+  const vSize = verdictSize(verdict);
+  const cSize = confessionSize(confession);
+  const chargeLine2 = venue ? `AT ${venue.toUpperCase()}` : "LOCATION WITHHELD";
+
+  return h("div", {
+    style: {
+      width: 1080, height: 1920, display: "flex", flexDirection: "column",
+      backgroundColor: "#171513", fontFamily: "Sohne", color: "#fff",
+    },
+  }, [
+    // Header (left aligned)
+    h("div", { key: "hd", style: {
+      display: "flex", flexDirection: "column", alignItems: "flex-start",
+      padding: "165px 110px 0 110px",
+    } }, [
+      h("div", { key: "lbl", style: {
+        color: RITUAL, fontSize: 26, letterSpacing: 6, fontWeight: 400,
+      } }, "THE BOOTH NOTICED."),
+      h("div", { key: "cf", style: {
+        color: MUTED, fontSize: cSize, fontWeight: 300, lineHeight: 1.38,
+        marginTop: 60, maxWidth: 860,
+      } }, confession),
+      h("div", { key: "vd", style: {
+        color: VERDICT, fontFamily: "Control", fontWeight: 700, fontSize: vSize,
+        lineHeight: 1.2, marginTop: 78, maxWidth: 860,
+      } }, verdict),
+    ]),
+    // Middle group — centred in the remaining space (like the canvas)
+    h("div", { key: "mid", style: {
+      display: "flex", flexGrow: 1, flexDirection: "column",
+      alignItems: "center", justifyContent: "center", paddingTop: 80,
+    } }, [
+      h("img", { key: "wm", src: wordmarkDataUri, width: 560, height: 188,
+        style: { transform: "rotate(-10deg)" } }),
+      h("div", { key: "c1", style: {
+        marginTop: 64, fontSize: 30, letterSpacing: 6, color: "rgba(255,255,255,0.6)",
+      } }, "AS CHARGED"),
+      h("div", { key: "c2", style: {
+        marginTop: 12, fontSize: 30, letterSpacing: 6, color: "rgba(255,255,255,0.6)",
+      } }, chargeLine2),
+    ]),
+    // Footer
+    h("div", { key: "ft", style: {
+      display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 96,
+    } }, [
+      subjectNumber ? h("div", { key: "sn", style: {
+        fontSize: 24, letterSpacing: 4, color: "rgba(255,255,255,0.28)", marginBottom: 34,
+      } }, `SUBJECT #${subjectNumber}`) : null,
+      h("div", { key: "hg", style: {
+        fontSize: 28, color: "rgba(255,255,255,0.4)",
+      } }, "@houseofguilty"),
+    ]),
+  ]);
+}
+
+export async function renderCardPng(data) {
+  const svg = await satori(ShareCard(data), {
+    width: 1080, height: 1920,
+    fonts: [
+      { name: "Sohne", data: sohne, weight: 300, style: "normal" },
+      { name: "Sohne", data: sohne, weight: 400, style: "normal" },
+      { name: "Control", data: controlReg, weight: 400, style: "normal" },
+      { name: "Control", data: controlBold, weight: 700, style: "normal" },
+    ],
+  });
+  return new Resvg(svg, { fitTo: { mode: "original" } }).render().asPng();
+}

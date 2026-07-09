@@ -30,3 +30,6 @@ dist-ssr
 
 # Local Claude Code tooling (preview launch config, etc.) — not part of the app
 .claude
+# Firebase functions
+functions/node_modules
+functions/.env

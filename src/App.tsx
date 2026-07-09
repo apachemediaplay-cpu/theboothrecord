@@ -25,6 +25,7 @@ import Landing from "./pages/Landing";
 // import Home from "./pages/Home";
 import TheWall from "./pages/TheWall";
 import Moderate from "./pages/Moderate";
+import VerdictShare from "./pages/VerdictShare";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/moderate" element={<Moderate />} />
+          <Route path="/v/:id" element={<VerdictShare />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

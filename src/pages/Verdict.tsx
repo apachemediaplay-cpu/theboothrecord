@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { venueDisplayName } from "@/lib/source";
-import { logShare } from "@/lib/metrics";
+import { logShare, resolveShareId } from "@/lib/metrics";
+import { useToast } from "@/hooks/use-toast";
 
 // Feature flag: email capture is temporarily OFF but kept in code so it can be
 // switched back on later. NOTE: persistence now happens server-side in the
@@ -12,6 +13,8 @@ const ENABLE_EMAIL_CAPTURE = false;
 
 const Verdict = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [sharingLink, setSharingLink] = useState(false);
   const [typedText, setTypedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const [isGlitching, setIsGlitching] = useState(false);
@@ -277,10 +280,43 @@ const Verdict = () => {
     });
   };
 
-  const handleOnRecordConfirm = async () => {
-    // Log the share-button tap (share INTENT only — fire-and-forget, no destination/reach
-    // tracking). Keyed on the persisted row source so it aligns with the confession count.
+  // PRIMARY share: resolve this confession's uuid (owner-gated) and share the single
+  // /v/{uuid} link. The link's server-rendered preview carries the verdict + card image —
+  // no separate text or attached file. Keep the PNG path (below) as the secondary option.
+  const handleShareLink = async () => {
+    // Share-INTENT metric (fire-and-forget), keyed on the persisted row source.
     logShare(rowSource);
+    setSharingLink(true);
+    try {
+      const id = await resolveShareId(Number(subjectNumber), verdictResponse);
+      if (!id) {
+        toast({
+          title: "Couldn't create the link",
+          description: "Give it a second and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const url = `https://theboothrecord.com/v/${id}`;
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: "GUILTY",
+          text: "You've been summoned. You know what you did.",
+          url,
+        });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link copied", description: "Paste it anywhere." });
+      }
+    } catch {
+      // User dismissed the native share sheet — no-op.
+    } finally {
+      setSharingLink(false);
+    }
+  };
+
+  // SECONDARY "Save image": the client-rendered PNG, for Stories (which don't unfurl links).
+  const handleOnRecordConfirm = async () => {
     setSharing(true);
     try {
       const blob = await generateShareCard();
@@ -404,22 +440,25 @@ const Verdict = () => {
             </div>
           ) : null)}
 
-        {/* Primary action: ON RECORD — single tap. The disclosure line above
-            IS the consent; tapping generates the PNG and shares/downloads it. */}
+        {/* Primary action: ON RECORD — single tap shares the /v/{uuid} link, whose preview
+            carries the verdict card. The disclosure line above IS the consent. */}
         <div className="w-full max-w-xs flex flex-col items-center gap-3">
           <p className="text-ritual text-sm font-mono-light tracking-wide text-center">
             Your words. Not your name.
           </p>
           <button
-            onClick={handleOnRecordConfirm}
-            disabled={sharing}
+            onClick={handleShareLink}
+            disabled={sharingLink}
             className="btn-booth disabled:opacity-50"
           >
-            {sharing ? "FILING…" : "ON RECORD"}
+            {sharingLink ? "FILING…" : "ON RECORD"}
           </button>
         </div>
 
         {/* Demoted secondary actions */}
+        <button onClick={handleOnRecordConfirm} disabled={sharing} className={secondaryLink}>
+          {sharing ? "SAVING…" : "SAVE IMAGE"}
+        </button>
         <button onClick={handleConfessAgain} className={secondaryLink}>
           CONFESS AGAIN
         </button>
