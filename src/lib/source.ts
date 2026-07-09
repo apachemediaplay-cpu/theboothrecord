@@ -10,6 +10,8 @@ export function captureSourceFromUrl(search: string = window.location.search): s
   const params = new URLSearchParams(search);
   const sourceParam = (params.get("source") || "").trim();
   const venueParam = (params.get("venue") || "").trim();
+  const testParam = (params.get("test") || "").trim();
+  const isTestLink = testParam === "1" || testParam.toLowerCase() === "true";
 
   // source and venue are FULLY INDEPENDENT — venue= can NEVER write to the source key.
   if (sourceParam || venueParam) {
@@ -27,10 +29,41 @@ export function captureSourceFromUrl(search: string = window.location.search): s
     } else {
       sessionStorage.removeItem("venueName");
     }
+
+    // test flag: append ?test=1 to a venue QR to mark a test scan. A fresh scan link
+    // decides it; a plain (non-test) scan link clears it. Repeat confessions ("go
+    // deeper") load a param-less URL and skip this whole block, so is_test STICKS
+    // across repeats — the same persistence guarantee as source.
+    if (isTestLink) {
+      sessionStorage.setItem("is_test", "1");
+    } else {
+      sessionStorage.removeItem("is_test");
+    }
   }
-  // no params → fall back to stored (both kept as-is)
+  // no params → fall back to stored (source, venueName, is_test all kept as-is)
 
   return sessionStorage.getItem("source");
+}
+
+// Stable per-session id: survives client-side nav within the session, resets on a new
+// tab/session. Written to every confession row (via tag_confession) so we can later see
+// confessions-per-session without inflating any venue count.
+export function getSessionId(): string {
+  let id = sessionStorage.getItem("booth_session_id");
+  if (!id) {
+    id =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem("booth_session_id", id);
+  }
+  return id;
+}
+
+// True when this session arrived via a ?test=1 scan link (see captureSourceFromUrl).
+// Persists across repeat confessions exactly like source.
+export function isTestSession(): boolean {
+  return sessionStorage.getItem("is_test") === "1";
 }
 
 // Single slug-keyed venue table — the ONE source of truth for both the share-card

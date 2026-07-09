@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { supabase } from "@/integrations/supabase/client";
+import { tagConfession } from "@/lib/metrics";
 
 // Three-beat loader copy. Each beat types out, then holds while a thin caret blinks.
 // Beat 1 ≈5s total (≈3.4s hold), beat 2 ≈6s total (≈4.7s hold) → beat 3 at ≈11s.
@@ -42,6 +43,9 @@ const Receiving = () => {
           sessionStorage.setItem("verdictResponse", data.verdict || "");
           if (data.subject_number != null) {
             sessionStorage.setItem("subjectNumber", String(data.subject_number));
+            // Fire-and-forget: tag the row the Edge Function just created with this
+            // session's id + test flag. Never blocks navigation to /verdict.
+            tagConfession(Number(data.subject_number));
           } else {
             sessionStorage.removeItem("subjectNumber");
           }

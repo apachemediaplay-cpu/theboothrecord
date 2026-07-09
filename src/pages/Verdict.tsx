@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { venueDisplayName } from "@/lib/source";
+import { logShare } from "@/lib/metrics";
 
 // Feature flag: email capture is temporarily OFF but kept in code so it can be
 // switched back on later. NOTE: persistence now happens server-side in the
@@ -277,6 +278,9 @@ const Verdict = () => {
   };
 
   const handleOnRecordConfirm = async () => {
+    // Log the share-button tap (share INTENT only — fire-and-forget, no destination/reach
+    // tracking). Keyed on the persisted row source so it aligns with the confession count.
+    logShare(rowSource);
     setSharing(true);
     try {
       const blob = await generateShareCard();
