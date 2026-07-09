@@ -8,31 +8,44 @@ import { Resvg } from "@resvg/resvg-js";
 const __dir = dirname(fileURLToPath(import.meta.url));
 const h = React.createElement;
 
-const [sohne, controlBold, controlReg, wordmarkPng] = await Promise.all([
-  readFile(join(__dir, "fonts/soehne-mono-kraftig.ttf")),
-  readFile(join(__dir, "../../public/fonts/ControlUpright-Bold.otf")),
-  readFile(join(__dir, "../../public/fonts/ControlUpright-Regular.otf")),
-  readFile(join(__dir, "assets/wordmark.png")),
-]);
-const wordmarkDataUri = "data:image/png;base64," + wordmarkPng.toString("base64");
+// Lazy, memoized asset load. IMPORTANT: this is NOT top-level await — firebase-functions
+// loads the module with require() during codebase analysis, which throws
+// ERR_REQUIRE_ASYNC_MODULE on any import graph that has top-level await. Loading on first
+// render keeps the graph synchronous to import. All fonts live inside functions/ so the
+// deployed bundle is self-contained (nothing read from ../../public).
+let _assets = null;
+async function loadAssets() {
+  if (_assets) return _assets;
+  const [sohne, controlBold, controlReg, wordmarkPng] = await Promise.all([
+    readFile(join(__dir, "fonts/soehne-mono-kraftig.ttf")),
+    readFile(join(__dir, "fonts/ControlUpright-Bold.otf")),
+    readFile(join(__dir, "fonts/ControlUpright-Regular.otf")),
+    readFile(join(__dir, "assets/wordmark.png")),
+  ]);
+  _assets = {
+    sohne, controlBold, controlReg,
+    wordmarkDataUri: "data:image/png;base64," + wordmarkPng.toString("base64"),
+  };
+  return _assets;
+}
 
 const RITUAL = "rgb(0,255,30)";
 const MUTED = "rgb(135,130,120)";
 const VERDICT = "#F4F0EA";
 
-// Dynamic verdict sizing: normal verdicts render at 70px (matches the client canvas);
-// long ones shrink in buckets so they never clip. lineHeight ~1.2.
+// Dynamic verdict sizing: hold 70px (client parity) until the card would clip (~200 chars),
+// then step down only for genuinely overflowing verdicts. lineHeight ~1.2.
 function verdictSize(text) {
   const n = text.length;
-  if (n <= 200) return 70;   // client parity — client always draws 70px
-  if (n <= 290) return 58;   // shrink only where 70px would clip the card
+  if (n <= 200) return 70;
+  if (n <= 290) return 58;
   return 46;
 }
 function confessionSize(text) {
   return text.length <= 120 ? 42 : 36;
 }
 
-function ShareCard({ confession, verdict, venue, subjectNumber }) {
+function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri }) {
   const vSize = verdictSize(verdict);
   const cSize = confessionSize(confession);
   const chargeLine2 = venue ? `AT ${venue.toUpperCase()}` : "LOCATION WITHHELD";
@@ -89,7 +102,8 @@ function ShareCard({ confession, verdict, venue, subjectNumber }) {
 }
 
 export async function renderCardPng(data) {
-  const svg = await satori(ShareCard(data), {
+  const { sohne, controlBold, controlReg, wordmarkDataUri } = await loadAssets();
+  const svg = await satori(ShareCard({ ...data, wordmarkDataUri }), {
     width: 1080, height: 1920,
     fonts: [
       { name: "Sohne", data: sohne, weight: 300, style: "normal" },
