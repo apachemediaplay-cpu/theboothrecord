@@ -8,11 +8,20 @@ import { onRequest } from "firebase-functions/v2/https";
 import { createClient } from "@supabase/supabase-js";
 import { renderCardPng } from "./src/card.mjs";
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const ORIGIN = "https://theboothrecord.com";
 
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+// Lazy, memoized Supabase client. Created on first request, NOT at import: the codebase
+// analyzer loads this module before functions/.env is applied, so reading the env / calling
+// createClient at top level throws "supabaseUrl is required". Env vars are present at
+// request time. (SUPABASE_URL / SUPABASE_ANON_KEY are the names in functions/.env.)
+let _sb = null;
+function getSb() {
+  if (_sb) return _sb;
+  _sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+    auth: { persistSession: false },
+  });
+  return _sb;
+}
 
 // Minimal source -> venue display name (mirrors src/lib/source.ts VENUES). Used for the
 // "AS CHARGED AT <venue>" line; unknown/direct -> LOCATION WITHHELD (handled in card.mjs).
@@ -28,7 +37,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 // non-uuid like "1" or a random number matches nothing and this returns null.
 async function fetchVerdict(id) {
   if (!id) return null;
-  const { data, error } = await sb.rpc("get_share_verdict", { _id: id });
+  const { data, error } = await getSb().rpc("get_share_verdict", { _id: id });
   if (error || !data || !data.length) return null;
   return data[0];
 }
