@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { Camera } from "lucide-react";
 import micButtonSvg from "@/assets/mic-button.svg";
@@ -135,6 +135,15 @@ const Confess = () => {
       navigate("/receiving");
     }
   };
+
+  // Consent gate is required for EVERY entry path, including QR scans that deep-link to
+  // /confess?source=... The source + ?test=1 have already been captured above (the
+  // captureSourceFromUrl in the useState initializer runs before this return), so
+  // redirecting to the gate never loses the venue tag; after ENTER the flow returns here
+  // and the venue prompt + attribution persist from session state.
+  if (sessionStorage.getItem("consent") !== "1") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="screen-container animate-fade-in">

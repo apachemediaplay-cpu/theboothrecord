@@ -105,6 +105,10 @@ const Index = () => {
 
   const handleEnter = () => {
     if (!consent) return; // consent gate — ENTER blocked until ticked
+    // Record consent for the session so /confess (including QR deep-links) can require
+    // it. Session-scoped: a fresh scan (new session) re-gates; repeats within the
+    // session ("go deeper") do not.
+    sessionStorage.setItem("consent", "1");
     navigate("/confidentiality");
   };
 
