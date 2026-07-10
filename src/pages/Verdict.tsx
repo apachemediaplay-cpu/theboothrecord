@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { venueDisplayName } from "@/lib/source";
-import { logShare, resolveShareId } from "@/lib/metrics";
+import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
 import { useToast } from "@/hooks/use-toast";
 
 // Feature flag: email capture is temporarily OFF but kept in code so it can be
@@ -15,6 +15,9 @@ const Verdict = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [sharingLink, setSharingLink] = useState(false);
+  // stamp_venue for THIS confession. undefined until fetched → treated as "show venue"
+  // (default/true). Only false suppresses the venue on the SAVE IMAGE card.
+  const [stampVenue, setStampVenue] = useState<boolean | undefined>(undefined);
   const [typedText, setTypedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const [isGlitching, setIsGlitching] = useState(false);
@@ -33,9 +36,13 @@ const Verdict = () => {
   //   1. an explicit ?venue= captured from the URL (used directly), else
   //   2. the frozen table lookup on the persisted row source, else
   //   3. "" → the card renders LOCATION WITHHELD (never a raw slug).
+  // The venue stamp is decided at SAVE IMAGE time (after stamp_venue loads) so the card is
+  // rendered once with the correct value — see handleOnRecordConfirm. suppress === true (i.e.
+  // stamp_venue === false) → "" → the card's existing LOCATION WITHHELD path.
   const venueName = sessionStorage.getItem("venueName") || "";
   const rowSource = sessionStorage.getItem("verdictSource") || "";
-  const filedVenue = venueDisplayName(venueName, rowSource).toUpperCase();
+  const computeFiledVenue = (suppress: boolean) =>
+    (suppress ? "" : venueDisplayName(venueName, rowSource)).toUpperCase();
 
   // Feature 2: optional email capture — gated behind ENABLE_EMAIL_CAPTURE, kept for later.
   // (Dormant: confessions are now saved by the Edge Function, which has no email field.)
@@ -145,7 +152,7 @@ const Verdict = () => {
     return lines;
   };
 
-  const generateShareCard = async (): Promise<Blob> => {
+  const generateShareCard = async (filedVenue: string): Promise<Blob> => {
     const W = 1080;
     const H = 1920;
     const canvas = document.createElement("canvas");
@@ -319,7 +326,20 @@ const Verdict = () => {
   const handleOnRecordConfirm = async () => {
     setSharing(true);
     try {
-      const blob = await generateShareCard();
+      // Load stamp_venue BEFORE rendering, so the card is drawn ONCE with the correct venue
+      // (it never shows the venue and then swaps). The Edge Function response doesn't include
+      // it, so resolve our own uuid (owner-gated) then read the row. Cached in state for
+      // repeat taps; on any failure suppress stays false → the venue shows as normal.
+      let suppress = stampVenue === false;
+      if (stampVenue === undefined && subjectNumber && verdictResponse) {
+        const uuid = await resolveShareId(Number(subjectNumber), verdictResponse);
+        const row = uuid ? await fetchSharedVerdict(uuid) : null;
+        if (row) {
+          setStampVenue(row.stamp_venue);
+          suppress = row.stamp_venue === false;
+        }
+      }
+      const blob = await generateShareCard(computeFiledVenue(suppress));
       const file = new File([blob], "guilty-on-record.png", { type: "image/png" });
 
       const canShareFiles =

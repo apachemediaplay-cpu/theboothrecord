@@ -68,6 +68,9 @@ export type SharedVerdict = {
   confession_text: string;
   verdict_text: string;
   source: string;
+  // From get_share_verdict. false = suppress the venue name (show the withheld fallback);
+  // absent/true = show the venue as normal.
+  stamp_venue?: boolean;
 };
 export async function fetchSharedVerdict(id: string | undefined): Promise<SharedVerdict | null> {
   if (!id) return null;

@@ -29,7 +29,8 @@ const VerdictShare = () => {
   const source = row?.source ?? "";
   const ctaHref =
     source && source !== "direct" ? `/confess?source=${encodeURIComponent(source)}` : "/confess";
-  const venue = venueDisplayName("", source);
+  // stamp_venue === false suppresses the venue name → "" → existing "Location withheld".
+  const venue = row?.stamp_venue === false ? "" : venueDisplayName("", source);
 
   if (status === "loading") {
     return (
