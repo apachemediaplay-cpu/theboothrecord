@@ -1,3 +1,5 @@
+import venuesData from "@/data/venues.json";
+
 // Venue attribution + display-name resolution (single source of truth).
 //
 // Capture rule: the ?source= / ?venue= URL params ALWAYS overwrite stored attribution
@@ -66,40 +68,17 @@ export function isTestSession(): boolean {
   return sessionStorage.getItem("is_test") === "1";
 }
 
-// Single slug-keyed venue table — the ONE source of truth for both the share-card
-// display name AND the on-screen /confess prompt. Slugs MUST match the QR and the DB
-// `source` column exactly. Live approved rows use `seoultiger1988` / `frenchiecbdb`;
-// the old bare "seoultiger"/"frenchie" keys were a slug mismatch (never in the DB) and
-// have been renamed/replaced here so source-only links resolve instead of falling through.
+// Venue config — the ONE source of truth for both the share-card display name AND the
+// on-screen /confess prompt, per slug. Slugs MUST match the QR and the DB `source` column.
+//
+// SINGLE SOURCE: the data lives in src/data/venues.json. This client imports it directly
+// (bundled at build → prompt resolution stays synchronous). The share-card OG function
+// (functions/index.mjs) reads the SAME file via a copy (functions/venues.json), because a
+// deployed Cloud Function can only read files inside its own bundle — the copy is made by
+// functions/prep.mjs and the deploy predeploy hook. Add a venue in venues.json ONLY.
 export type Venue = { displayName: string; headline: string; guidance?: string };
 
-const VENUES: Record<string, Venue> = {
-  seoultiger1988: {
-    displayName: "Seoul Tiger 1988",
-    headline: "Confess your most guilty order.",
-    guidance: "The one you'd never admit to.",
-  },
-  frenchiecbda: {
-    displayName: "Frenchie",
-    headline: "Everyone here is guilty.",
-    guidance: "Yours first.",
-  },
-  frenchiecbdb: {
-    displayName: "Frenchie",
-    headline: "We already know.",
-    guidance: "Say it anyway.",
-  },
-  frenchiecbd: {
-    displayName: "Frenchie",
-    headline: "Everyone here is guilty.",
-    guidance: "Yours first.",
-  },
-  highballcbr: {
-    displayName: "Highball",
-    headline: "Confess your best worst decision.",
-    guidance: "Good vibes only.",
-  },
-};
+const VENUES = venuesData as Record<string, Venue>;
 
 // Confess-page prompt resolution. Unknown or absent source → headline only, no guidance.
 type Prompt = { headline: string; guidance?: string };

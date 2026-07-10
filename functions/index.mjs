@@ -4,22 +4,34 @@
 //
 // Reads verdicts ONLY through get_share_verdict(token) — an unguessable token, never the
 // sequential id — so nothing here is enumerable. Does not touch the verdict engine.
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { onRequest } from "firebase-functions/v2/https";
 import { renderCardPng } from "./src/card.mjs";
 
+const __dir = dirname(fileURLToPath(import.meta.url));
 const ORIGIN = "https://theboothrecord.com";
 
 // Source -> venue display name for the "AS CHARGED AT <venue>" line; unknown/direct ->
 // LOCATION WITHHELD (handled in card.mjs).
-// ⚠️ MUST MIRROR the `VENUES` display names in src/lib/source.ts — this is a duplicate
-// (the function can't import the browser-coupled source.ts). Add every new venue slug here
-// too, or the shared card drops the venue stamp. (Durable fix: a Supabase venues table.)
-const VENUE = {
-  seoultiger1988: "Seoul Tiger 1988",
-  frenchiecbd: "Frenchie", frenchiecbda: "Frenchie", frenchiecbdb: "Frenchie",
-  highballcbr: "Highball",
-};
-const venueFor = (source) => VENUE[(source || "").toLowerCase()] || "";
+// SINGLE SOURCE: src/data/venues.json, copied to functions/venues.json by prep.mjs + the
+// deploy predeploy hook (the deployed function can't read ../src at runtime). No hand-synced
+// map — add venues in src/data/venues.json only. Lazily read + memoized.
+let _venueMap = null;
+async function venueFor(source) {
+  if (!_venueMap) {
+    try {
+      const data = JSON.parse(await readFile(join(__dir, "venues.json"), "utf8"));
+      _venueMap = Object.fromEntries(
+        Object.entries(data).map(([slug, v]) => [slug.toLowerCase(), v.displayName]),
+      );
+    } catch {
+      _venueMap = {};
+    }
+  }
+  return _venueMap[(source || "").toLowerCase()] || "";
+}
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -82,7 +94,7 @@ export const ogImage = onRequest(
       const png = await renderCardPng({
         confession: row.confession_text || "",
         verdict: row.verdict_text || "",
-        venue: venueFor(row.source),
+        venue: await venueFor(row.source),
         subjectNumber: row.subject_number,
       });
       // uuid -> content is immutable, so cache hard.
@@ -107,7 +119,7 @@ export const share = onRequest(
       const row = id && (await fetchVerdict(id));
       res.set("Content-Type", "text/html; charset=utf-8");
       if (!row) { res.status(200).send(html); return; } // unknown uuid -> plain app (VerdictShare shows not-found)
-      const venue = venueFor(row.source);
+      const venue = await venueFor(row.source);
       const out = injectOg(html, {
         title: venue ? `Guilty as charged at ${venue}.` : "The booth noticed.",
         description: row.verdict_text || "You've been summoned. You know what you did.",

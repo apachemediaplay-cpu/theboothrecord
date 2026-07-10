@@ -33,3 +33,6 @@ dist-ssr
 # Firebase functions
 functions/node_modules
 functions/.env
+
+# Generated: copy of src/data/venues.json (single source), made by prep.mjs + deploy predeploy
+functions/venues.json

@@ -9,6 +9,11 @@ for (const f of ["ControlUpright-Bold.otf", "ControlUpright-Regular.otf"]) {
   console.log("font:", f, "(copied)");
 }
 
+// 0b. Venue config: single source is ../src/data/venues.json; copy it in so index.mjs can
+// read it at runtime (same reason as the fonts). Also run by the deploy predeploy hook.
+await copyFile("../src/data/venues.json", "venues.json");
+console.log("venues.json (copied from src/data)");
+
 // 1. Söhne Mono woff2 -> ttf (Satori can't read woff2). Lossless sfnt unwrap.
 const woff2 = await readFile("../public/fonts/soehne-mono-kraftig.woff2");
 const ttf = await decompress(woff2);

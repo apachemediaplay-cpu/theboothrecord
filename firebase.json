@@ -8,5 +8,11 @@
       { "source": "**", "destination": "/index.html" }
     ]
   },
-  "functions": { "source": "functions", "runtime": "nodejs20" }
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20",
+    "predeploy": [
+      "node -e \"require('fs').copyFileSync('src/data/venues.json','functions/venues.json')\""
+    ]
+  }
 }
