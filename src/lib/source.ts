@@ -94,6 +94,11 @@ const VENUES: Record<string, Venue> = {
     headline: "Everyone here is guilty.",
     guidance: "Yours first.",
   },
+  highballcbr: {
+    displayName: "Highball",
+    headline: "Confess your best worst decision.",
+    guidance: "Good vibes only.",
+  },
 };
 
 // Confess-page prompt resolution. Unknown or absent source → headline only, no guidance.
