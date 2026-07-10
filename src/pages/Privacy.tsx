@@ -11,7 +11,7 @@ const Privacy = () => (
       </Link>
 
       <h1 className="font-control text-3xl font-bold mt-8 mb-1">The Booth — Privacy</h1>
-      <p className="text-muted-foreground text-sm mb-8">Effective: 29 June 2026</p>
+      <p className="text-muted-foreground text-sm mb-8">Effective: 10 July 2026</p>
 
       <p className="mb-6">
         The Booth is run by Stabl Nutrition Pty Ltd (ABN 31 674 471 553), trading as House of Guilty
@@ -30,7 +30,6 @@ const Privacy = () => (
           The venue tag — which venue's code you scanned, so we know where a confession came from. This
           identifies the venue, not you.
         </li>
-        <li>Your email — only if you choose to leave one to claim your case. Optional and skippable.</li>
         <li>
           Limited technical data — such as your IP address, used briefly to prevent spam and abuse. We
           don't use it to identify you.
@@ -42,7 +41,7 @@ const Privacy = () => (
         <li>To generate your verdict.</li>
         <li>To run and improve The Booth.</li>
         <li>To understand which venues confessions come from.</li>
-        <li>If you left an email, to contact you about GUILTY. You can opt out any time.</li>
+        <li>To run the public wall (see below).</li>
       </ul>
 
       <h2 className="font-control text-lg font-bold mt-8 mb-2">Who else sees it</h2>
@@ -58,9 +57,18 @@ const Privacy = () => (
 
       <h2 className="font-control text-lg font-bold mt-8 mb-2">What's public, and what isn't</h2>
       <p className="mb-6 text-muted-foreground">
-        We do not publish your confession. After you confess, you get a verdict and a shareable card.
-        Whether that card goes anywhere public is entirely your choice — if you share it, you're the one
-        publishing it, to whatever you choose. We keep your confession in our own records; we don't post it.
+        Your confession may be published — anonymously — on our public wall at{" "}
+        <Link to="/thewall" className="text-foreground underline underline-offset-4">
+          theboothrecord.com/thewall
+        </Link>
+        , and may appear on our social channels. Publishing isn't automatic: we review every confession by
+        hand before it can appear, and most are never published. By confessing, you agree your anonymised
+        confession and its verdict may be shown publicly this way. We don't attach your name — because we
+        never had it. You also get a shareable card; whether that goes anywhere is your choice.
+      </p>
+      <p className="mb-6 text-muted-foreground">
+        Don't name yourself or anyone else in a confession. We reject anything that could identify a real
+        person, but keep it anonymous at the source.
       </p>
 
       <h2 className="font-control text-lg font-bold mt-8 mb-2">How long we keep it</h2>
@@ -89,9 +97,10 @@ const Privacy = () => (
         <a href="mailto:contact@houseofguilty.com" className="text-foreground underline underline-offset-4">
           contact@houseofguilty.com
         </a>{" "}
-        and quote the subject number printed on your verdict card (e.g. "SUBJECT #21"), and we'll delete it.
-        Because The Booth is anonymous, if you didn't save your card and left no subject number, we may not
-        be able to find a single confession among the rest — that's the anonymity working as intended.
+        and quote the subject number printed on your verdict card (e.g. "SUBJECT #21"), and we'll delete it
+        — whether or not it was ever published. Because The Booth is anonymous, if you didn't save your card
+        and left no subject number, we may not be able to find a single confession among the rest — that's
+        the anonymity working as intended.
       </p>
 
       <h2 className="font-control text-lg font-bold mt-8 mb-2">Changes</h2>

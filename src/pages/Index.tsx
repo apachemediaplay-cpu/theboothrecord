@@ -161,7 +161,22 @@ const Index = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-32 left-0 right-0 flex flex-col items-center gap-5 px-6">
+      <div className="fixed bottom-20 left-0 right-0 flex flex-col items-center gap-4 px-6">
+        {/* Consent copy (compliance SECTION C) — visible before ENTER. */}
+        <div className="max-w-xs text-center space-y-1.5">
+          <p className="text-ritual text-xs font-mono-light tracking-wide">Your words. Not your name.</p>
+          <p className="text-muted-foreground text-[11px] leading-snug font-mono-light">
+            The Booth is 18+. Confessions are anonymous — we don't ask who you are.
+          </p>
+          <p className="text-muted-foreground text-[11px] leading-snug font-mono-light">
+            Your confession and its verdict may be published on the public wall. Every one is reviewed by a
+            human before it appears; most aren't published.
+          </p>
+          <p className="text-muted-foreground text-[11px] leading-snug font-mono-light">
+            Don't include your real name, anyone else's name, or details that could identify a real person.
+          </p>
+        </div>
+
         <div className="flex items-start gap-3 max-w-xs">
           <input
             type="checkbox"
@@ -174,21 +189,21 @@ const Index = () => {
             htmlFor="consent"
             className="text-muted-foreground text-[11px] leading-snug font-mono-light cursor-pointer select-none"
           >
-            I'm 18+. No names, no harm, no illegal stuff. I've read the{" "}
-            <Link
-              to="/privacy"
-              onClick={(e) => e.stopPropagation()}
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              Privacy
-            </Link>{" "}
-            &amp;{" "}
+            I'm 18+ and I understand my confession may be published anonymously. I agree to the{" "}
             <Link
               to="/terms"
               onClick={(e) => e.stopPropagation()}
               className="underline underline-offset-2 hover:text-foreground"
             >
               Terms
+            </Link>{" "}
+            and{" "}
+            <Link
+              to="/privacy"
+              onClick={(e) => e.stopPropagation()}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Privacy
             </Link>
             .
           </label>
