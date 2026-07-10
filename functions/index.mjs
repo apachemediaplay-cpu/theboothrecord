@@ -9,11 +9,15 @@ import { renderCardPng } from "./src/card.mjs";
 
 const ORIGIN = "https://theboothrecord.com";
 
-// Minimal source -> venue display name (mirrors src/lib/source.ts VENUES). Used for the
-// "AS CHARGED AT <venue>" line; unknown/direct -> LOCATION WITHHELD (handled in card.mjs).
+// Source -> venue display name for the "AS CHARGED AT <venue>" line; unknown/direct ->
+// LOCATION WITHHELD (handled in card.mjs).
+// ⚠️ MUST MIRROR the `VENUES` display names in src/lib/source.ts — this is a duplicate
+// (the function can't import the browser-coupled source.ts). Add every new venue slug here
+// too, or the shared card drops the venue stamp. (Durable fix: a Supabase venues table.)
 const VENUE = {
   seoultiger1988: "Seoul Tiger 1988",
-  frenchie: "Frenchie", frenchiecbd: "Frenchie", frenchiecbda: "Frenchie", frenchiecbdb: "Frenchie",
+  frenchiecbd: "Frenchie", frenchiecbda: "Frenchie", frenchiecbdb: "Frenchie",
+  highballcbr: "Highball",
 };
 const venueFor = (source) => VENUE[(source || "").toLowerCase()] || "";
 
