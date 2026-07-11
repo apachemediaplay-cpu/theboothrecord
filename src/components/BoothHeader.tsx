@@ -16,7 +16,7 @@ const BoothHeader = () => {
       <div className="max-w-md mx-auto px-6">
         {/* Left-aligned to the same left edge as the "Once you begin…" hero + consent text.
             Reuses the old quote's font + size; whole line is Guilty orange; venue name bold. */}
-        <p className="text-[16px] font-mono-light tracking-wide text-[#FF4800]">
+        <p className="text-xl font-mono-light tracking-wide text-[#FF4800]">
           Location: <span className="font-bold">{venue}</span>
         </p>
       </div>
