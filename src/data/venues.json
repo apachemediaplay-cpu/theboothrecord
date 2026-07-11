@@ -28,5 +28,15 @@
     "displayName": "Ovolo South Yarra",
     "headline": "If these walls could talk.",
     "guidance": "Confess what the room saw."
+  },
+  "tintinokgn": {
+    "displayName": "Tintino",
+    "headline": "The wine already told us.",
+    "guidance": "Confess it yourself."
+  },
+  "gigiprahran": {
+    "displayName": "Gigi",
+    "headline": "Gigi is listening.",
+    "guidance": "Tell her everything."
   }
 }
