@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useMemo, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseModeration as sb } from "@/integrations/supabase/moderation-client";
 import type { Database } from "@/integrations/supabase/types";
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 // reads it. Nullable: rows created before the rollout have topic = null.
 type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   topic: string | null;
+  is_test: boolean | null;
 };
 type Status = "pending" | "approved" | "rejected";
 
@@ -128,6 +129,16 @@ const Moderate = () => {
   // composes with the other filters (AND); never touches a row's status.
   const [topicFilter, setTopicFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+
+  // Metrics panel (read-only). Collapsed by default. The queue only ever holds ONE
+  // status (admin_list_confessions filters by _status), so cross-status totals need
+  // the full set. Rather than add an RPC, we call the SAME RPC with _status = null
+  // (its body: `where (_status is null or ...)` → every status) exactly once, lazily
+  // on first expand, and compute everything client-side. Never mutates a row.
+  const [metricsOpen, setMetricsOpen] = useState(false);
+  const [metricsRows, setMetricsRows] = useState<Confession[] | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState(false);
 
   // Session bootstrap + magic-link redirect. This client (and only this client)
   // has detectSessionInUrl:true, so it parses the token off the /moderate URL.
@@ -252,6 +263,74 @@ const Moderate = () => {
     });
   };
 
+  // One-shot fetch of every status for the metrics panel. Reuses admin_list_confessions
+  // with _status = null — no new RPC, no new query surface. Cached in metricsRows; the
+  // Refresh control re-runs it (status counts drift as you approve/reject).
+  const loadMetrics = () => {
+    setMetricsLoading(true);
+    setMetricsError(false);
+    rpc("admin_list_confessions", { _status: null }).then(({ data, error }) => {
+      setMetricsLoading(false);
+      if (error) {
+        setMetricsError(true);
+        return;
+      }
+      setMetricsRows((data as Confession[]) ?? []);
+    });
+  };
+
+  const toggleMetrics = () => {
+    const next = !metricsOpen;
+    setMetricsOpen(next);
+    if (next && metricsRows === null && !metricsLoading) loadMetrics();
+  };
+
+  // All counts derive from ONE base set: completed (verdict issued) and non-test. Using a
+  // single denominator keeps every sub-total reconcilable. is_test is excluded only when
+  // strictly true (null/older rows count as real). null topic → "untagged" so topics sum
+  // to the total. Direct traffic is kept out of the per-venue topic breakdown.
+  const metrics = useMemo(() => {
+    if (!metricsRows) return null;
+    const base = metricsRows.filter((r) => r.is_test !== true && r.verdict_text != null);
+    const byStatus: Record<Status, number> = { pending: 0, approved: 0, rejected: 0 };
+    const byVenue = new Map<string, number>();
+    const byTopic = new Map<string, number>();
+    const venueTopic = new Map<string, Map<string, number>>();
+    const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
+    for (const r of base) {
+      if (r.status === "pending" || r.status === "approved" || r.status === "rejected") {
+        byStatus[r.status] += 1;
+      }
+      bump(byVenue, r.source);
+      const topicKey = r.topic ?? "untagged";
+      bump(byTopic, topicKey);
+      if (r.source !== "direct") {
+        let tm = venueTopic.get(r.source);
+        if (!tm) venueTopic.set(r.source, (tm = new Map()));
+        bump(tm, topicKey);
+      }
+    }
+    const byCountDesc = (a: [string, number], b: [string, number]) =>
+      b[1] - a[1] || a[0].localeCompare(b[0]);
+    return {
+      total: base.length,
+      byStatus,
+      directCount: byVenue.get("direct") ?? 0,
+      venueRows: [...byVenue].filter(([s]) => s !== "direct").sort(byCountDesc),
+      topicRows: [...byTopic].sort(byCountDesc),
+      venueTopicRows: [...byVenue]
+        .filter(([s]) => s !== "direct")
+        .sort(byCountDesc)
+        .map(([venue, count]) => ({
+          venue,
+          count,
+          topics: [...(venueTopic.get(venue) ?? new Map<string, number>())].sort(byCountDesc),
+        })),
+    };
+  }, [metricsRows]);
+
+  const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key;
+
   // --- Render states --------------------------------------------------------
 
   if (!authReady) {
@@ -335,6 +414,128 @@ const Moderate = () => {
             Sign out
           </Button>
         </header>
+
+        {/* Metrics panel (read-only) — collapsed by default so it stays out of the way.
+            Every count is over completed, non-test confessions across ALL statuses. */}
+        <section className="rounded-lg border border-border">
+          <button
+            type="button"
+            onClick={toggleMetrics}
+            className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+          >
+            <span>Metrics</span>
+            <span className="text-xs text-muted-foreground">
+              {metricsOpen ? "Hide" : "Show"}
+            </span>
+          </button>
+
+          {metricsOpen ? (
+            <div className="space-y-5 border-t border-border px-4 py-4 text-xs">
+              {metricsLoading ? (
+                <p className="text-muted-foreground">Loading metrics…</p>
+              ) : metricsError ? (
+                <div className="space-y-2">
+                  <p className="text-muted-foreground">Couldn't load metrics.</p>
+                  <Button size="sm" variant="outline" onClick={loadMetrics}>
+                    Retry
+                  </Button>
+                </div>
+              ) : metrics ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-muted-foreground">
+                      Completed (verdict issued), excluding test sessions · all statuses.
+                    </p>
+                    <Button size="sm" variant="ghost" onClick={loadMetrics}>
+                      Refresh
+                    </Button>
+                  </div>
+
+                  {/* 1. Totals */}
+                  <div>
+                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">Totals</p>
+                    <p>
+                      Total confessions: <span className="font-semibold">{metrics.total}</span>
+                    </p>
+                    <p className="text-muted-foreground">
+                      pending {metrics.byStatus.pending} · approved {metrics.byStatus.approved} ·
+                      rejected {metrics.byStatus.rejected}
+                    </p>
+                  </div>
+
+                  {/* 2. By venue — the primary metric. 'direct' shown separately. */}
+                  <div>
+                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">By venue</p>
+                    {metrics.venueRows.length === 0 ? (
+                      <p className="text-muted-foreground">No venue traffic yet.</p>
+                    ) : (
+                      <table className="w-full max-w-xs">
+                        <tbody>
+                          {metrics.venueRows.map(([slug, n]) => (
+                            <tr key={slug}>
+                              <td className="py-0.5">{slug}</td>
+                              <td className="py-0.5 text-right tabular-nums">{n}</td>
+                            </tr>
+                          ))}
+                          <tr className="text-muted-foreground">
+                            <td className="border-t border-border py-0.5">direct</td>
+                            <td className="border-t border-border py-0.5 text-right tabular-nums">
+                              {metrics.directCount}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* 3. By topic — desc, 'untagged' included so it sums to the total. */}
+                  <div>
+                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">By topic</p>
+                    <table className="w-full max-w-xs">
+                      <tbody>
+                        {metrics.topicRows.map(([key, n]) => (
+                          <tr key={key} className={key === "untagged" ? "text-muted-foreground" : ""}>
+                            <td className="py-0.5">{topicLabel(key)}</td>
+                            <td className="py-0.5 text-right tabular-nums">{n}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* 4. Topic × venue — per venue slug (never 'direct'), topics desc. */}
+                  <div>
+                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">
+                      Topics by venue
+                    </p>
+                    {metrics.venueTopicRows.length === 0 ? (
+                      <p className="text-muted-foreground">No venue traffic yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {metrics.venueTopicRows.map(({ venue, count, topics }) => (
+                          <div key={venue}>
+                            <p className="font-medium">
+                              {venue}{" "}
+                              <span className="text-muted-foreground">· {count}</span>
+                            </p>
+                            <ul className="ml-3 text-muted-foreground">
+                              {topics.map(([key, n]) => (
+                                <li key={key} className="flex max-w-[16rem] justify-between">
+                                  <span>{topicLabel(key)}</span>
+                                  <span className="tabular-nums">{n}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
 
         {/* Status tabs (item 5) */}
         <div className="flex gap-1">
