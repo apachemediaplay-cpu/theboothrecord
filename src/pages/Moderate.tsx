@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
+import { venueDisplayName } from "@/lib/source";
 import { cn } from "@/lib/utils";
 
 // `topic` is a forward-only column not yet in the generated types (like the admin RPCs
@@ -70,6 +71,17 @@ const TOPICS: { value: string; label: string }[] = [
 const TOPIC_LABELS: Record<string, string> = Object.fromEntries(
   TOPICS.map((t) => [t.value, t.label]),
 );
+
+// Short weekday/month for the "By night" labels + copy summary ("Sat 19 Jul"). Built by
+// hand so the format is comma-free and stable regardless of locale.
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// nightKey "YYYY-MM-DD" → "Sat 19 Jul". Parsed as local midnight so the weekday is correct.
+const formatNightLabel = (night: string) => {
+  const d = new Date(`${night}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return night;
+  return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+};
 
 const flagText = (row: Confession) =>
   `${row.confession_text} ${row.verdict_text ?? ""}`.toLowerCase();
@@ -143,6 +155,12 @@ const Moderate = () => {
   // scan-tracking SQL hasn't been run yet) → the section says so instead of showing zeros.
   const [scanCounts, setScanCounts] = useState<{ source: string; scans: number }[] | null>(null);
   const [shareCounts, setShareCounts] = useState<{ source: string; shares: number }[] | null>(null);
+  // Per-night share counts (admin_share_nights). night = "YYYY-MM-DD" (server-bucketed with
+  // a 4am cutoff in the browser's timezone). null = RPC unavailable.
+  const [nightShares, setNightShares] =
+    useState<{ night: string; source: string; shares: number }[] | null>(null);
+  // Which night+venue row was just copied — shows a brief "Copied" on that row's button.
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Session bootstrap + magic-link redirect. This client (and only this client)
   // has detectSessionInUrl:true, so it parses the token off the /moderate URL.
@@ -275,11 +293,21 @@ const Moderate = () => {
   const loadMetrics = () => {
     setMetricsLoading(true);
     setMetricsError(false);
+    // Bucket per-night shares in the moderator's own timezone so they line up with the
+    // confessions bucketed client-side below. Fallback to UTC if the browser won't report one.
+    const tz = (() => {
+      try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      } catch {
+        return "UTC";
+      }
+    })();
     Promise.all([
       rpc("admin_list_confessions", { _status: null }),
       rpc("admin_scan_counts"),
       rpc("admin_share_counts"),
-    ]).then(([conf, scans, shares]) => {
+      rpc("admin_share_nights", { _tz: tz }),
+    ]).then(([conf, scans, shares, nights]) => {
       setMetricsLoading(false);
       if (conf.error) {
         setMetricsError(true);
@@ -291,6 +319,11 @@ const Moderate = () => {
       );
       setShareCounts(
         shares.error ? null : ((shares.data as { source: string; shares: number }[]) ?? []),
+      );
+      setNightShares(
+        nights.error
+          ? null
+          : ((nights.data as { night: string; source: string; shares: number }[]) ?? []),
       );
     });
   };
@@ -355,6 +388,45 @@ const Moderate = () => {
       })
       .sort((a, b) => b.shares - a.shares || a.source.localeCompare(b.source));
 
+    // Per-night, per-venue. Night = local date with a 4am cutoff: shift the wall clock back
+    // 4h, then take the local date, so a 1am tap counts toward the previous evening. This
+    // MUST match the server bucketing in admin_share_nights (same 4am shift, same timezone —
+    // we pass the browser tz to the RPC). 'direct' is excluded (it isn't a venue).
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const nightKeyOf = (createdAt: string) => {
+      const d = new Date(createdAt);
+      d.setHours(d.getHours() - 4);
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+    type NightRow = { night: string; source: string; confessions: number; shares: number };
+    const nightMap = new Map<string, NightRow>();
+    const nightAt = (night: string, source: string) => {
+      const key = `${night}|${source}`;
+      let e = nightMap.get(key);
+      if (!e) nightMap.set(key, (e = { night, source, confessions: 0, shares: 0 }));
+      return e;
+    };
+    for (const r of base) {
+      if (r.source === "direct" || !r.created_at) continue;
+      nightAt(nightKeyOf(r.created_at), r.source).confessions += 1;
+    }
+    for (const row of nightShares ?? []) {
+      if (row.source === "direct" || !row.night) continue;
+      nightAt(row.night, row.source).shares += row.shares;
+    }
+    // Most recent 30 nights only; within a night, busiest venue first.
+    const recentNights = new Set(
+      [...new Set([...nightMap.values()].map((e) => e.night))].sort().reverse().slice(0, 30),
+    );
+    const nightRows = [...nightMap.values()]
+      .filter((e) => recentNights.has(e.night))
+      .sort(
+        (a, b) =>
+          (a.night < b.night ? 1 : a.night > b.night ? -1 : 0) ||
+          b.confessions - a.confessions ||
+          a.source.localeCompare(b.source),
+      );
+
     return {
       total: base.length,
       byStatus,
@@ -377,12 +449,37 @@ const Moderate = () => {
       completionRows,
       shareRows,
       overallShareRate: base.length > 0 ? totalShares / base.length : null,
+      // By night
+      nightRows,
+      nightSharesAvailable: nightShares !== null,
     };
-  }, [metricsRows, scanCounts, shareCounts]);
+  }, [metricsRows, scanCounts, shareCounts, nightShares]);
 
   const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key;
   // Ratio → whole-percent string; null (divide-by-zero) → an em dash, never NaN.
   const fmtPct = (rate: number | null) => (rate === null ? "—" : `${Math.round(rate * 100)}%`);
+
+  // Copy a night+venue line to the clipboard, e.g. "Highball — Sat 19 Jul: 47 confessions,
+  // 30 shared." Venue display name comes from venues.json (venueDisplayName), slug as
+  // fallback. Read-only; briefly flips the row's button to "Copied".
+  const copyNight = async (row: {
+    night: string;
+    source: string;
+    confessions: number;
+    shares: number;
+  }) => {
+    const key = `${row.night}|${row.source}`;
+    const name = venueDisplayName("", row.source) || row.source;
+    const conf = `${row.confessions} ${row.confessions === 1 ? "confession" : "confessions"}`;
+    const text = `${name} — ${formatNightLabel(row.night)}: ${conf}, ${row.shares} shared.`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
+    } catch {
+      /* clipboard blocked — leave the button unchanged */
+    }
+  };
 
   // --- Render states --------------------------------------------------------
 
@@ -667,6 +764,54 @@ const Moderate = () => {
                           </tbody>
                         </table>
                       </>
+                    )}
+                  </div>
+
+                  {/* 7. By night — per-night, per-venue confessions + shares. Night uses a 4am
+                      cutoff (a 1am tap counts toward the previous evening); 'direct' excluded;
+                      last 30 nights, most recent first. Each row copies a plain-text summary. */}
+                  <div>
+                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">By night</p>
+                    {!metrics.nightSharesAvailable ? (
+                      <p className="text-muted-foreground">
+                        Per-night shares unavailable — run the admin_share_nights SQL.
+                      </p>
+                    ) : metrics.nightRows.length === 0 ? (
+                      <p className="text-muted-foreground">No venue nights recorded yet.</p>
+                    ) : (
+                      <table className="w-full max-w-md">
+                        <thead>
+                          <tr className="text-muted-foreground">
+                            <td className="py-0.5">night</td>
+                            <td className="py-0.5">source</td>
+                            <td className="py-0.5 text-right">conf.</td>
+                            <td className="py-0.5 text-right">shares</td>
+                            <td className="py-0.5" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {metrics.nightRows.map((row) => {
+                            const key = `${row.night}|${row.source}`;
+                            return (
+                              <tr key={key}>
+                                <td className="py-0.5 whitespace-nowrap">{formatNightLabel(row.night)}</td>
+                                <td className="py-0.5">{row.source}</td>
+                                <td className="py-0.5 text-right tabular-nums">{row.confessions}</td>
+                                <td className="py-0.5 text-right tabular-nums">{row.shares}</td>
+                                <td className="py-0.5 pl-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => copyNight(row)}
+                                    className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                                  >
+                                    {copiedKey === key ? "Copied" : "Copy"}
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     )}
                   </div>
                 </>
