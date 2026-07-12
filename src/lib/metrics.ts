@@ -46,6 +46,32 @@ export function logShare(source: string | null | undefined): void {
   );
 }
 
+// Log a Booth arrival ("scan") — ONCE per session. Called when someone lands on the
+// consent gate. Guarded by a sessionStorage marker keyed on the session id: a refresh or
+// back-navigation within the same tab session finds the marker and skips, so one scan is
+// counted per session, never per page-load. A new tab / session logs a fresh scan.
+//
+// The marker is set BEFORE the RPC fires (optimistic) so a fast refresh mid-request can't
+// slip a second insert through. Fully fire-and-forget: a failure must NEVER block or delay
+// the user entering the Booth. source defaults to 'direct'; is_test carries the ?test=1 flag.
+export function logScan(source: string | null | undefined): void {
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    const sessionId = getSessionId();
+    if (sessionStorage.getItem("booth_scan_logged") === sessionId) return;
+    sessionStorage.setItem("booth_scan_logged", sessionId);
+    fireAndForget(
+      rpc("log_scan", {
+        _source: source ?? "direct",
+        _session_id: sessionId,
+        _is_test: isTestSession(),
+      }),
+    );
+  } catch {
+    /* never block entry on a metric */
+  }
+}
+
 // Resolve THIS confession's uuid share id. Owner-gated server-side (session id + verdict),
 // so it can't be used to map a sequential subject_number to a uuid. Returns the uuid
 // string for the share link, or null if ownership wasn't proven / on error.

@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import BoothFooter from "@/components/BoothFooter";
+import { captureSourceFromUrl } from "@/lib/source";
+import { logScan } from "@/lib/metrics";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,6 +23,13 @@ const Index = () => {
   const fullText2 = "That's the point.";
 
   // (Venue ?source= capture now happens globally in App.tsx on every load.)
+
+  // Count this arrival at the gate — once per session, fire-and-forget (see logScan). The
+  // source was already captured on load; read it back (returns 'direct' fallback via
+  // logScan when absent). Never blocks entry.
+  useEffect(() => {
+    logScan(captureSourceFromUrl());
+  }, []);
 
   useEffect(() => {
     let index = 0;

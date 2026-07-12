@@ -139,6 +139,10 @@ const Moderate = () => {
   const [metricsRows, setMetricsRows] = useState<Confession[] | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState(false);
+  // Aggregate reads for scan/share rates (admin RPCs). null = RPC unavailable (e.g. the
+  // scan-tracking SQL hasn't been run yet) → the section says so instead of showing zeros.
+  const [scanCounts, setScanCounts] = useState<{ source: string; scans: number }[] | null>(null);
+  const [shareCounts, setShareCounts] = useState<{ source: string; shares: number }[] | null>(null);
 
   // Session bootstrap + magic-link redirect. This client (and only this client)
   // has detectSessionInUrl:true, so it parses the token off the /moderate URL.
@@ -263,19 +267,31 @@ const Moderate = () => {
     });
   };
 
-  // One-shot fetch of every status for the metrics panel. Reuses admin_list_confessions
-  // with _status = null — no new RPC, no new query surface. Cached in metricsRows; the
-  // Refresh control re-runs it (status counts drift as you approve/reject).
+  // One-shot fetch for the metrics panel. Confessions come from admin_list_confessions with
+  // _status = null (every status, one call). Scans + shares come from admin-gated aggregate
+  // RPCs (admin_scan_counts / admin_share_counts). All three fire in parallel on first
+  // expand; the Refresh control re-runs them. Confessions failing = panel error; scans/shares
+  // failing degrade to null (that section reports "unavailable") without blanking the rest.
   const loadMetrics = () => {
     setMetricsLoading(true);
     setMetricsError(false);
-    rpc("admin_list_confessions", { _status: null }).then(({ data, error }) => {
+    Promise.all([
+      rpc("admin_list_confessions", { _status: null }),
+      rpc("admin_scan_counts"),
+      rpc("admin_share_counts"),
+    ]).then(([conf, scans, shares]) => {
       setMetricsLoading(false);
-      if (error) {
+      if (conf.error) {
         setMetricsError(true);
         return;
       }
-      setMetricsRows((data as Confession[]) ?? []);
+      setMetricsRows((conf.data as Confession[]) ?? []);
+      setScanCounts(
+        scans.error ? null : ((scans.data as { source: string; scans: number }[]) ?? []),
+      );
+      setShareCounts(
+        shares.error ? null : ((shares.data as { source: string; shares: number }[]) ?? []),
+      );
     });
   };
 
@@ -312,6 +328,33 @@ const Moderate = () => {
     }
     const byCountDesc = (a: [string, number], b: [string, number]) =>
       b[1] - a[1] || a[0].localeCompare(b[0]);
+
+    // Scan → completion → share funnel. scanCounts/shareCounts are null when their RPC is
+    // unavailable; treat as empty maps for the math and surface availability via flags.
+    const scanMap = new Map((scanCounts ?? []).map((r) => [r.source, r.scans]));
+    const shareMap = new Map((shareCounts ?? []).map((r) => [r.source, r.shares]));
+    const totalScans = [...scanMap.values()].reduce((a, b) => a + b, 0);
+    const totalShares = [...shareMap.values()].reduce((a, b) => a + b, 0);
+
+    // Completion = completed confessions ÷ scans, per source that has scans. rate is null on
+    // divide-by-zero (→ "—"). Confessions are all-time, so a source with pre-tracking history
+    // can read > 100% — flagged in the UI.
+    const completionRows = [...scanMap.entries()].sort(byCountDesc).map(([source, scans]) => {
+      const confessions = byVenue.get(source) ?? 0;
+      return { source, scans, confessions, rate: scans > 0 ? confessions / scans : null };
+    });
+
+    // Share rate = share taps ÷ completed confessions. Overall + per source (union of sources
+    // that have shares or completed confessions). rate null when the denominator is 0.
+    const shareSources = [...new Set([...byVenue.keys(), ...shareMap.keys()])];
+    const shareRows = shareSources
+      .map((source) => {
+        const shares = shareMap.get(source) ?? 0;
+        const completed = byVenue.get(source) ?? 0;
+        return { source, shares, completed, rate: completed > 0 ? shares / completed : null };
+      })
+      .sort((a, b) => b.shares - a.shares || a.source.localeCompare(b.source));
+
     return {
       total: base.length,
       byStatus,
@@ -326,10 +369,20 @@ const Moderate = () => {
           count,
           topics: [...(venueTopic.get(venue) ?? new Map<string, number>())].sort(byCountDesc),
         })),
+      // Funnel
+      scansAvailable: scanCounts !== null,
+      sharesAvailable: shareCounts !== null,
+      totalScans,
+      totalShares,
+      completionRows,
+      shareRows,
+      overallShareRate: base.length > 0 ? totalShares / base.length : null,
     };
-  }, [metricsRows]);
+  }, [metricsRows, scanCounts, shareCounts]);
 
   const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key;
+  // Ratio → whole-percent string; null (divide-by-zero) → an em dash, never NaN.
+  const fmtPct = (rate: number | null) => (rate === null ? "—" : `${Math.round(rate * 100)}%`);
 
   // --- Render states --------------------------------------------------------
 
@@ -529,6 +582,91 @@ const Moderate = () => {
                           </div>
                         ))}
                       </div>
+                    )}
+                  </div>
+
+                  {/* 5. Scans & completion — scans by source + completion rate (confessions ÷
+                      scans). Scans can't be backfilled, so completion is only meaningful for
+                      the scan-tracking era; historical confessions can push a rate past 100%. */}
+                  <div>
+                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">
+                      Scans &amp; completion
+                    </p>
+                    {!metrics.scansAvailable ? (
+                      <p className="text-muted-foreground">
+                        Scan tracking isn't live yet — run the scan_events SQL to enable it.
+                      </p>
+                    ) : metrics.completionRows.length === 0 ? (
+                      <p className="text-muted-foreground">No scans recorded yet.</p>
+                    ) : (
+                      <>
+                        <p className="mb-1 text-muted-foreground">
+                          Total scans: <span className="font-semibold text-foreground">{metrics.totalScans}</span>
+                          {" · "}completion = confessions ÷ scans, since tracking went live
+                          (older sources can exceed 100%).
+                        </p>
+                        <table className="w-full max-w-sm">
+                          <thead>
+                            <tr className="text-muted-foreground">
+                              <td className="py-0.5">source</td>
+                              <td className="py-0.5 text-right">scans</td>
+                              <td className="py-0.5 text-right">conf.</td>
+                              <td className="py-0.5 text-right">rate</td>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {metrics.completionRows.map(({ source, scans, confessions, rate }) => (
+                              <tr key={source}>
+                                <td className="py-0.5">{source}</td>
+                                <td className="py-0.5 text-right tabular-nums">{scans}</td>
+                                <td className="py-0.5 text-right tabular-nums">{confessions}</td>
+                                <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
+                    )}
+                  </div>
+
+                  {/* 6. Share rate — share taps ÷ completed confessions, overall + per source.
+                      Counts every tap, so a source can exceed 100%. */}
+                  <div>
+                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">Share rate</p>
+                    {!metrics.sharesAvailable ? (
+                      <p className="text-muted-foreground">
+                        Share counts unavailable — run the admin_share_counts SQL.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mb-1 text-muted-foreground">
+                          Overall:{" "}
+                          <span className="font-semibold text-foreground">
+                            {fmtPct(metrics.overallShareRate)}
+                          </span>{" "}
+                          ({metrics.totalShares} taps ÷ {metrics.total} confessions · counts every tap)
+                        </p>
+                        <table className="w-full max-w-sm">
+                          <thead>
+                            <tr className="text-muted-foreground">
+                              <td className="py-0.5">source</td>
+                              <td className="py-0.5 text-right">shares</td>
+                              <td className="py-0.5 text-right">conf.</td>
+                              <td className="py-0.5 text-right">rate</td>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {metrics.shareRows.map(({ source, shares, completed, rate }) => (
+                              <tr key={source}>
+                                <td className="py-0.5">{source}</td>
+                                <td className="py-0.5 text-right tabular-nums">{shares}</td>
+                                <td className="py-0.5 text-right tabular-nums">{completed}</td>
+                                <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
                     )}
                   </div>
                 </>
