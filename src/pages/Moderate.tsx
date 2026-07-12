@@ -286,10 +286,13 @@ const Moderate = () => {
   };
 
   // One-shot fetch for the metrics panel. Confessions come from admin_list_confessions with
-  // _status = null (every status, one call). Scans + shares come from admin-gated aggregate
-  // RPCs (admin_scan_counts / admin_share_counts). All three fire in parallel on first
-  // expand; the Refresh control re-runs them. Confessions failing = panel error; scans/shares
-  // failing degrade to null (that section reports "unavailable") without blanking the rest.
+  // _status = null (every status, one call). Scans + shares + per-night shares come from
+  // admin-gated aggregate RPCs. All fire in parallel on first expand; Refresh re-runs them.
+  //
+  // Error visibility: every sub-fetch is wrapped so a REJECTION (network/transport) can't
+  // reject Promise.all and freeze the panel on "Loading…". A failed confessions load →
+  // panel error; a failed scans/shares/nights load → that state goes null and its section
+  // renders "unavailable". No section can vanish silently — worst case it says so.
   const loadMetrics = () => {
     setMetricsLoading(true);
     setMetricsError(false);
@@ -302,30 +305,43 @@ const Moderate = () => {
         return "UTC";
       }
     })();
+    // Normalise both a rejected promise and a resolved {error} into { data, error:true }.
+    const safe = (p: ReturnType<typeof rpc>) =>
+      Promise.resolve(p).then(
+        (r) => r,
+        () => ({ data: null, error: { message: "request failed" } }),
+      );
     Promise.all([
-      rpc("admin_list_confessions", { _status: null }),
-      rpc("admin_scan_counts"),
-      rpc("admin_share_counts"),
-      rpc("admin_share_nights", { _tz: tz }),
-    ]).then(([conf, scans, shares, nights]) => {
-      setMetricsLoading(false);
-      if (conf.error) {
+      safe(rpc("admin_list_confessions", { _status: null })),
+      safe(rpc("admin_scan_counts")),
+      safe(rpc("admin_share_counts")),
+      safe(rpc("admin_share_nights", { _tz: tz })),
+    ])
+      .then(([conf, scans, shares, nights]) => {
+        setMetricsLoading(false);
+        if (conf.error) {
+          setMetricsError(true);
+          return;
+        }
+        setMetricsRows((conf.data as Confession[]) ?? []);
+        setScanCounts(
+          scans.error ? null : ((scans.data as { source: string; scans: number }[]) ?? []),
+        );
+        setShareCounts(
+          shares.error ? null : ((shares.data as { source: string; shares: number }[]) ?? []),
+        );
+        setNightShares(
+          nights.error
+            ? null
+            : ((nights.data as { night: string; source: string; shares: number }[]) ?? []),
+        );
+      })
+      // Backstop: anything unexpected in the handler still resolves the panel to an error
+      // state rather than leaving it stuck loading.
+      .catch(() => {
+        setMetricsLoading(false);
         setMetricsError(true);
-        return;
-      }
-      setMetricsRows((conf.data as Confession[]) ?? []);
-      setScanCounts(
-        scans.error ? null : ((scans.data as { source: string; scans: number }[]) ?? []),
-      );
-      setShareCounts(
-        shares.error ? null : ((shares.data as { source: string; shares: number }[]) ?? []),
-      );
-      setNightShares(
-        nights.error
-          ? null
-          : ((nights.data as { night: string; source: string; shares: number }[]) ?? []),
-      );
-    });
+      });
   };
 
   const toggleMetrics = () => {
@@ -364,8 +380,10 @@ const Moderate = () => {
 
     // Scan → completion → share funnel. scanCounts/shareCounts are null when their RPC is
     // unavailable; treat as empty maps for the math and surface availability via flags.
-    const scanMap = new Map((scanCounts ?? []).map((r) => [r.source, r.scans]));
-    const shareMap = new Map((shareCounts ?? []).map((r) => [r.source, r.shares]));
+    // Coerce counts to Number: Postgres bigint can serialize as a JSON string, and string
+    // "+" would concatenate instead of add (e.g. 0 + "1" → "01").
+    const scanMap = new Map((scanCounts ?? []).map((r) => [r.source, Number(r.scans) || 0]));
+    const shareMap = new Map((shareCounts ?? []).map((r) => [r.source, Number(r.shares) || 0]));
     const totalScans = [...scanMap.values()].reduce((a, b) => a + b, 0);
     const totalShares = [...shareMap.values()].reduce((a, b) => a + b, 0);
 
@@ -412,7 +430,7 @@ const Moderate = () => {
     }
     for (const row of nightShares ?? []) {
       if (row.source === "direct" || !row.night) continue;
-      nightAt(row.night, row.source).shares += row.shares;
+      nightAt(row.night, row.source).shares += Number(row.shares) || 0;
     }
     // Most recent 30 nights only; within a night, busiest venue first.
     const recentNights = new Set(

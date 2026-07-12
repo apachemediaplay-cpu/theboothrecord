@@ -6,6 +6,18 @@
       { "source": "/og/**", "function": { "functionId": "ogImage", "region": "us-central1" } },
       { "source": "/v/**", "function": { "functionId": "share", "region": "us-central1" } },
       { "source": "**", "destination": "/index.html" }
+    ],
+    "headers": [
+      {
+        "comment": "index.html must never be cached — it points at the fingerprinted bundle. A stale copy pins the browser to an old build (this is what hid the By-night section).",
+        "source": "/index.html",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+      },
+      {
+        "comment": "Fingerprinted build assets are content-addressed — safe to cache forever.",
+        "source": "/assets/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      }
     ]
   },
   "functions": {
