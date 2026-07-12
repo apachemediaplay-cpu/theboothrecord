@@ -4,11 +4,23 @@ import { supabaseModeration as sb } from "@/integrations/supabase/moderation-cli
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-type Confession = Database["public"]["Tables"]["confessions"]["Row"];
+// `topic` is a forward-only column not yet in the generated types (like the admin RPCs
+// themselves). It's written by generate-verdict at confession time; the frontend only
+// reads it. Nullable: rows created before the rollout have topic = null.
+type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
+  topic: string | null;
+};
 type Status = "pending" | "approved" | "rejected";
 
 // The admin_* RPCs are not in the generated types (Functions is empty and can't be
@@ -35,6 +47,28 @@ const WATCHWORDS = [
 ];
 
 const TABS: Status[] = ["pending", "approved", "rejected"];
+
+// Topic taxonomy written by generate-verdict at confession time. Keys are the stored
+// values; labels are display-only. Older rows predate the rollout and have topic = null,
+// surfaced as "Untagged" — never hidden. Unknown values fall back to the raw string, so
+// adding a topic server-side can't crash the page before this list catches up.
+const TOPICS: { value: string; label: string }[] = [
+  { value: "wellness", label: "Wellness" },
+  { value: "work", label: "Work" },
+  { value: "dating_sex", label: "Dating & sex" },
+  { value: "friendship", label: "Friendship" },
+  { value: "family", label: "Family" },
+  { value: "money", label: "Money" },
+  { value: "food_drink", label: "Food & drink" },
+  { value: "social_performance", label: "Social performance" },
+  { value: "vanity", label: "Vanity" },
+  { value: "substances", label: "Substances" },
+  { value: "petty", label: "Petty" },
+  { value: "other", label: "Other" },
+];
+const TOPIC_LABELS: Record<string, string> = Object.fromEntries(
+  TOPICS.map((t) => [t.value, t.label]),
+);
 
 const flagText = (row: Confession) =>
   `${row.confession_text} ${row.verdict_text ?? ""}`.toLowerCase();
@@ -63,6 +97,14 @@ const SourceBadge = ({ source }: { source: string }) => {
   );
 };
 
+// Muted, unobtrusive counterpart to SourceBadge — a topic is metadata, not an action.
+// null → a muted "untagged"; an unrecognised value falls back to the raw string.
+const TopicBadge = ({ topic }: { topic: string | null }) => (
+  <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+    {topic ? TOPIC_LABELS[topic] ?? topic : "untagged"}
+  </span>
+);
+
 const Moderate = () => {
   const { toast } = useToast();
 
@@ -82,6 +124,9 @@ const Moderate = () => {
   // Client-side filters over the already-loaded rows (brief item 5). Neither touches
   // the DB or any row's status; the keyword search is a filter, not a highlighter.
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  // "all" | one of the TOPICS values | "untagged" (rows with topic = null). Display-only,
+  // composes with the other filters (AND); never touches a row's status.
+  const [topicFilter, setTopicFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
   // Session bootstrap + magic-link redirect. This client (and only this client)
@@ -129,6 +174,7 @@ const Moderate = () => {
     if (next === tab) return;
     setTab(next);
     setSourceFilter("all");
+    setTopicFilter("all");
     setSearch("");
   };
 
@@ -265,6 +311,11 @@ const Moderate = () => {
   const sources = Array.from(new Set(rows.map((r) => r.source))).sort();
   const visibleRows = rows.filter((row) => {
     if (sourceFilter !== "all" && row.source !== sourceFilter) return false;
+    if (topicFilter !== "all") {
+      // "untagged" matches null topics; any other value is an exact match.
+      if (topicFilter === "untagged" ? row.topic != null : row.topic !== topicFilter)
+        return false;
+    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       if (!`${row.confession_text} ${row.verdict_text ?? ""}`.toLowerCase().includes(q)) return false;
@@ -323,6 +374,24 @@ const Moderate = () => {
           </div>
         ) : null}
 
+        {/* Topic filter — client-side over loaded rows, composes with the other filters
+            (AND). Display-only; never changes any row's status. Full static taxonomy plus
+            "Untagged" for the pre-rollout null rows. */}
+        <Select value={topicFilter} onValueChange={setTopicFilter}>
+          <SelectTrigger className="w-full sm:w-64">
+            <SelectValue placeholder="All topics" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All topics</SelectItem>
+            {TOPICS.map((t) => (
+              <SelectItem key={t.value} value={t.value}>
+                {t.label}
+              </SelectItem>
+            ))}
+            <SelectItem value="untagged">Untagged</SelectItem>
+          </SelectContent>
+        </Select>
+
         {/* Keyword search (item 5) — active, on-demand filter over loaded rows only.
             Distinct from the passive amber flag; never changes any row's status. */}
         <Input
@@ -353,6 +422,7 @@ const Moderate = () => {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span>#{row.subject_number}</span>
                     <SourceBadge source={row.source} />
+                    <TopicBadge topic={row.topic} />
                     <span>{new Date(row.created_at).toLocaleString()}</span>
                     {flagged ? (
                       <span className="rounded bg-amber-500/15 text-amber-500 px-1.5 py-0.5 text-[11px] font-medium">
