@@ -379,9 +379,11 @@ const Verdict = () => {
   // SAVE IMAGE pairs with the share button — brighter than the exit links below it.
   const shareSecondary =
     "text-sm text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
-  // CONFESS AGAIN / THE PUBLIC RECORD — demoted: smaller and dimmer than the share actions.
+  // CONFESS AGAIN / THE PUBLIC RECORD — demoted below everything else. Kept subordinate by
+  // size (text-xs, vs SAVE IMAGE's text-sm), so full muted-foreground is legibility only,
+  // not a promotion.
   const exitLink =
-    "text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors tracking-wide";
+    "text-xs text-muted-foreground hover:text-foreground transition-colors tracking-wide";
 
   return (
     <div className="screen-container animate-fade-in">
@@ -496,7 +498,6 @@ const Verdict = () => {
             stays visible and working (they may still want to save the image). */}
         {hasShared && (
           <div className="flex flex-col items-center gap-1">
-            <p className="text-ritual text-xs font-mono-light tracking-wide">On record.</p>
             <a
               href="https://instagram.com/houseofguilty"
               target="_blank"
