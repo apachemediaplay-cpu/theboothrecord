@@ -34,7 +34,9 @@ export function tagConfession(subjectNumber: number): void {
 }
 
 // Log a share-button tap — share INTENT only, never destination or reach. Called when
-// the ON RECORD button is tapped on the verdict card.
+// the SHARE VERDICT button is tapped on the verdict card. The logged event is the
+// log_share RPC keyed on venue source + session — the button label is never recorded,
+// so renaming the button does not affect metric continuity.
 export function logShare(source: string | null | undefined): void {
   fireAndForget(
     rpc("log_share", {

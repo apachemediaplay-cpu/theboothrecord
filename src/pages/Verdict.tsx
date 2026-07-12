@@ -52,6 +52,11 @@ const Verdict = () => {
   // ON RECORD share flow (single-tap: the disclosure line is the consent)
   const [sharing, setSharing] = useState(false);
 
+  // True once the user taps EITHER share action. Set on tap, not on success: the Web
+  // Share API can't reliably confirm completion and SAVE IMAGE gives no iOS callback.
+  // Gates the post-share Instagram reveal; the share block stays visible regardless.
+  const [hasShared, setHasShared] = useState(false);
+
   const handleClaim = () => {
     const value = email.trim();
     const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -291,6 +296,8 @@ const Verdict = () => {
   // /v/{uuid} link. The link's server-rendered preview carries the verdict + card image —
   // no separate text or attached file. Keep the PNG path (below) as the secondary option.
   const handleShareLink = async () => {
+    // Reveal the Instagram follow line on tap (see hasShared note).
+    setHasShared(true);
     // Share-INTENT metric (fire-and-forget), keyed on the persisted row source.
     logShare(rowSource);
     setSharingLink(true);
@@ -324,6 +331,8 @@ const Verdict = () => {
 
   // SECONDARY "Save image": the client-rendered PNG, for Stories (which don't unfurl links).
   const handleOnRecordConfirm = async () => {
+    // Reveal the Instagram follow line on tap (SAVE IMAGE gives no completion callback).
+    setHasShared(true);
     setSharing(true);
     try {
       // Load stamp_venue BEFORE rendering, so the card is drawn ONCE with the correct venue
@@ -367,8 +376,12 @@ const Verdict = () => {
     }
   };
 
-  const secondaryLink =
-    "text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
+  // SAVE IMAGE pairs with the share button — brighter than the exit links below it.
+  const shareSecondary =
+    "text-sm text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
+  // CONFESS AGAIN / THE PUBLIC RECORD — demoted: smaller and dimmer than the share actions.
+  const exitLink =
+    "text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors tracking-wide";
 
   return (
     <div className="screen-container animate-fade-in">
@@ -460,8 +473,9 @@ const Verdict = () => {
             </div>
           ) : null)}
 
-        {/* Primary action: ON RECORD — single tap shares the /v/{uuid} link, whose preview
-            carries the verdict card. The disclosure line above IS the consent. */}
+        {/* Share pair: SHARE VERDICT (shares the /v/{uuid} link, whose preview carries the
+            verdict card) with SAVE IMAGE directly beneath it. The disclosure line above IS
+            the consent. Label change only — SHARE VERDICT still calls handleShareLink. */}
         <div className="w-full max-w-xs flex flex-col items-center gap-3">
           <p className="text-ritual text-sm font-mono-light tracking-wide text-center">
             Your words. Not your name.
@@ -471,22 +485,40 @@ const Verdict = () => {
             disabled={sharingLink}
             className="btn-booth disabled:opacity-50"
           >
-            {sharingLink ? "FILING…" : "ON RECORD"}
+            {sharingLink ? "FILING…" : "SHARE VERDICT"}
+          </button>
+          <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
+            {sharing ? "SAVING…" : "SAVE IMAGE"}
           </button>
         </div>
 
-        {/* Demoted secondary actions */}
-        <button onClick={handleOnRecordConfirm} disabled={sharing} className={secondaryLink}>
-          {sharing ? "SAVING…" : "SAVE IMAGE"}
-        </button>
-        <button onClick={handleConfessAgain} className={secondaryLink}>
-          CONFESS AGAIN
-        </button>
-        {verdictResponse !== "Entry withheld" && (
-          <button onClick={() => handleNavigate("/thewall")} className={secondaryLink}>
-            THE PUBLIC RECORD
-          </button>
+        {/* Instagram follow — appears ONLY after a share is tapped. The share block above
+            stays visible and working (they may still want to save the image). */}
+        {hasShared && (
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-ritual text-xs font-mono-light tracking-wide">On record.</p>
+            <a
+              href="https://instagram.com/houseofguilty"
+              target="_blank"
+              rel="noopener"
+              className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-opacity"
+            >
+              @houseofguilty →
+            </a>
+          </div>
         )}
+
+        {/* Demoted exit links — bigger gap above, smaller + dimmer. Whitespace only. */}
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <button onClick={handleConfessAgain} className={exitLink}>
+            CONFESS AGAIN
+          </button>
+          {verdictResponse !== "Entry withheld" && (
+            <button onClick={() => handleNavigate("/thewall")} className={exitLink}>
+              THE PUBLIC RECORD
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
