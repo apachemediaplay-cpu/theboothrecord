@@ -57,6 +57,11 @@ const Verdict = () => {
   // Gates the post-share Instagram reveal; the share block stays visible regardless.
   const [hasShared, setHasShared] = useState(false);
 
+  // This confession's share uuid. Resolved once (owner-gated) and reused by BOTH share
+  // paths: SHARE VERDICT sends /v/{uuid} as the link; SAVE IMAGE sends the same /v/{uuid}
+  // as the url travelling alongside the PNG. Cached so repeat taps don't re-resolve.
+  const [shareId, setShareId] = useState<string | null>(null);
+
   const handleClaim = () => {
     const value = email.trim();
     const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -302,7 +307,7 @@ const Verdict = () => {
     logShare(rowSource);
     setSharingLink(true);
     try {
-      const id = await resolveShareId(Number(subjectNumber), verdictResponse);
+      const id = shareId ?? (await resolveShareId(Number(subjectNumber), verdictResponse));
       if (!id) {
         toast({
           title: "Couldn't create the link",
@@ -311,6 +316,7 @@ const Verdict = () => {
         });
         return;
       }
+      if (!shareId) setShareId(id);
       const url = `https://theboothrecord.com/v/${id}`;
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
@@ -333,16 +339,26 @@ const Verdict = () => {
   const handleOnRecordConfirm = async () => {
     // Reveal the Instagram follow line on tap (SAVE IMAGE gives no completion callback).
     setHasShared(true);
+    // Share-INTENT metric, keyed on the persisted row source — same as SHARE VERDICT.
+    // SAVE IMAGE is a share: Stories are the venue's UGC channel. Previously unlogged,
+    // which made share-rate blind to the exact channel the venue pitch is built on.
+    logShare(rowSource);
     setSharing(true);
     try {
+      // Resolve our own uuid (owner-gated) ONCE. It does two jobs: stamp_venue for the
+      // card, and the /v/{uuid} link that travels with the PNG.
+      let uuid = shareId;
+      if (!uuid && subjectNumber && verdictResponse) {
+        uuid = await resolveShareId(Number(subjectNumber), verdictResponse);
+        if (uuid) setShareId(uuid);
+      }
       // Load stamp_venue BEFORE rendering, so the card is drawn ONCE with the correct venue
       // (it never shows the venue and then swaps). The Edge Function response doesn't include
-      // it, so resolve our own uuid (owner-gated) then read the row. Cached in state for
-      // repeat taps; on any failure suppress stays false → the venue shows as normal.
+      // it, so read the row via the uuid above. Cached in state for repeat taps; on any
+      // failure suppress stays false → the venue shows as normal.
       let suppress = stampVenue === false;
-      if (stampVenue === undefined && subjectNumber && verdictResponse) {
-        const uuid = await resolveShareId(Number(subjectNumber), verdictResponse);
-        const row = uuid ? await fetchSharedVerdict(uuid) : null;
+      if (stampVenue === undefined && uuid) {
+        const row = await fetchSharedVerdict(uuid);
         if (row) {
           setStampVenue(row.stamp_venue);
           suppress = row.stamp_venue === false;
@@ -356,8 +372,16 @@ const Verdict = () => {
         !!navigator.canShare &&
         navigator.canShare({ files: [file] });
 
+      // The url travels WITH the image. It MUST be /v/{uuid}, not the homepage:
+      //   1. VerdictShare's CTA is `/confess?source=<venue>` — so a confession referred by
+      //      a shared Story is CREDITED TO THE VENUE. A homepage link lands as `direct`,
+      //      silently leaking the venue's own UGC referrals out of its own numbers.
+      //   2. The recipient lands on the exact verdict they just saw, not a cold front door.
+      // Homepage only as a fallback if the uuid can't be resolved.
+      const shareUrl = uuid ? `https://theboothrecord.com/v/${uuid}` : "https://theboothrecord.com";
+
       if (canShareFiles) {
-        await navigator.share({ files: [file], title: "GUILTY", text: "You've been summoned. You know what you did.", url: "https://theboothrecord.com" });
+        await navigator.share({ files: [file], title: "GUILTY", text: "You've been summoned. You know what you did.", url: shareUrl });
       } else {
         // Desktop fallback: download the PNG.
         const url = URL.createObjectURL(blob);
