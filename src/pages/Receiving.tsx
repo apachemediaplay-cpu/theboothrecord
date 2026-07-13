@@ -7,12 +7,24 @@ import { tagConfession } from "@/lib/metrics";
 // Three-beat loader copy. Each beat types out, then holds while a thin caret blinks.
 // Beat 1 ≈5s total (≈3.4s hold), beat 2 ≈6s total (≈4.7s hold) → beat 3 at ≈11s.
 // Beat 3 is the terminal hold — no fixed duration; it waits for the verdict.
+// Three-beat loader copy. Each beat types out, then holds while a thin caret blinks.
+//
+// VOICE: the Booth observes the CONFESSOR — it never narrates its own progress.
+// Beat 1 disarms (presumption: nothing here was news). Beat 2 states the actual
+// verdict mechanism (the gap between stated and unstated), so the verdict lands as
+// fair rather than as a trick. Beat 3 is a standing fact, not a countdown — it must
+// read well whether the verdict arrives 2s or 20s after it appears.
+//
+// Every beat uses a HARD line break (rendered via whitespace-pre-line) so each is
+// always exactly two lines on mobile — it never flickers between 1 and 2 lines as
+// it types.
+//
+// Beat 1 ≈5s total (≈3.4s hold), beat 2 ≈6s total (≈4.7s hold) → beat 3 at ≈11s.
+// Beat 3 is the terminal hold — no fixed duration; it waits for the verdict.
 const BEATS = [
-  // Beat 1 uses a HARD line break (rendered via whitespace-pre-line) so it is always
-  // exactly two lines on mobile — it never flickers between 1 and 2 lines as it types.
-  { text: "Your sin is being\nreceived.", hold: 3400 },
-  { text: "The booth is deciding.", hold: 4700 },
-  { text: "Your verdict is coming.", hold: Number.POSITIVE_INFINITY },
+  { text: "Received.\nWe already knew.", hold: 3400 },
+  { text: "Looking for what\nyou left out.", hold: 4700 },
+  { text: "You already know\nwhat this says.", hold: Number.POSITIVE_INFINITY },
 ] as const;
 const CHAR_MS = 60; // typewriter feel
 
