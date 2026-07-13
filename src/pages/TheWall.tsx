@@ -13,9 +13,6 @@ const TheWall = () => {
   const [confessions, setConfessions] = useState<ConfessionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [confessionCount, setConfessionCount] = useState(0);
-  const [showBoothPrompt, setShowBoothPrompt] = useState(false);
-  const [boothPromptVisible, setBoothPromptVisible] = useState(false);
-  const [boothDismissed, setBoothDismissed] = useState(false);
 
   // Feature 3: load only APPROVED confessions from Supabase.
   // RLS also enforces this server-side; the explicit filter keeps the query aligned.
@@ -72,17 +69,6 @@ const TheWall = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Show booth prompt after 5 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!boothDismissed) {
-        setShowBoothPrompt(true);
-        setTimeout(() => setBoothPromptVisible(true), 50);
-      }
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [boothDismissed]);
-
 
   return (
     <div className="min-h-[100dvh] bg-background relative overflow-hidden">
@@ -109,7 +95,7 @@ const TheWall = () => {
       {/* Header */}
       <div className="pt-16 pb-4 md:pt-20 md:pb-6 text-center px-6">
         <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide mb-2">
-          THE PUBLIC RECORD
+          THE GUILTY
         </h1>
       </div>
 
@@ -130,7 +116,7 @@ const TheWall = () => {
 
 
       {/* Confession feed */}
-      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-16">
+      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-28">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -158,70 +144,23 @@ const TheWall = () => {
             </div>
           ))
         )}
-
-        {/* Submit your own CTA */}
-        <div className="py-16 text-center">
-          <Link
-            to="/confess"
-            className="group inline-block"
-          >
-            <p className="text-muted-foreground/25 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 group-hover:text-muted-foreground/50 transition-colors duration-500">
-              YOUR TURN.
-            </p>
-            <p className="text-muted-foreground/35 text-[11px] tracking-[0.3em] uppercase font-mono-light group-hover:text-ritual/60 transition-colors duration-500">
-              ENTER THE BOOTH →
-            </p>
-          </Link>
-        </div>
       </div>
 
-      {/* Booth prompt popup with overlay */}
-      {showBoothPrompt && !boothDismissed && (
-        <>
-          <div
-            className={`fixed inset-0 z-30 bg-background/60 transition-opacity duration-700 ${
-              boothPromptVisible ? "opacity-100" : "opacity-0"
-            }`}
-            onClick={() => {
-              setBoothPromptVisible(false);
-              setTimeout(() => {
-                setShowBoothPrompt(false);
-                setBoothDismissed(true);
-              }, 500);
-            }}
-          />
-          <div
-            className={`fixed inset-0 z-40 flex items-center justify-center p-4 transition-all duration-700 ${
-              boothPromptVisible ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <div className={`relative border border-foreground/20 bg-primary px-8 py-6 sm:px-12 sm:py-8 text-center shadow-[0_0_40px_rgba(255,255,255,0.1)] w-full max-w-[320px] sm:max-w-[360px] transition-transform duration-700 ${
-              boothPromptVisible ? "scale-100" : "scale-95"
-            }`}>
-              <button
-                onClick={() => {
-                  setBoothPromptVisible(false);
-                  setTimeout(() => {
-                    setShowBoothPrompt(false);
-                    setBoothDismissed(true);
-                  }, 500);
-                }}
-                className="absolute top-3 right-4 text-primary-foreground/40 hover:text-primary-foreground/70 text-[10px] font-mono-light transition-colors"
-              >
-                ✕
-              </button>
-              <Link to="/confess" className="group inline-block">
-                <p className="text-primary-foreground/60 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-3 group-hover:text-primary-foreground/80 transition-colors duration-500">
-                  YOUR TURN.
-                </p>
-                <p className="text-primary-foreground/80 text-[12px] tracking-[0.3em] uppercase font-mono-light group-hover:text-primary-foreground transition-colors duration-500">
-                  ENTER THE BOOTH →
-                </p>
-              </Link>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Pinned CTA. Fixed to the screen, not the page — always visible while scrolling,
+          never covers a confession, never demands dismissal. Replaces both the timed modal
+          and the dim end-of-scroll link. Booth palette, not a browser dialog.
+          No ?source= needed: captureSourceFromUrl() falls back to sessionStorage on a
+          param-less URL, so the venue still carries through to the confession. */}
+      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background/95 backdrop-blur-sm">
+        <Link to="/confess" className="group block py-4 text-center">
+          <p className="text-ritual/70 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-1 group-hover:text-ritual transition-colors">
+            YOUR TURN.
+          </p>
+          <p className="text-foreground/80 text-[12px] tracking-[0.3em] uppercase font-mono-light group-hover:text-foreground transition-colors">
+            ENTER THE BOOTH →
+          </p>
+        </Link>
+      </div>
 
       <BoothFooter />
 

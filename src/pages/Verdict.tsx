@@ -127,14 +127,6 @@ const Verdict = () => {
     navigate(path);
   };
 
-  const handleConfessAgain = () => {
-    sessionStorage.removeItem("confession");
-    sessionStorage.removeItem("subjectNumber");
-    sessionStorage.removeItem("verdictSource");
-    sessionStorage.removeItem("venueName");
-    navigate("/return");
-  };
-
   // --- ON RECORD share card generation (1080×1920 PNG) ---
 
   const loadImage = (src: string) =>
@@ -403,11 +395,10 @@ const Verdict = () => {
   // SAVE IMAGE pairs with the share button — brighter than the exit links below it.
   const shareSecondary =
     "text-sm text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
-  // CONFESS AGAIN / THE PUBLIC RECORD — demoted below everything else. Kept subordinate by
-  // size (text-xs, vs SAVE IMAGE's text-sm), so full muted-foreground is legibility only,
-  // not a promotion.
-  const exitLink =
-    "text-xs text-muted-foreground hover:text-foreground transition-colors tracking-wide";
+  // SEE THE GUILTY — same size as POST TO STORY so it's findable, but NOT underlined,
+  // so it reads as a door rather than a share action.
+  const wallLink =
+    "text-sm text-foreground/70 hover:text-foreground transition-colors tracking-wide";
 
   return (
     <div className="screen-container animate-fade-in">
@@ -514,7 +505,7 @@ const Verdict = () => {
             {sharingLink ? "FILING…" : "SHARE VERDICT"}
           </button>
           <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
-            {sharing ? "SAVING…" : "SAVE IMAGE"}
+            {sharing ? "PREPARING…" : "POST TO STORY"}
           </button>
         </div>
 
@@ -533,14 +524,20 @@ const Verdict = () => {
           </div>
         )}
 
-        {/* Demoted exit links — bigger gap above, smaller + dimmer. Whitespace only. */}
-        <div className="mt-4 flex flex-col items-center gap-4">
-          <button onClick={handleConfessAgain} className={exitLink}>
-            CONFESS AGAIN
-          </button>
+        {/* Single exit. CONFESS AGAIN removed: it was the same number of taps as the
+            wall but a worse path — the wall PRIMES a second confession (social proof +
+            "mine's worse than that"), and its own pinned CTA returns them to /confess.
+            Two exits forced a decision; one exit forces none.
+
+            Promoted from exitLink (text-xs, muted — read as a legal footer) to text-sm.
+            One tier up, NOT two: a bold button here would pull the eye downward past
+            SHARE VERDICT, and sharing is the PERISHABLE action — once they leave for
+            the wall, Confess.tsx's mount reset wipes the card and it can never be
+            shared. The wall is always available; the share is not. */}
+        <div className="mt-6 flex flex-col items-center">
           {verdictResponse !== "Entry withheld" && (
-            <button onClick={() => handleNavigate("/thewall")} className={exitLink}>
-              THE PUBLIC RECORD
+            <button onClick={() => handleNavigate("/thewall")} className={wallLink}>
+              SEE THE GUILTY →
             </button>
           )}
         </div>

@@ -31,6 +31,23 @@ const Confess = () => {
     textareaRef.current?.focus();
   }, []);
 
+  // The previous confession's leftovers must be cleared before a new one starts,
+  // or /verdict can briefly render the OLD verdict while the new one is in flight.
+  // This used to live in Verdict.tsx's handleConfessAgain, which is being removed —
+  // so it moves here, where EVERY route into the booth passes through (wall CTA,
+  // fresh QR scan, bookmark, /return).
+  //
+  // THREE keys only. DO NOT clear "venueName".
+  // captureSourceFromUrl() writes venueName from ?venue= on a fresh scan and this
+  // effect runs after it — clearing it here would wipe the venue on a genuine QR
+  // scan and print LOCATION WITHHELD instead of AT HIGHBALL.
+  // "source", "is_test", "consent" and "booth_session_id" must also survive.
+  useEffect(() => {
+    sessionStorage.removeItem("confession");
+    sessionStorage.removeItem("subjectNumber");
+    sessionStorage.removeItem("verdictSource");
+  }, []);
+
   // Typing animation for placeholder
   useEffect(() => {
     if (confession || interimText) return;
