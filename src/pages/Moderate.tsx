@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseModeration as sb } from "@/integrations/supabase/moderation-client";
 import type { Database } from "@/integrations/supabase/types";
+import venuesData from "@/data/venues.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,83 +17,127 @@ import { useToast } from "@/hooks/use-toast";
 import { venueDisplayName } from "@/lib/source";
 import { cn } from "@/lib/utils";
 
-// `topic` is a forward-only column not yet in the generated types (like the admin RPCs
-// themselves). It's written by generate-verdict at confession time; the frontend only
-// reads it. Nullable: rows created before the rollout have topic = null.
+// `topic`/`is_test` are forward-only columns not in the generated types; the frontend
+// only reads them (written server-side by generate-verdict / tag_confession).
 type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   topic: string | null;
   is_test: boolean | null;
 };
 type Status = "pending" | "approved" | "rejected";
 
-// The admin_* RPCs are not in the generated types (Functions is empty and can't be
-// regenerated without DB access), so cast narrowly at the call sites.
-type RpcResult<T> = Promise<{ data: T | null; error: { message: string } | null }>;
-const rpc = sb.rpc.bind(sb) as unknown as (
-  fn: string,
-  args?: Record<string, unknown>,
-) => RpcResult<unknown>;
+// The admin_* RPCs are not in the generated types, so cast narrowly at the call sites.
+type RpcResult = Promise<{ data: unknown; error: { message: string } | null }>;
+const rpc = sb.rpc.bind(sb) as unknown as (fn: string, args?: Record<string, unknown>) => RpcResult;
 
-// Passive venue-sensitivity flag (brief item 4). Plain, case-insensitive substring
-// match — no regex, no external calls. Edit this list + redeploy to tune it; false
-// positives are harmless (it only draws the eye, it never takes an action). This is
-// deliberately independent of the keyword search field (item 5): the flag catches the
-// confessions you weren't looking for.
+// Normalise a rejected promise AND a resolved {error} into one shape, so one failed
+// sub-fetch can never reject a Promise.all and freeze the page (see the console rebuild
+// notes). A failed call surfaces as its section's "unavailable" state, never a blank.
+const safe = (p: RpcResult): Promise<{ data: unknown; error: { message: string } | null }> =>
+  Promise.resolve(p).then(
+    (r) => r,
+    () => ({ data: null, error: { message: "request failed" } }),
+  );
+
+// ── New RPC row shapes (all admin-gated, verified live in Supabase) ──
+type ScanCount = { source: string; scans: number | string };
+type ShareCount = { source: string; shares: number | string };
+type ShareNight = { night: string; source: string; shares: number | string };
+type ConfCount = {
+  night: string;
+  source: string;
+  topic: string | null;
+  status: string;
+  completed: number | string;
+  total: number | string;
+};
+type VenueReport = {
+  source: string;
+  scans: number | string;
+  confessions: number | string;
+  completion_rate: number | string | null;
+  shares: number | string;
+  share_rate: number | string | null;
+  nights_active: number | string;
+  first_night: string | null;
+  last_night: string | null;
+  top_topics: { topic: string; n: number }[] | null;
+};
+
+const PAGE_SIZE = 50;
+
+// Date-range control. _from is a NIGHT-BUCKET date (not a calendar date): a bucket is
+// (created_at at tz) − 4h, cast to date. We compute _from the same way client-side so it
+// agrees with the server bucketing. _to stays null (unbounded → up to now).
+type Range = "7" | "30" | "all";
+const RANGE_NIGHTS: Record<Range, number> = { "7": 7, "30": 30, all: Infinity };
+const RANGE_LABELS: Record<Range, string> = {
+  "7": "Last 7 nights",
+  "30": "Last 30 nights",
+  all: "All time",
+};
+
 const WATCHWORDS = [
-  // drug / personal-use
   "coke", "cocaine", "line", "lines", "pill", "pills", "mdma", "molly", "ket",
   "ketamine", "weed", "meth", "heroin", "acid", "shroom", "shrooms",
-  // sexual
   "sex", "nude", "nudes", "porn", "escort", "hooker",
-  // violence
   "kill", "hit", "punch", "stab", "gun", "knife", "assault",
 ];
 
 const TABS: Status[] = ["pending", "approved", "rejected"];
 
-// Topic taxonomy written by generate-verdict at confession time. Keys are the stored
-// values; labels are display-only. Older rows predate the rollout and have topic = null,
-// surfaced as "Untagged" — never hidden. Unknown values fall back to the raw string, so
-// adding a topic server-side can't crash the page before this list catches up.
-const TOPICS: { value: string; label: string }[] = [
-  { value: "wellness", label: "Wellness" },
-  { value: "work", label: "Work" },
-  { value: "dating_sex", label: "Dating & sex" },
-  { value: "friendship", label: "Friendship" },
-  { value: "family", label: "Family" },
-  { value: "money", label: "Money" },
-  { value: "food_drink", label: "Food & drink" },
-  { value: "social_performance", label: "Social performance" },
-  { value: "vanity", label: "Vanity" },
-  { value: "substances", label: "Substances" },
-  { value: "petty", label: "Petty" },
-  { value: "other", label: "Other" },
-];
-const TOPIC_LABELS: Record<string, string> = Object.fromEntries(
-  TOPICS.map((t) => [t.value, t.label]),
-);
+const TOPIC_LABELS: Record<string, string> = {
+  wellness: "Wellness",
+  work: "Work",
+  dating_sex: "Dating & sex",
+  friendship: "Friendship",
+  family: "Family",
+  money: "Money",
+  food_drink: "Food & drink",
+  social_performance: "Social performance",
+  vanity: "Vanity",
+  substances: "Substances",
+  petty: "Petty",
+  other: "Other",
+};
+const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key;
 
-// Short weekday/month for the "By night" labels + copy summary ("Sat 19 Jul"). Built by
-// hand so the format is comma-free and stable regardless of locale.
+// Venue selector options (the primary axis). Known venues only; slug shown to disambiguate
+// the several Frenchie slugs. "All venues" is prepended in the JSX.
+const VENUE_OPTIONS = Object.entries(venuesData as Record<string, { displayName: string }>)
+  .map(([slug, v]) => ({ slug, name: v.displayName }))
+  .sort((a, b) => a.name.localeCompare(b.name) || a.slug.localeCompare(b.slug));
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-// nightKey "YYYY-MM-DD" → "Sat 19 Jul". Parsed as local midnight so the weekday is correct.
-const formatNightLabel = (night: string) => {
+const pad = (n: number) => String(n).padStart(2, "0");
+const fmtYmd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// "YYYY-MM-DD" → "Sat 19 Jul" (comma-free, locale-stable). Parsed as local midnight.
+const formatNightLabel = (night: string | null) => {
+  if (!night) return "—";
   const d = new Date(`${night}T00:00:00`);
   if (Number.isNaN(d.getTime())) return night;
   return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 };
 
-const flagText = (row: Confession) =>
-  `${row.confession_text} ${row.verdict_text ?? ""}`.toLowerCase();
-
-const isFlagged = (row: Confession) => {
-  const hay = flagText(row);
-  return WATCHWORDS.some((w) => hay.includes(w));
+// _from for a range: the night bucket N−1 days before tonight's bucket (so "7 nights" =
+// tonight + the 6 before it). All time → null. Same 4am shift as the server.
+const nightBucketFrom = (nightsBack: number): string | null => {
+  if (!Number.isFinite(nightsBack)) return null;
+  const d = new Date();
+  d.setHours(d.getHours() - 4);
+  d.setDate(d.getDate() - (nightsBack - 1));
+  return fmtYmd(d);
 };
 
-const sortDesc = (a: Confession, b: Confession) =>
-  new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+// Ratio (0–1+) → whole-percent; null → em dash, never NaN. Server rates are assumed to be
+// fractions (matches the client convention confessions/scans); see the report card note.
+const fmtPct = (rate: number | null) => (rate === null ? "—" : `${Math.round(rate * 100)}%`);
+const num = (v: number | string | null | undefined) => Number(v) || 0;
+
+const isFlagged = (row: Confession) => {
+  const hay = `${row.confession_text} ${row.verdict_text ?? ""}`.toLowerCase();
+  return WATCHWORDS.some((w) => hay.includes(w));
+};
 
 const SourceBadge = ({ source }: { source: string }) => {
   const isVenue = !!source && source !== "direct";
@@ -100,9 +145,7 @@ const SourceBadge = ({ source }: { source: string }) => {
     <span
       className={cn(
         "rounded px-1.5 py-0.5 text-[11px] font-medium",
-        isVenue
-          ? "bg-ritual/15 text-ritual border border-ritual/30"
-          : "bg-muted text-muted-foreground",
+        isVenue ? "bg-ritual/15 text-ritual border border-ritual/30" : "bg-muted text-muted-foreground",
       )}
     >
       {source}
@@ -110,11 +153,9 @@ const SourceBadge = ({ source }: { source: string }) => {
   );
 };
 
-// Muted, unobtrusive counterpart to SourceBadge — a topic is metadata, not an action.
-// null → a muted "untagged"; an unrecognised value falls back to the raw string.
 const TopicBadge = ({ topic }: { topic: string | null }) => (
   <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-    {topic ? TOPIC_LABELS[topic] ?? topic : "untagged"}
+    {topic ? topicLabel(topic) : "untagged"}
   </span>
 );
 
@@ -123,92 +164,290 @@ const Moderate = () => {
 
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
-
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
-
-  const [tab, setTab] = useState<Status>("pending");
-  const [rows, setRows] = useState<Confession[]>([]);
-  const [loadingRows, setLoadingRows] = useState(false);
   const [notAuthorized, setNotAuthorized] = useState(false);
+
+  // Page-wide axes: date range (drives every RPC) + venue (primary axis).
+  const [range, setRange] = useState<Range>("30");
+  const [venue, setVenue] = useState<string>("all");
+
+  // Confession list (server-side + paginated).
+  const [tab, setTab] = useState<Status>("pending");
+  const [qInput, setQInput] = useState("");
+  const [qDebounced, setQDebounced] = useState("");
+  const [page, setPage] = useState(0);
+  const [rows, setRows] = useState<Confession[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
-  // Client-side filters over the already-loaded rows (brief item 5). Neither touches
-  // the DB or any row's status; the keyword search is a filter, not a highlighter.
-  const [sourceFilter, setSourceFilter] = useState<string>("all");
-  // "all" | one of the TOPICS values | "untagged" (rows with topic = null). Display-only,
-  // composes with the other filters (AND); never touches a row's status.
-  const [topicFilter, setTopicFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
-
-  // Metrics panel (read-only). Collapsed by default. The queue only ever holds ONE
-  // status (admin_list_confessions filters by _status), so cross-status totals need
-  // the full set. Rather than add an RPC, we call the SAME RPC with _status = null
-  // (its body: `where (_status is null or ...)` → every status) exactly once, lazily
-  // on first expand, and compute everything client-side. Never mutates a row.
-  const [metricsOpen, setMetricsOpen] = useState(false);
-  const [metricsRows, setMetricsRows] = useState<Confession[] | null>(null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-  const [metricsError, setMetricsError] = useState(false);
-  // Aggregate reads for scan/share rates (admin RPCs). null = RPC unavailable (e.g. the
-  // scan-tracking SQL hasn't been run yet) → the section says so instead of showing zeros.
-  const [scanCounts, setScanCounts] = useState<{ source: string; scans: number }[] | null>(null);
-  const [shareCounts, setShareCounts] = useState<{ source: string; shares: number }[] | null>(null);
-  // Per-night share counts (admin_share_nights). night = "YYYY-MM-DD" (server-bucketed with
-  // a 4am cutoff in the browser's timezone). null = RPC unavailable.
-  const [nightShares, setNightShares] =
-    useState<{ night: string; source: string; shares: number }[] | null>(null);
-  // Which night+venue row was just copied — shows a brief "Copied" on that row's button.
+  // Cross-venue rollup (venue === "all").
+  const [rollupOpen, setRollupOpen] = useState(true);
+  const [rollup, setRollup] = useState<{
+    conf: ConfCount[];
+    scans: ScanCount[] | null;
+    shares: ShareCount[] | null;
+    nights: ShareNight[] | null;
+  } | null>(null);
+  const [rollupLoading, setRollupLoading] = useState(false);
+  const [rollupError, setRollupError] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Session bootstrap + magic-link redirect. This client (and only this client)
-  // has detectSessionInUrl:true, so it parses the token off the /moderate URL.
+  // Single-venue report (venue !== "all").
+  const [report, setReport] = useState<VenueReport | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState(false);
+  const [reportCopied, setReportCopied] = useState(false);
+
+  const tz = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
+    }
+  }, []);
+  // _from recomputed when the range changes. _to null = unbounded (up to now).
+  const fromDate = useMemo(() => nightBucketFrom(RANGE_NIGHTS[range]), [range]);
+  const rangeArgs = useMemo(
+    () => ({ _tz: tz, _from: fromDate, _to: null }),
+    [tz, fromDate],
+  );
+
+  // Session bootstrap + magic-link redirect (this client has detectSessionInUrl:true).
   useEffect(() => {
     sb.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setAuthReady(true);
     });
-    const { data: sub } = sb.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-    });
+    const { data: sub } = sb.auth.onAuthStateChange((_event, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Load rows for the active tab whenever the session or tab changes. A non-admin
-  // session gets 'not authorized' from the RPC body (is_admin() check) — the data
-  // layer, not the route, is the guard. admin_list_confessions is SECURITY DEFINER,
-  // so the Approved/Rejected tabs return rows anon RLS would otherwise hide.
+  // Debounce the search box, and reset to page 1 whenever the query settles.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQDebounced(qInput);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [qInput]);
+
+  // ── Confession list + count (server-side: status, source, keyword, range, paging) ──
   useEffect(() => {
     if (!session) {
       setRows([]);
+      setTotalCount(0);
       setNotAuthorized(false);
       return;
     }
     let cancelled = false;
-    setLoadingRows(true);
-    setNotAuthorized(false);
-    rpc("admin_list_confessions", { _status: tab }).then(({ data, error }) => {
+    setListLoading(true);
+    setListError(false);
+    const filters = {
+      _status: tab,
+      _source: venue === "all" ? null : venue,
+      _q: qDebounced.trim() || null,
+      ...rangeArgs,
+    };
+    Promise.all([
+      safe(rpc("admin_list_confessions", { ...filters, _limit: PAGE_SIZE, _offset: page * PAGE_SIZE })),
+      safe(rpc("admin_list_confessions_count", filters)),
+    ]).then(([list, count]) => {
       if (cancelled) return;
-      setLoadingRows(false);
-      if (error) {
-        setNotAuthorized(true);
+      setListLoading(false);
+      if (list.error) {
+        // The list RPC is the auth gate: is_admin() failures say "not authorized".
+        if (/authoriz/i.test(list.error.message)) setNotAuthorized(true);
+        else setListError(true);
         setRows([]);
+        setTotalCount(0);
         return;
       }
-      setRows((data as Confession[]) ?? []);
+      setNotAuthorized(false);
+      setRows((list.data as Confession[]) ?? []);
+      setTotalCount(count.error ? 0 : num(count.data as number));
     });
     return () => {
       cancelled = true;
     };
-  }, [session, tab]);
+  }, [session, venue, tab, qDebounced, page, rangeArgs, refreshTick]);
 
+  // ── Cross-venue rollup (only when "All venues") ──
+  useEffect(() => {
+    if (!session || venue !== "all") return;
+    let cancelled = false;
+    setRollupLoading(true);
+    setRollupError(false);
+    Promise.all([
+      safe(rpc("admin_confession_counts", rangeArgs)),
+      safe(rpc("admin_scan_counts", rangeArgs)),
+      safe(rpc("admin_share_counts", rangeArgs)),
+      safe(rpc("admin_share_nights", rangeArgs)),
+    ]).then(([conf, scans, shares, nights]) => {
+      if (cancelled) return;
+      setRollupLoading(false);
+      if (conf.error) {
+        setRollupError(true);
+        return;
+      }
+      setRollup({
+        conf: (conf.data as ConfCount[]) ?? [],
+        scans: scans.error ? null : ((scans.data as ScanCount[]) ?? []),
+        shares: shares.error ? null : ((shares.data as ShareCount[]) ?? []),
+        nights: nights.error ? null : ((nights.data as ShareNight[]) ?? []),
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, venue, rangeArgs, refreshTick]);
+
+  // ── Single-venue report (only when a venue is selected) ──
+  useEffect(() => {
+    if (!session || venue === "all") return;
+    let cancelled = false;
+    setReportLoading(true);
+    setReportError(false);
+    safe(rpc("admin_venue_report", { _source: venue, ...rangeArgs })).then((res) => {
+      if (cancelled) return;
+      setReportLoading(false);
+      if (res.error) {
+        setReportError(true);
+        setReport(null);
+        return;
+      }
+      // Function returns a single row: supabase may hand it back bare or as a 1-element array.
+      const row = Array.isArray(res.data) ? res.data[0] : res.data;
+      setReport((row as VenueReport) ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, venue, rangeArgs, refreshTick]);
+
+  // Pivot admin_confession_counts (long form) into the rollup dashboard shape. This REPLACES
+  // the old client-side row counting — the list is now paged, so totals must come from here.
+  const dash = useMemo(() => {
+    if (!rollup) return null;
+    let totalAll = 0;
+    let totalCompleted = 0;
+    const byStatus: Record<Status, number> = { pending: 0, approved: 0, rejected: 0 };
+    const byVenue = new Map<string, number>(); // completed per source
+    const byTopic = new Map<string, number>(); // completed per topic
+    const venueTopic = new Map<string, Map<string, number>>();
+    const nightConf = new Map<string, { night: string; source: string; confessions: number }>();
+    for (const r of rollup.conf) {
+      const completed = num(r.completed);
+      const total = num(r.total);
+      totalAll += total;
+      totalCompleted += completed;
+      if (r.status === "pending" || r.status === "approved" || r.status === "rejected") {
+        byStatus[r.status] += total;
+      }
+      byVenue.set(r.source, (byVenue.get(r.source) ?? 0) + completed);
+      const topicKey = r.topic ?? "untagged";
+      byTopic.set(topicKey, (byTopic.get(topicKey) ?? 0) + completed);
+      if (r.source !== "direct") {
+        let tm = venueTopic.get(r.source);
+        if (!tm) venueTopic.set(r.source, (tm = new Map()));
+        tm.set(topicKey, (tm.get(topicKey) ?? 0) + completed);
+        if (r.night) {
+          const k = `${r.night}|${r.source}`;
+          const e = nightConf.get(k) ?? { night: r.night, source: r.source, confessions: 0 };
+          e.confessions += completed;
+          nightConf.set(k, e);
+        }
+      }
+    }
+    const byCountDesc = (a: [string, number], b: [string, number]) =>
+      b[1] - a[1] || a[0].localeCompare(b[0]);
+
+    const scanMap = new Map((rollup.scans ?? []).map((r) => [r.source, num(r.scans)]));
+    const shareMap = new Map((rollup.shares ?? []).map((r) => [r.source, num(r.shares)]));
+    const totalScans = [...scanMap.values()].reduce((a, b) => a + b, 0);
+    const totalShares = [...shareMap.values()].reduce((a, b) => a + b, 0);
+
+    const completionRows = [...scanMap.entries()].sort(byCountDesc).map(([source, scans]) => {
+      const confessions = byVenue.get(source) ?? 0;
+      return { source, scans, confessions, rate: scans > 0 ? confessions / scans : null };
+    });
+    const shareRows = [...new Set([...byVenue.keys(), ...shareMap.keys()])]
+      .map((source) => {
+        const shares = shareMap.get(source) ?? 0;
+        const completed = byVenue.get(source) ?? 0;
+        return { source, shares, completed, rate: completed > 0 ? shares / completed : null };
+      })
+      .sort((a, b) => b.shares - a.shares || a.source.localeCompare(b.source));
+
+    // Merge per-night confessions (from confession_counts) with per-night shares.
+    type NightRow = { night: string; source: string; confessions: number; shares: number };
+    const nightMap = new Map<string, NightRow>();
+    for (const [k, e] of nightConf) {
+      nightMap.set(k, { night: e.night, source: e.source, confessions: e.confessions, shares: 0 });
+    }
+    for (const row of rollup.nights ?? []) {
+      if (row.source === "direct" || !row.night) continue;
+      const k = `${row.night}|${row.source}`;
+      const e = nightMap.get(k) ?? { night: row.night, source: row.source, confessions: 0, shares: 0 };
+      e.shares += num(row.shares);
+      nightMap.set(k, e);
+    }
+    const recentNights = new Set(
+      [...new Set([...nightMap.values()].map((e) => e.night))].sort().reverse().slice(0, 30),
+    );
+    const nightRows = [...nightMap.values()]
+      .filter((e) => recentNights.has(e.night))
+      .sort(
+        (a, b) =>
+          (a.night < b.night ? 1 : a.night > b.night ? -1 : 0) ||
+          b.confessions - a.confessions ||
+          a.source.localeCompare(b.source),
+      );
+
+    return {
+      totalAll,
+      totalCompleted,
+      byStatus,
+      directCount: byVenue.get("direct") ?? 0,
+      venueRows: [...byVenue].filter(([s]) => s !== "direct").sort(byCountDesc),
+      topicRows: [...byTopic].sort(byCountDesc),
+      venueTopicRows: [...byVenue]
+        .filter(([s]) => s !== "direct")
+        .sort(byCountDesc)
+        .map(([v, count]) => ({
+          venue: v,
+          count,
+          topics: [...(venueTopic.get(v) ?? new Map<string, number>())].sort(byCountDesc),
+        })),
+      scansAvailable: rollup.scans !== null,
+      sharesAvailable: rollup.shares !== null,
+      nightSharesAvailable: rollup.nights !== null,
+      totalScans,
+      totalShares,
+      completionRows,
+      shareRows,
+      overallShareRate: totalCompleted > 0 ? totalShares / totalCompleted : null,
+      nightRows,
+    };
+  }, [rollup]);
+
+  // ── Actions ──
+  const changeVenue = (v: string) => {
+    setVenue(v);
+    setPage(0);
+  };
+  const changeRange = (r: Range) => {
+    setRange(r);
+    setPage(0);
+  };
   const changeTab = (next: Status) => {
     if (next === tab) return;
     setTab(next);
-    setSourceFilter("all");
-    setTopicFilter("all");
-    setSearch("");
+    setPage(0);
   };
 
   const sendLink = async (e: FormEvent) => {
@@ -236,28 +475,18 @@ const Moderate = () => {
     setLinkSent(false);
   };
 
-  // Restore a row to the status it had before the last action. The single undo path
-  // for every action (approve/reject/un-approve/restore). Re-inserts the row into the
-  // list only if its restored status belongs in the currently-viewed tab.
+  // Undo → set the status back, then refetch (pagination makes local re-insertion unreliable).
   const undoStatus = async (row: Confession, originalStatus: Status) => {
     const { error } = await rpc("admin_set_status", { _id: row.id, _status: originalStatus });
     if (error) {
       toast({ title: "Undo failed", description: error.message, variant: "destructive" });
       return;
     }
-    setRows((prev) =>
-      originalStatus === tab
-        ? [...prev.filter((r) => r.id !== row.id), { ...row, status: originalStatus }].sort(sortDesc)
-        : prev,
-    );
+    setRefreshTick((t) => t + 1);
     toast({ title: "Restored", description: `#${row.subject_number}` });
   };
 
-  // The one handler behind every status change. Optimistically removes the row, calls
-  // the RPC, and on success shows an undo toast. On failure the row is restored to the
-  // list. duration is a per-toast Radix prop: approve gets a longer window because it
-  // publishes to the live public wall (see brief item 2). The toast is convenience;
-  // the durable safety net is the Approved-tab un-approve control, always available.
+  // Optimistically drop the row from the current page; on failure refetch to re-sync.
   const applyStatus = async (
     row: Confession,
     newStatus: Status,
@@ -266,10 +495,11 @@ const Moderate = () => {
     const original = row.status as Status;
     setBusyId(row.id);
     setRows((prev) => prev.filter((r) => r.id !== row.id));
+    setTotalCount((c) => Math.max(0, c - 1));
     const { error } = await rpc("admin_set_status", { _id: row.id, _status: newStatus });
     setBusyId(null);
     if (error) {
-      setRows((prev) => [...prev, row].sort(sortDesc));
+      setRefreshTick((t) => t + 1);
       toast({ title: "Update failed", description: error.message, variant: "destructive" });
       return;
     }
@@ -285,207 +515,7 @@ const Moderate = () => {
     });
   };
 
-  // One-shot fetch for the metrics panel. Confessions come from admin_list_confessions with
-  // _status = null (every status, one call). Scans + shares + per-night shares come from
-  // admin-gated aggregate RPCs. All fire in parallel on first expand; Refresh re-runs them.
-  //
-  // Error visibility: every sub-fetch is wrapped so a REJECTION (network/transport) can't
-  // reject Promise.all and freeze the panel on "Loading…". A failed confessions load →
-  // panel error; a failed scans/shares/nights load → that state goes null and its section
-  // renders "unavailable". No section can vanish silently — worst case it says so.
-  const loadMetrics = () => {
-    setMetricsLoading(true);
-    setMetricsError(false);
-    // Bucket per-night shares in the moderator's own timezone so they line up with the
-    // confessions bucketed client-side below. Fallback to UTC if the browser won't report one.
-    const tz = (() => {
-      try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-      } catch {
-        return "UTC";
-      }
-    })();
-    // Normalise both a rejected promise and a resolved {error} into { data, error:true }.
-    const safe = (p: ReturnType<typeof rpc>) =>
-      Promise.resolve(p).then(
-        (r) => r,
-        () => ({ data: null, error: { message: "request failed" } }),
-      );
-    Promise.all([
-      safe(rpc("admin_list_confessions", { _status: null })),
-      safe(rpc("admin_scan_counts")),
-      safe(rpc("admin_share_counts")),
-      safe(rpc("admin_share_nights", { _tz: tz })),
-    ])
-      .then(([conf, scans, shares, nights]) => {
-        setMetricsLoading(false);
-        if (conf.error) {
-          setMetricsError(true);
-          return;
-        }
-        setMetricsRows((conf.data as Confession[]) ?? []);
-        setScanCounts(
-          scans.error ? null : ((scans.data as { source: string; scans: number }[]) ?? []),
-        );
-        setShareCounts(
-          shares.error ? null : ((shares.data as { source: string; shares: number }[]) ?? []),
-        );
-        setNightShares(
-          nights.error
-            ? null
-            : ((nights.data as { night: string; source: string; shares: number }[]) ?? []),
-        );
-      })
-      // Backstop: anything unexpected in the handler still resolves the panel to an error
-      // state rather than leaving it stuck loading.
-      .catch(() => {
-        setMetricsLoading(false);
-        setMetricsError(true);
-      });
-  };
-
-  const toggleMetrics = () => {
-    const next = !metricsOpen;
-    setMetricsOpen(next);
-    if (next && metricsRows === null && !metricsLoading) loadMetrics();
-  };
-
-  // All counts derive from ONE base set: completed (verdict issued) and non-test. Using a
-  // single denominator keeps every sub-total reconcilable. is_test is excluded only when
-  // strictly true (null/older rows count as real). null topic → "untagged" so topics sum
-  // to the total. Direct traffic is kept out of the per-venue topic breakdown.
-  const metrics = useMemo(() => {
-    if (!metricsRows) return null;
-    const base = metricsRows.filter((r) => r.is_test !== true && r.verdict_text != null);
-    const byStatus: Record<Status, number> = { pending: 0, approved: 0, rejected: 0 };
-    const byVenue = new Map<string, number>();
-    const byTopic = new Map<string, number>();
-    const venueTopic = new Map<string, Map<string, number>>();
-    const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
-    for (const r of base) {
-      if (r.status === "pending" || r.status === "approved" || r.status === "rejected") {
-        byStatus[r.status] += 1;
-      }
-      bump(byVenue, r.source);
-      const topicKey = r.topic ?? "untagged";
-      bump(byTopic, topicKey);
-      if (r.source !== "direct") {
-        let tm = venueTopic.get(r.source);
-        if (!tm) venueTopic.set(r.source, (tm = new Map()));
-        bump(tm, topicKey);
-      }
-    }
-    const byCountDesc = (a: [string, number], b: [string, number]) =>
-      b[1] - a[1] || a[0].localeCompare(b[0]);
-
-    // Scan → completion → share funnel. scanCounts/shareCounts are null when their RPC is
-    // unavailable; treat as empty maps for the math and surface availability via flags.
-    // Coerce counts to Number: Postgres bigint can serialize as a JSON string, and string
-    // "+" would concatenate instead of add (e.g. 0 + "1" → "01").
-    const scanMap = new Map((scanCounts ?? []).map((r) => [r.source, Number(r.scans) || 0]));
-    const shareMap = new Map((shareCounts ?? []).map((r) => [r.source, Number(r.shares) || 0]));
-    const totalScans = [...scanMap.values()].reduce((a, b) => a + b, 0);
-    const totalShares = [...shareMap.values()].reduce((a, b) => a + b, 0);
-
-    // Completion = completed confessions ÷ scans, per source that has scans. rate is null on
-    // divide-by-zero (→ "—"). Confessions are all-time, so a source with pre-tracking history
-    // can read > 100% — flagged in the UI.
-    const completionRows = [...scanMap.entries()].sort(byCountDesc).map(([source, scans]) => {
-      const confessions = byVenue.get(source) ?? 0;
-      return { source, scans, confessions, rate: scans > 0 ? confessions / scans : null };
-    });
-
-    // Share rate = share taps ÷ completed confessions. Overall + per source (union of sources
-    // that have shares or completed confessions). rate null when the denominator is 0.
-    const shareSources = [...new Set([...byVenue.keys(), ...shareMap.keys()])];
-    const shareRows = shareSources
-      .map((source) => {
-        const shares = shareMap.get(source) ?? 0;
-        const completed = byVenue.get(source) ?? 0;
-        return { source, shares, completed, rate: completed > 0 ? shares / completed : null };
-      })
-      .sort((a, b) => b.shares - a.shares || a.source.localeCompare(b.source));
-
-    // Per-night, per-venue. Night = local date with a 4am cutoff: shift the wall clock back
-    // 4h, then take the local date, so a 1am tap counts toward the previous evening. This
-    // MUST match the server bucketing in admin_share_nights (same 4am shift, same timezone —
-    // we pass the browser tz to the RPC). 'direct' is excluded (it isn't a venue).
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const nightKeyOf = (createdAt: string) => {
-      const d = new Date(createdAt);
-      d.setHours(d.getHours() - 4);
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    };
-    type NightRow = { night: string; source: string; confessions: number; shares: number };
-    const nightMap = new Map<string, NightRow>();
-    const nightAt = (night: string, source: string) => {
-      const key = `${night}|${source}`;
-      let e = nightMap.get(key);
-      if (!e) nightMap.set(key, (e = { night, source, confessions: 0, shares: 0 }));
-      return e;
-    };
-    for (const r of base) {
-      if (r.source === "direct" || !r.created_at) continue;
-      nightAt(nightKeyOf(r.created_at), r.source).confessions += 1;
-    }
-    for (const row of nightShares ?? []) {
-      if (row.source === "direct" || !row.night) continue;
-      nightAt(row.night, row.source).shares += Number(row.shares) || 0;
-    }
-    // Most recent 30 nights only; within a night, busiest venue first.
-    const recentNights = new Set(
-      [...new Set([...nightMap.values()].map((e) => e.night))].sort().reverse().slice(0, 30),
-    );
-    const nightRows = [...nightMap.values()]
-      .filter((e) => recentNights.has(e.night))
-      .sort(
-        (a, b) =>
-          (a.night < b.night ? 1 : a.night > b.night ? -1 : 0) ||
-          b.confessions - a.confessions ||
-          a.source.localeCompare(b.source),
-      );
-
-    return {
-      total: base.length,
-      byStatus,
-      directCount: byVenue.get("direct") ?? 0,
-      venueRows: [...byVenue].filter(([s]) => s !== "direct").sort(byCountDesc),
-      topicRows: [...byTopic].sort(byCountDesc),
-      venueTopicRows: [...byVenue]
-        .filter(([s]) => s !== "direct")
-        .sort(byCountDesc)
-        .map(([venue, count]) => ({
-          venue,
-          count,
-          topics: [...(venueTopic.get(venue) ?? new Map<string, number>())].sort(byCountDesc),
-        })),
-      // Funnel
-      scansAvailable: scanCounts !== null,
-      sharesAvailable: shareCounts !== null,
-      totalScans,
-      totalShares,
-      completionRows,
-      shareRows,
-      overallShareRate: base.length > 0 ? totalShares / base.length : null,
-      // By night
-      nightRows,
-      nightSharesAvailable: nightShares !== null,
-    };
-  }, [metricsRows, scanCounts, shareCounts, nightShares]);
-
-  const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key;
-  // Ratio → whole-percent string; null (divide-by-zero) → an em dash, never NaN.
-  const fmtPct = (rate: number | null) => (rate === null ? "—" : `${Math.round(rate * 100)}%`);
-
-  // Copy a night+venue line to the clipboard, e.g. "Highball — Sat 19 Jul: 47 confessions,
-  // 30 shared." Venue display name comes from venues.json (venueDisplayName), slug as
-  // fallback. Read-only; briefly flips the row's button to "Copied".
-  const copyNight = async (row: {
-    night: string;
-    source: string;
-    confessions: number;
-    shares: number;
-  }) => {
+  const copyNight = async (row: { night: string; source: string; confessions: number; shares: number }) => {
     const key = `${row.night}|${row.source}`;
     const name = venueDisplayName("", row.source) || row.source;
     const conf = `${row.confessions} ${row.confessions === 1 ? "confession" : "confessions"}`;
@@ -495,12 +525,38 @@ const Moderate = () => {
       setCopiedKey(key);
       setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
     } catch {
-      /* clipboard blocked — leave the button unchanged */
+      /* clipboard blocked */
     }
   };
 
-  // --- Render states --------------------------------------------------------
+  const copyReport = async () => {
+    if (!report) return;
+    const name = venueDisplayName("", report.source) || report.source;
+    const span =
+      report.first_night && report.last_night
+        ? ` (${formatNightLabel(report.first_night)}–${formatNightLabel(report.last_night)})`
+        : "";
+    const cr = report.completion_rate == null ? null : num(report.completion_rate);
+    const sr = report.share_rate == null ? null : num(report.share_rate);
+    const topics = (report.top_topics ?? []).map((t) => `${topicLabel(t.topic)} (${t.n})`).join(", ");
+    const text = [
+      `${name} — ${RANGE_LABELS[range]}${span}`,
+      `Scans: ${num(report.scans)} · Confessions: ${num(report.confessions)} (${fmtPct(cr)} completion)`,
+      `Shares: ${num(report.shares)} (${fmtPct(sr)} share rate) · ${num(report.nights_active)} nights active`,
+      topics ? `Top topics: ${topics}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setReportCopied(true);
+      setTimeout(() => setReportCopied(false), 1500);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
 
+  // ── Render states ──
   if (!authReady) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background text-foreground">
@@ -509,12 +565,11 @@ const Moderate = () => {
     );
   }
 
-  // Logged out: email + magic link.
   if (!session) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background text-foreground px-4">
         <form onSubmit={sendLink} className="w-full max-w-sm space-y-4">
-          <h1 className="text-lg font-semibold">Moderation</h1>
+          <h1 className="text-lg font-semibold">CONSOLE</h1>
           {linkSent ? (
             <p className="text-sm text-muted-foreground">
               Check your inbox for a sign-in link, then return to this page.
@@ -540,7 +595,6 @@ const Moderate = () => {
     );
   }
 
-  // Logged in, but not an admin: RPC rejected.
   if (notAuthorized) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background text-foreground px-4">
@@ -554,457 +608,471 @@ const Moderate = () => {
     );
   }
 
-  // Logged in admin: the queue.
-  const sources = Array.from(new Set(rows.map((r) => r.source))).sort();
-  const visibleRows = rows.filter((row) => {
-    if (sourceFilter !== "all" && row.source !== sourceFilter) return false;
-    if (topicFilter !== "all") {
-      // "untagged" matches null topics; any other value is an exact match.
-      if (topicFilter === "untagged" ? row.topic != null : row.topic !== topicFilter)
-        return false;
-    }
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      if (!`${row.confession_text} ${row.verdict_text ?? ""}`.toLowerCase().includes(q)) return false;
-    }
-    return true;
-  });
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const venueName = venue === "all" ? null : venueDisplayName("", venue) || venue;
+  const reportCr = report && report.completion_rate != null ? num(report.completion_rate) : null;
+  const reportSr = report && report.share_rate != null ? num(report.share_rate) : null;
+
+  const StatBlock = ({ label, value }: { label: string; value: string | number }) => (
+    <div className="rounded-md border border-border px-3 py-2">
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-lg font-semibold tabular-nums">{value}</p>
+    </div>
+  );
 
   return (
     <main className="min-h-screen bg-background text-foreground px-4 py-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <header className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold capitalize">
-            {tab}
-            {rows.length ? ` · ${rows.length}` : ""}
-          </h1>
+          <h1 className="text-xl font-bold tracking-wide">CONSOLE</h1>
           <Button variant="outline" size="sm" onClick={signOut}>
             Sign out
           </Button>
         </header>
 
-        {/* Metrics panel (read-only) — collapsed by default so it stays out of the way.
-            Every count is over completed, non-test confessions across ALL statuses. */}
-        <section className="rounded-lg border border-border">
-          <button
-            type="button"
-            onClick={toggleMetrics}
-            className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
-          >
-            <span>Metrics</span>
-            <span className="text-xs text-muted-foreground">
-              {metricsOpen ? "Hide" : "Show"}
-            </span>
-          </button>
-
-          {metricsOpen ? (
-            <div className="space-y-5 border-t border-border px-4 py-4 text-xs">
-              {metricsLoading ? (
-                <p className="text-muted-foreground">Loading metrics…</p>
-              ) : metricsError ? (
-                <div className="space-y-2">
-                  <p className="text-muted-foreground">Couldn't load metrics.</p>
-                  <Button size="sm" variant="outline" onClick={loadMetrics}>
-                    Retry
-                  </Button>
-                </div>
-              ) : metrics ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <p className="text-muted-foreground">
-                      Completed (verdict issued), excluding test sessions · all statuses.
-                    </p>
-                    <Button size="sm" variant="ghost" onClick={loadMetrics}>
-                      Refresh
-                    </Button>
-                  </div>
-
-                  {/* 1. Totals */}
-                  <div>
-                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">Totals</p>
-                    <p>
-                      Total confessions: <span className="font-semibold">{metrics.total}</span>
-                    </p>
-                    <p className="text-muted-foreground">
-                      pending {metrics.byStatus.pending} · approved {metrics.byStatus.approved} ·
-                      rejected {metrics.byStatus.rejected}
-                    </p>
-                  </div>
-
-                  {/* 2. By venue — the primary metric. 'direct' shown separately. */}
-                  <div>
-                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">By venue</p>
-                    {metrics.venueRows.length === 0 ? (
-                      <p className="text-muted-foreground">No venue traffic yet.</p>
-                    ) : (
-                      <table className="w-full max-w-xs">
-                        <tbody>
-                          {metrics.venueRows.map(([slug, n]) => (
-                            <tr key={slug}>
-                              <td className="py-0.5">{slug}</td>
-                              <td className="py-0.5 text-right tabular-nums">{n}</td>
-                            </tr>
-                          ))}
-                          <tr className="text-muted-foreground">
-                            <td className="border-t border-border py-0.5">direct</td>
-                            <td className="border-t border-border py-0.5 text-right tabular-nums">
-                              {metrics.directCount}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-
-                  {/* 3. By topic — desc, 'untagged' included so it sums to the total. */}
-                  <div>
-                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">By topic</p>
-                    <table className="w-full max-w-xs">
-                      <tbody>
-                        {metrics.topicRows.map(([key, n]) => (
-                          <tr key={key} className={key === "untagged" ? "text-muted-foreground" : ""}>
-                            <td className="py-0.5">{topicLabel(key)}</td>
-                            <td className="py-0.5 text-right tabular-nums">{n}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* 4. Topic × venue — per venue slug (never 'direct'), topics desc. */}
-                  <div>
-                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">
-                      Topics by venue
-                    </p>
-                    {metrics.venueTopicRows.length === 0 ? (
-                      <p className="text-muted-foreground">No venue traffic yet.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {metrics.venueTopicRows.map(({ venue, count, topics }) => (
-                          <div key={venue}>
-                            <p className="font-medium">
-                              {venue}{" "}
-                              <span className="text-muted-foreground">· {count}</span>
-                            </p>
-                            <ul className="ml-3 text-muted-foreground">
-                              {topics.map(([key, n]) => (
-                                <li key={key} className="flex max-w-[16rem] justify-between">
-                                  <span>{topicLabel(key)}</span>
-                                  <span className="tabular-nums">{n}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 5. Scans & completion — scans by source + completion rate (confessions ÷
-                      scans). Scans can't be backfilled, so completion is only meaningful for
-                      the scan-tracking era; historical confessions can push a rate past 100%. */}
-                  <div>
-                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">
-                      Scans &amp; completion
-                    </p>
-                    {!metrics.scansAvailable ? (
-                      <p className="text-muted-foreground">
-                        Scan tracking isn't live yet — run the scan_events SQL to enable it.
-                      </p>
-                    ) : metrics.completionRows.length === 0 ? (
-                      <p className="text-muted-foreground">No scans recorded yet.</p>
-                    ) : (
-                      <>
-                        <p className="mb-1 text-muted-foreground">
-                          Total scans: <span className="font-semibold text-foreground">{metrics.totalScans}</span>
-                          {" · "}completion = confessions ÷ scans, since tracking went live
-                          (older sources can exceed 100%).
-                        </p>
-                        <table className="w-full max-w-sm">
-                          <thead>
-                            <tr className="text-muted-foreground">
-                              <td className="py-0.5">source</td>
-                              <td className="py-0.5 text-right">scans</td>
-                              <td className="py-0.5 text-right">conf.</td>
-                              <td className="py-0.5 text-right">rate</td>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {metrics.completionRows.map(({ source, scans, confessions, rate }) => (
-                              <tr key={source}>
-                                <td className="py-0.5">{source}</td>
-                                <td className="py-0.5 text-right tabular-nums">{scans}</td>
-                                <td className="py-0.5 text-right tabular-nums">{confessions}</td>
-                                <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </>
-                    )}
-                  </div>
-
-                  {/* 6. Share rate — share taps ÷ completed confessions, overall + per source.
-                      Counts every tap, so a source can exceed 100%. */}
-                  <div>
-                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">Share rate</p>
-                    {!metrics.sharesAvailable ? (
-                      <p className="text-muted-foreground">
-                        Share counts unavailable — run the admin_share_counts SQL.
-                      </p>
-                    ) : (
-                      <>
-                        <p className="mb-1 text-muted-foreground">
-                          Overall:{" "}
-                          <span className="font-semibold text-foreground">
-                            {fmtPct(metrics.overallShareRate)}
-                          </span>{" "}
-                          ({metrics.totalShares} taps ÷ {metrics.total} confessions · counts every tap)
-                        </p>
-                        <table className="w-full max-w-sm">
-                          <thead>
-                            <tr className="text-muted-foreground">
-                              <td className="py-0.5">source</td>
-                              <td className="py-0.5 text-right">shares</td>
-                              <td className="py-0.5 text-right">conf.</td>
-                              <td className="py-0.5 text-right">rate</td>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {metrics.shareRows.map(({ source, shares, completed, rate }) => (
-                              <tr key={source}>
-                                <td className="py-0.5">{source}</td>
-                                <td className="py-0.5 text-right tabular-nums">{shares}</td>
-                                <td className="py-0.5 text-right tabular-nums">{completed}</td>
-                                <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </>
-                    )}
-                  </div>
-
-                  {/* 7. By night — per-night, per-venue confessions + shares. Night uses a 4am
-                      cutoff (a 1am tap counts toward the previous evening); 'direct' excluded;
-                      last 30 nights, most recent first. Each row copies a plain-text summary. */}
-                  <div>
-                    <p className="mb-1 uppercase tracking-wide text-muted-foreground">By night</p>
-                    {!metrics.nightSharesAvailable ? (
-                      <p className="text-muted-foreground">
-                        Per-night shares unavailable — run the admin_share_nights SQL.
-                      </p>
-                    ) : metrics.nightRows.length === 0 ? (
-                      <p className="text-muted-foreground">No venue nights recorded yet.</p>
-                    ) : (
-                      <table className="w-full max-w-md">
-                        <thead>
-                          <tr className="text-muted-foreground">
-                            <td className="py-0.5">night</td>
-                            <td className="py-0.5">source</td>
-                            <td className="py-0.5 text-right">conf.</td>
-                            <td className="py-0.5 text-right">shares</td>
-                            <td className="py-0.5" />
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {metrics.nightRows.map((row) => {
-                            const key = `${row.night}|${row.source}`;
-                            return (
-                              <tr key={key}>
-                                <td className="py-0.5 whitespace-nowrap">{formatNightLabel(row.night)}</td>
-                                <td className="py-0.5">{row.source}</td>
-                                <td className="py-0.5 text-right tabular-nums">{row.confessions}</td>
-                                <td className="py-0.5 text-right tabular-nums">{row.shares}</td>
-                                <td className="py-0.5 pl-3 text-right">
-                                  <button
-                                    type="button"
-                                    onClick={() => copyNight(row)}
-                                    className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-                                  >
-                                    {copiedKey === key ? "Copied" : "Copy"}
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-        </section>
-
-        {/* Status tabs (item 5) */}
-        <div className="flex gap-1">
-          {TABS.map((t) => (
-            <Button
-              key={t}
-              size="sm"
-              variant={t === tab ? "secondary" : "ghost"}
-              className="capitalize"
-              onClick={() => changeTab(t)}
-            >
-              {t}
-            </Button>
-          ))}
-        </div>
-
-        {/* Source filter (item 5) — only meaningful with more than one source present */}
-        {sources.length > 1 ? (
-          <div className="flex flex-wrap items-center gap-1">
-            <Button
-              size="sm"
-              variant={sourceFilter === "all" ? "secondary" : "ghost"}
-              onClick={() => setSourceFilter("all")}
-            >
-              All
-            </Button>
-            {sources.map((s) => (
+        {/* Axes: date range (drives every RPC) + venue (primary). */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex gap-1">
+            {(Object.keys(RANGE_NIGHTS) as Range[]).map((r) => (
               <Button
-                key={s}
+                key={r}
                 size="sm"
-                variant={sourceFilter === s ? "secondary" : "ghost"}
-                onClick={() => setSourceFilter(s)}
+                variant={r === range ? "secondary" : "ghost"}
+                onClick={() => changeRange(r)}
               >
-                {s}
+                {r === "all" ? "All" : `${r} nights`}
               </Button>
             ))}
           </div>
-        ) : null}
+          <Select value={venue} onValueChange={changeVenue}>
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue placeholder="All venues" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All venues</SelectItem>
+              {VENUE_OPTIONS.map((v) => (
+                <SelectItem key={v.slug} value={v.slug}>
+                  {v.name} ({v.slug})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Topic filter — client-side over loaded rows, composes with the other filters
-            (AND). Display-only; never changes any row's status. Full static taxonomy plus
-            "Untagged" for the pre-rollout null rows. */}
-        <Select value={topicFilter} onValueChange={setTopicFilter}>
-          <SelectTrigger className="w-full sm:w-64">
-            <SelectValue placeholder="All topics" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All topics</SelectItem>
-            {TOPICS.map((t) => (
-              <SelectItem key={t.value} value={t.value}>
-                {t.label}
-              </SelectItem>
-            ))}
-            <SelectItem value="untagged">Untagged</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* ── VENUE REPORT (single venue) — built to be screenshotted for the owner. ── */}
+        {venue !== "all" ? (
+          <section className="rounded-lg border border-border p-4 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">{venueName}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {RANGE_LABELS[range]}
+                  {report?.first_night && report?.last_night
+                    ? ` · ${formatNightLabel(report.first_night)}–${formatNightLabel(report.last_night)}`
+                    : ""}
+                </p>
+              </div>
+              <Button size="sm" variant="ghost" onClick={copyReport} disabled={!report}>
+                {reportCopied ? "Copied" : "Copy summary"}
+              </Button>
+            </div>
 
-        {/* Keyword search (item 5) — active, on-demand filter over loaded rows only.
-            Distinct from the passive amber flag; never changes any row's status. */}
-        <Input
-          type="search"
-          placeholder="Search confession or verdict text…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        {loadingRows ? (
-          <p className="text-sm text-muted-foreground">Loading queue…</p>
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground capitalize">Nothing {tab}.</p>
-        ) : visibleRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No matches. Clear the filters to see all.</p>
-        ) : (
-          <ul className="space-y-4">
-            {visibleRows.map((row) => {
-              const flagged = isFlagged(row);
-              return (
-                <li
-                  key={row.id}
-                  className={cn(
-                    "rounded-lg border border-border p-4 space-y-3",
-                    flagged && "border-l-4 border-l-amber-500",
+            {reportLoading ? (
+              <p className="text-sm text-muted-foreground">Loading report…</p>
+            ) : reportError ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Couldn't load this venue's report.</p>
+                <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                  Retry
+                </Button>
+              </div>
+            ) : report ? (
+              <>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <StatBlock label="Scans" value={num(report.scans)} />
+                  <StatBlock label="Confessions" value={num(report.confessions)} />
+                  <StatBlock label="Completion" value={fmtPct(reportCr)} />
+                  <StatBlock label="Shares" value={num(report.shares)} />
+                  <StatBlock label="Share rate" value={fmtPct(reportSr)} />
+                  <StatBlock label="Nights active" value={num(report.nights_active)} />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Top topics</p>
+                  {report.top_topics && report.top_topics.length > 0 ? (
+                    <ul className="flex flex-wrap gap-2 text-xs">
+                      {report.top_topics.map((t) => (
+                        <li key={t.topic} className="rounded bg-muted px-2 py-1">
+                          {topicLabel(t.topic)} <span className="text-muted-foreground">· {t.n}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No topics in range.</p>
                   )}
-                >
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <span>#{row.subject_number}</span>
-                    <SourceBadge source={row.source} />
-                    <TopicBadge topic={row.topic} />
-                    <span>{new Date(row.created_at).toLocaleString()}</span>
-                    {flagged ? (
-                      <span className="rounded bg-amber-500/15 text-amber-500 px-1.5 py-0.5 text-[11px] font-medium">
-                        review
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="whitespace-pre-wrap text-sm">{row.confession_text}</p>
-                  {row.verdict_text ? (
-                    <p className="whitespace-pre-wrap text-sm text-muted-foreground border-l-2 border-border pl-3">
-                      {row.verdict_text}
-                    </p>
-                  ) : null}
+                </div>
+              </>
+            ) : null}
+          </section>
+        ) : (
+          /* ── ROLLUP (all venues) — cross-venue dashboard. ── */
+          <section className="rounded-lg border border-border">
+            <button
+              type="button"
+              onClick={() => setRollupOpen((o) => !o)}
+              className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+            >
+              <span>Rollup · {RANGE_LABELS[range]}</span>
+              <span className="text-xs text-muted-foreground">{rollupOpen ? "Hide" : "Show"}</span>
+            </button>
 
-                  {/* Action row varies by tab. The Approved tab's un-approve is the
-                      durable, always-available safety net (item 2, Layer 2) — it does
-                      not depend on the toast lifecycle. */}
-                  <div className="flex gap-2">
-                    {tab === "pending" ? (
-                      <>
-                        <Button
-                          size="sm"
-                          className="bg-ritual text-background hover:bg-ritual/90"
-                          disabled={busyId === row.id}
-                          onClick={() =>
-                            applyStatus(row, "approved", { title: "Approved", duration: 9000 })
-                          }
-                        >
-                          Approve
-                        </Button>
+            {rollupOpen ? (
+              <div className="space-y-5 border-t border-border px-4 py-4 text-xs">
+                {rollupLoading ? (
+                  <p className="text-muted-foreground">Loading rollup…</p>
+                ) : rollupError ? (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground">Couldn't load the rollup.</p>
+                    <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                      Retry
+                    </Button>
+                  </div>
+                ) : dash ? (
+                  <>
+                    <p className="text-muted-foreground">
+                      Completed confessions across all venues, {RANGE_LABELS[range].toLowerCase()}.
+                    </p>
+
+                    {/* Totals */}
+                    <div>
+                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">Totals</p>
+                      <p>
+                        Completed: <span className="font-semibold">{dash.totalCompleted}</span>{" "}
+                        <span className="text-muted-foreground">of {dash.totalAll} total</span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        pending {dash.byStatus.pending} · approved {dash.byStatus.approved} · rejected{" "}
+                        {dash.byStatus.rejected}
+                      </p>
+                    </div>
+
+                    {/* By venue */}
+                    <div>
+                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">By venue</p>
+                      {dash.venueRows.length === 0 ? (
+                        <p className="text-muted-foreground">No venue traffic in range.</p>
+                      ) : (
+                        <table className="w-full max-w-xs">
+                          <tbody>
+                            {dash.venueRows.map(([slug, n]) => (
+                              <tr key={slug}>
+                                <td className="py-0.5">{slug}</td>
+                                <td className="py-0.5 text-right tabular-nums">{n}</td>
+                              </tr>
+                            ))}
+                            <tr className="text-muted-foreground">
+                              <td className="border-t border-border py-0.5">direct</td>
+                              <td className="border-t border-border py-0.5 text-right tabular-nums">
+                                {dash.directCount}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+
+                    {/* By topic */}
+                    <div>
+                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">By topic</p>
+                      {dash.topicRows.length === 0 ? (
+                        <p className="text-muted-foreground">No confessions in range.</p>
+                      ) : (
+                        <table className="w-full max-w-xs">
+                          <tbody>
+                            {dash.topicRows.map(([key, n]) => (
+                              <tr key={key} className={key === "untagged" ? "text-muted-foreground" : ""}>
+                                <td className="py-0.5">{topicLabel(key)}</td>
+                                <td className="py-0.5 text-right tabular-nums">{n}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+
+                    {/* Scans & completion */}
+                    <div>
+                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">Scans &amp; completion</p>
+                      {!dash.scansAvailable ? (
+                        <p className="text-muted-foreground">Scan counts unavailable.</p>
+                      ) : dash.completionRows.length === 0 ? (
+                        <p className="text-muted-foreground">No scans in range.</p>
+                      ) : (
+                        <>
+                          <p className="mb-1 text-muted-foreground">
+                            Total scans:{" "}
+                            <span className="font-semibold text-foreground">{dash.totalScans}</span> · completion =
+                            confessions ÷ scans.
+                          </p>
+                          <table className="w-full max-w-sm">
+                            <thead>
+                              <tr className="text-muted-foreground">
+                                <td className="py-0.5">source</td>
+                                <td className="py-0.5 text-right">scans</td>
+                                <td className="py-0.5 text-right">conf.</td>
+                                <td className="py-0.5 text-right">rate</td>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {dash.completionRows.map(({ source, scans, confessions, rate }) => (
+                                <tr key={source}>
+                                  <td className="py-0.5">{source}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{scans}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{confessions}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Share rate */}
+                    <div>
+                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">Share rate</p>
+                      {!dash.sharesAvailable ? (
+                        <p className="text-muted-foreground">Share counts unavailable.</p>
+                      ) : (
+                        <>
+                          <p className="mb-1 text-muted-foreground">
+                            Overall:{" "}
+                            <span className="font-semibold text-foreground">{fmtPct(dash.overallShareRate)}</span> (
+                            {dash.totalShares} taps ÷ {dash.totalCompleted} confessions · counts every tap)
+                          </p>
+                          <table className="w-full max-w-sm">
+                            <thead>
+                              <tr className="text-muted-foreground">
+                                <td className="py-0.5">source</td>
+                                <td className="py-0.5 text-right">shares</td>
+                                <td className="py-0.5 text-right">conf.</td>
+                                <td className="py-0.5 text-right">rate</td>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {dash.shareRows.map(({ source, shares, completed, rate }) => (
+                                <tr key={source}>
+                                  <td className="py-0.5">{source}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{shares}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{completed}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </>
+                      )}
+                    </div>
+
+                    {/* By night */}
+                    <div>
+                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">By night</p>
+                      {dash.nightRows.length === 0 ? (
+                        <p className="text-muted-foreground">No venue nights in range.</p>
+                      ) : (
+                        <table className="w-full max-w-md">
+                          <thead>
+                            <tr className="text-muted-foreground">
+                              <td className="py-0.5">night</td>
+                              <td className="py-0.5">source</td>
+                              <td className="py-0.5 text-right">conf.</td>
+                              <td className="py-0.5 text-right">shares</td>
+                              <td className="py-0.5" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {dash.nightRows.map((row) => {
+                              const key = `${row.night}|${row.source}`;
+                              return (
+                                <tr key={key}>
+                                  <td className="py-0.5 whitespace-nowrap">{formatNightLabel(row.night)}</td>
+                                  <td className="py-0.5">{row.source}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{row.confessions}</td>
+                                  <td className="py-0.5 text-right tabular-nums">{row.shares}</td>
+                                  <td className="py-0.5 pl-3 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => copyNight(row)}
+                                      className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                                    >
+                                      {copiedKey === key ? "Copied" : "Copy"}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">Loading rollup…</p>
+                )}
+              </div>
+            ) : null}
+          </section>
+        )}
+
+        {/* ── CONFESSION LIST (server-side, paginated). Scanned for good ones, not cleared. ── */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex gap-1">
+              {TABS.map((t) => (
+                <Button
+                  key={t}
+                  size="sm"
+                  variant={t === tab ? "secondary" : "ghost"}
+                  className="capitalize"
+                  onClick={() => changeTab(t)}
+                >
+                  {t}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {venue === "all" ? "all venues" : venue} · {totalCount} {tab}
+            </p>
+          </div>
+
+          <Input
+            type="search"
+            placeholder="Search confession or verdict text…"
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
+          />
+
+          {/* Pager */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              Page {page + 1} of {totalPages}
+            </span>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page <= 0 || listLoading}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                Prev
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page >= totalPages - 1 || listLoading}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+
+          {listLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : listError ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Couldn't load confessions.</p>
+              <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                Retry
+              </Button>
+            </div>
+          ) : rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {qDebounced.trim() ? "No matches." : `Nothing ${tab}.`}
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {rows.map((row) => {
+                const flagged = isFlagged(row);
+                return (
+                  <li
+                    key={row.id}
+                    className={cn(
+                      "rounded-lg border border-border p-4 space-y-3",
+                      flagged && "border-l-4 border-l-amber-500",
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>#{row.subject_number}</span>
+                      <SourceBadge source={row.source} />
+                      <TopicBadge topic={row.topic} />
+                      <span>{new Date(row.created_at).toLocaleString()}</span>
+                      {flagged ? (
+                        <span className="rounded bg-amber-500/15 text-amber-500 px-1.5 py-0.5 text-[11px] font-medium">
+                          review
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="whitespace-pre-wrap text-sm">{row.confession_text}</p>
+                    {row.verdict_text ? (
+                      <p className="whitespace-pre-wrap text-sm text-muted-foreground border-l-2 border-border pl-3">
+                        {row.verdict_text}
+                      </p>
+                    ) : null}
+
+                    <div className="flex gap-2">
+                      {tab === "pending" ? (
+                        <>
+                          <Button
+                            size="sm"
+                            className="bg-ritual text-background hover:bg-ritual/90"
+                            disabled={busyId === row.id}
+                            onClick={() => applyStatus(row, "approved", { title: "Approved", duration: 9000 })}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={busyId === row.id}
+                            onClick={() => applyStatus(row, "rejected", { title: "Rejected", duration: 5000 })}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      ) : null}
+
+                      {tab === "approved" ? (
                         <Button
                           size="sm"
                           variant="destructive"
                           disabled={busyId === row.id}
                           onClick={() =>
-                            applyStatus(row, "rejected", { title: "Rejected", duration: 5000 })
+                            applyStatus(row, "rejected", { title: "Un-approved — off the wall", duration: 5000 })
                           }
                         >
-                          Reject
+                          Un-approve
                         </Button>
-                      </>
-                    ) : null}
+                      ) : null}
 
-                    {tab === "approved" ? (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={busyId === row.id}
-                        onClick={() =>
-                          applyStatus(row, "rejected", {
-                            title: "Un-approved — off the wall",
-                            duration: 5000,
-                          })
-                        }
-                      >
-                        Un-approve
-                      </Button>
-                    ) : null}
-
-                    {tab === "rejected" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busyId === row.id}
-                        onClick={() =>
-                          applyStatus(row, "pending", {
-                            title: "Restored to pending",
-                            duration: 5000,
-                          })
-                        }
-                      >
-                        Restore to pending
-                      </Button>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      {tab === "rejected" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busyId === row.id}
+                          onClick={() =>
+                            applyStatus(row, "pending", { title: "Restored to pending", duration: 5000 })
+                          }
+                        >
+                          Restore to pending
+                        </Button>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </main>
   );
