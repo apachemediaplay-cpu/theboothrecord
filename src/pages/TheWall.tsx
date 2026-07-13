@@ -92,31 +92,51 @@ const TheWall = () => {
         }}
       />
 
-      {/* Header */}
-      <div className="pt-16 pb-4 md:pt-20 md:pb-6 text-center px-6">
-        <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide mb-2">
-          THE GUILTY
-        </h1>
+      {/* Pinned header: title + live status + Instagram follow. FIXED (not sticky): the
+          outer wrapper's overflow-hidden breaks position:sticky, so this is pinned to the
+          viewport and the feed below carries matching top padding. Stays on arrival and
+          while the feed scrolls. */}
+      <div className="fixed top-0 inset-x-0 z-20 bg-background/95 backdrop-blur-sm">
+        {/* Header */}
+        <div className="pt-16 pb-4 md:pt-20 md:pb-6 text-center px-6">
+          <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide mb-2">
+            THE GUILTY
+          </h1>
+        </div>
+
+        {/* Live indicator — populated view ONLY. A manually-gated wall has no real-time
+            status, so this is suppressed on the empty state (it would misrepresent it). */}
+        {confessions.length > 0 && (
+          <div className="flex items-center justify-center gap-2 pb-6 md:pb-8">
+            <span className="text-muted-foreground/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
+              LIVE CONFESSIONS
+            </span>
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
+              style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
+            />
+          </div>
+        )}
+
+        {/* Instagram follow. Placed here, NOT in the pinned bar: the bar has one job
+            (return them to /confess) and a second link would dilute it. This catches the
+            confessors who chose NOT to share — the Verdict screen's follow link is gated
+            behind hasShared, so that group is otherwise never asked. */}
+        <div className="flex justify-center pb-6 md:pb-8">
+          <a
+            href="https://instagram.com/houseofguilty"
+            target="_blank"
+            rel="noopener"
+            className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-opacity"
+          >
+            @houseofguilty →
+          </a>
+        </div>
       </div>
 
-      {/* Live indicator — populated view ONLY. A manually-gated wall has no real-time
-          status, so this is suppressed on the empty state (it would misrepresent it). */}
-      {confessions.length > 0 && (
-        <div className="flex items-center justify-center gap-2 pb-6 md:pb-8">
-          <span className="text-muted-foreground/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
-            LIVE CONFESSIONS
-          </span>
-          <span
-            className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
-            style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
-          />
-        </div>
-      )}
-
-
-
-      {/* Confession feed */}
-      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pb-28">
+      {/* Confession feed. Top padding clears the FIXED header (≈202px mobile, taller at md
+          where its paddings/type grow) so the first confession isn't hidden underneath. */}
+      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-28">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
