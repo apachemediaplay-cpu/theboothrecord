@@ -129,9 +129,18 @@ const nightBucketFrom = (nightsBack: number): string | null => {
   return fmtYmd(d);
 };
 
-// Ratio (0–1+) → whole-percent; null → em dash, never NaN. Server rates are assumed to be
-// fractions (matches the client convention confessions/scans); see the report card note.
+// Ratio (0–1+) → whole-percent. For CLIENT-computed rates (confessions/scans etc.), which
+// are fractions. null → em dash, never NaN.
 const fmtPct = (rate: number | null) => (rate === null ? "—" : `${Math.round(rate * 100)}%`);
+// admin_venue_report already returns completion_rate/share_rate as WHOLE percents
+// (SQL: round(100.0 * a / b, 1)), and null on divide-by-zero (scans=0 / confessions=0).
+// So DON'T multiply — just append "%". null/non-numeric → "—" (never "0%"/"NaN%"). A real
+// 0.0 (e.g. 0 confessions over some scans) is finite → renders "0%", as it should.
+const fmtPctValue = (v: number | string | null | undefined) => {
+  if (v == null) return "—";
+  const n = Number(v);
+  return Number.isFinite(n) ? `${n}%` : "—";
+};
 const num = (v: number | string | null | undefined) => Number(v) || 0;
 
 const isFlagged = (row: Confession) => {
@@ -536,13 +545,11 @@ const Moderate = () => {
       report.first_night && report.last_night
         ? ` (${formatNightLabel(report.first_night)}–${formatNightLabel(report.last_night)})`
         : "";
-    const cr = report.completion_rate == null ? null : num(report.completion_rate);
-    const sr = report.share_rate == null ? null : num(report.share_rate);
     const topics = (report.top_topics ?? []).map((t) => `${topicLabel(t.topic)} (${t.n})`).join(", ");
     const text = [
       `${name} — ${RANGE_LABELS[range]}${span}`,
-      `Scans: ${num(report.scans)} · Confessions: ${num(report.confessions)} (${fmtPct(cr)} completion)`,
-      `Shares: ${num(report.shares)} (${fmtPct(sr)} share rate) · ${num(report.nights_active)} nights active`,
+      `Scans: ${num(report.scans)} · Confessions: ${num(report.confessions)} (${fmtPctValue(report.completion_rate)} completion)`,
+      `Shares: ${num(report.shares)} (${fmtPctValue(report.share_rate)} share rate) · ${num(report.nights_active)} nights active`,
       topics ? `Top topics: ${topics}` : "",
     ]
       .filter(Boolean)
@@ -610,8 +617,6 @@ const Moderate = () => {
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const venueName = venue === "all" ? null : venueDisplayName("", venue) || venue;
-  const reportCr = report && report.completion_rate != null ? num(report.completion_rate) : null;
-  const reportSr = report && report.share_rate != null ? num(report.share_rate) : null;
 
   const StatBlock = ({ label, value }: { label: string; value: string | number }) => (
     <div className="rounded-md border border-border px-3 py-2">
@@ -691,9 +696,9 @@ const Moderate = () => {
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   <StatBlock label="Scans" value={num(report.scans)} />
                   <StatBlock label="Confessions" value={num(report.confessions)} />
-                  <StatBlock label="Completion" value={fmtPct(reportCr)} />
+                  <StatBlock label="Completion" value={fmtPctValue(report.completion_rate)} />
                   <StatBlock label="Shares" value={num(report.shares)} />
-                  <StatBlock label="Share rate" value={fmtPct(reportSr)} />
+                  <StatBlock label="Share rate" value={fmtPctValue(report.share_rate)} />
                   <StatBlock label="Nights active" value={num(report.nights_active)} />
                 </div>
                 <div>
