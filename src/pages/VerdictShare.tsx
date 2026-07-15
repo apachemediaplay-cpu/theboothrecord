@@ -86,6 +86,14 @@ const VerdictShare = () => {
         <Link to={ctaHref} className="btn-booth text-center">
           ENTER THE BOOTH →
         </Link>
+        <a
+          href="https://houseofguilty.com/contraband?source=booth-share"
+          target="_blank"
+          rel="noopener"
+          className="text-sm font-mono-light tracking-wide text-muted-foreground/70 hover:text-foreground transition-colors"
+        >
+          THE FIRST OFFENCE — $45 →
+        </a>
       </div>
 
       <BoothFooter />

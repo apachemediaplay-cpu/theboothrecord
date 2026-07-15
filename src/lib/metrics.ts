@@ -6,7 +6,7 @@
 // a failure must NEVER block the confess/verdict/share flow; it just leaves a soft metric
 // unrecorded.
 import { supabase } from "@/integrations/supabase/client";
-import { getSessionId, isTestSession } from "@/lib/source";
+import { getSessionId, isTestSession, isPhysicalScan } from "@/lib/source";
 
 // These RPCs aren't in the generated types (Functions is empty and can't be regenerated
 // without DB access), so cast narrowly here.
@@ -29,6 +29,7 @@ export function tagConfession(subjectNumber: number): void {
       _subject_number: subjectNumber,
       _session_id: getSessionId(),
       _is_test: isTestSession(),
+      _physical: isPhysicalScan(),
     }),
   );
 }
@@ -65,6 +66,7 @@ export function logScan(source: string | null | undefined): void {
         _source: source ?? "direct",
         _session_id: sessionId,
         _is_test: isTestSession(),
+        _physical: isPhysicalScan(),
       }),
     );
   } catch {

@@ -109,3 +109,12 @@ export function venueDisplayName(
 
   return ""; // priority 3 → LOCATION WITHHELD (never the raw slug)
 }
+
+// True when this session arrived via a printed venue card. Physical cards ALWAYS carry
+// ?venue= (print spec); share-through and IG links carry ?source= only. captureSourceFromUrl
+// stores venueName from ?venue= and clears it on a source-only link, so a non-empty venueName
+// is exactly "arrived via a physical card" — the signal separating an in-room scan from remote
+// share-through traffic that carries the same venue source.
+export function isPhysicalScan(): boolean {
+  return !!(sessionStorage.getItem("venueName") || "").trim();
+}
