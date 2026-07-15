@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
-import { venueDisplayName, venueForceStamp } from "@/lib/source";
+import { venueDisplayName, venueForceStamp, isPhysicalScan } from "@/lib/source";
 import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
 import { useToast } from "@/hooks/use-toast";
 
@@ -523,6 +523,20 @@ const Verdict = () => {
             >
               @houseofguilty →
             </a>
+            {/* Sampler CTA — NOT for in-venue scanners (physical ?venue= card): showing a
+                "buy online" link there poaches the host. isPhysicalScan() is false for
+                direct / Instagram / share-through, so those do get it. Unlike the shared
+                card (VerdictShare), this is gated — that viewer is never in-venue. */}
+            {!isPhysicalScan() && (
+              <a
+                href="https://houseofguilty.com/contraband?source=booth-verdict"
+                target="_blank"
+                rel="noopener"
+                className="text-sm font-mono-light tracking-wide text-muted-foreground/70 hover:text-foreground transition-colors"
+              >
+                THE FIRST OFFENCE — $45 →
+              </a>
+            )}
           </div>
         )}
 
