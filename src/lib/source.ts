@@ -76,7 +76,11 @@ export function isTestSession(): boolean {
 // (functions/index.mjs) reads the SAME file via a copy (functions/venues.json), because a
 // deployed Cloud Function can only read files inside its own bundle — the copy is made by
 // functions/prep.mjs and the deploy predeploy hook. Add a venue in venues.json ONLY.
-export type Venue = { displayName: string; headline: string; guidance?: string };
+// forceStamp: per-venue override. When true, this venue's name is stamped on shares even
+// if the illegal-activity classifier set stamp_venue = false. It ONLY affects venue-name
+// display — the classifier still runs and stamp_venue is still written to the row. Absent
+// → undefined → behaves as false (every other venue unchanged).
+export type Venue = { displayName: string; headline: string; guidance?: string; forceStamp?: boolean };
 
 const VENUES = venuesData as Record<string, Venue>;
 
@@ -108,6 +112,14 @@ export function venueDisplayName(
   if (s && s !== "direct" && VENUES[s]) return VENUES[s].displayName; // priority 2
 
   return ""; // priority 3 → LOCATION WITHHELD (never the raw slug)
+}
+
+// True when this source's venue config opts into forceStamp (always stamp the venue name,
+// even when stamp_venue = false). Same lowercase lookup + venues.json as venueDisplayName.
+// Absent config / unknown source → false, so every non-opted venue is unchanged.
+export function venueForceStamp(source: string | null | undefined): boolean {
+  const s = (source || "").trim().toLowerCase();
+  return !!(s && VENUES[s]?.forceStamp);
 }
 
 // True when this session arrived via a printed venue card. Physical cards ALWAYS carry

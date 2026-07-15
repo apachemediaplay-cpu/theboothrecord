@@ -47,6 +47,7 @@
   "ryehighsociety": {
     "displayName": "Rye High Society",
     "headline": "GREAT PARENT. QUESTIONABLE PERSON.",
-    "guidance": "Confess your worst — or best."
+    "guidance": "Confess your worst — or best.",
+    "forceStamp": true
   }
 }

@@ -19,18 +19,28 @@ const ORIGIN = "https://theboothrecord.com";
 // deploy predeploy hook (the deployed function can't read ../src at runtime). No hand-synced
 // map — add venues in src/data/venues.json only. Lazily read + memoized.
 let _venueMap = null;
-async function venueFor(source) {
+async function loadVenues() {
   if (!_venueMap) {
     try {
       const data = JSON.parse(await readFile(join(__dir, "venues.json"), "utf8"));
       _venueMap = Object.fromEntries(
-        Object.entries(data).map(([slug, v]) => [slug.toLowerCase(), v.displayName]),
+        Object.entries(data).map(([slug, v]) => [slug.toLowerCase(), v]),
       );
     } catch {
       _venueMap = {};
     }
   }
-  return _venueMap[(source || "").toLowerCase()] || "";
+  return _venueMap;
+}
+async function venueFor(source) {
+  const m = await loadVenues();
+  return m[(source || "").toLowerCase()]?.displayName || "";
+}
+// forceStamp override: always stamp this venue's name even when stamp_venue = false.
+// Venue-name display only; the classifier / stamp_venue value are untouched. Absent → false.
+async function venueForceStamp(source) {
+  const m = await loadVenues();
+  return m[(source || "").toLowerCase()]?.forceStamp === true;
 }
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -93,7 +103,9 @@ export const ogImage = onRequest(
       if (!row) { res.status(404).send("Not found"); return; }
       // stamp_venue === false suppresses the venue name → "" makes card.mjs render the
       // existing "LOCATION WITHHELD" fallback. Absent/true behaves exactly as before.
-      const venue = row.stamp_venue === false ? "" : await venueFor(row.source);
+      // forceStamp overrides suppression for opted-in venues (venue-name display only).
+      const suppress = row.stamp_venue === false && !(await venueForceStamp(row.source));
+      const venue = suppress ? "" : await venueFor(row.source);
       const png = await renderCardPng({
         confession: row.confession_text || "",
         verdict: row.verdict_text || "",
@@ -123,7 +135,9 @@ export const share = onRequest(
       res.set("Content-Type", "text/html; charset=utf-8");
       if (!row) { res.status(200).send(html); return; } // unknown uuid -> plain app (VerdictShare shows not-found)
       // stamp_venue === false suppresses the venue → og:title uses the non-venue hook.
-      const venue = row.stamp_venue === false ? "" : await venueFor(row.source);
+      // forceStamp overrides suppression for opted-in venues (venue-name display only).
+      const suppress = row.stamp_venue === false && !(await venueForceStamp(row.source));
+      const venue = suppress ? "" : await venueFor(row.source);
       const out = injectOg(html, {
         title: venue ? `Guilty as charged at ${venue}.` : "The booth noticed.",
         description: row.verdict_text || "You've been summoned. You know what you did.",
