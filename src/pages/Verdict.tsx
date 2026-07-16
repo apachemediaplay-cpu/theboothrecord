@@ -521,7 +521,7 @@ const Verdict = () => {
               href="https://instagram.com/houseofguilty"
               target="_blank"
               rel="noopener"
-              className="inline-flex items-center gap-1.5 text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-opacity"
+              className="inline-flex items-center gap-1.5 text-sm font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
             >
               <Instagram size={15} strokeWidth={1.75} aria-hidden="true" />
               @houseofguilty
@@ -535,7 +535,7 @@ const Verdict = () => {
                 href="https://houseofguilty.com/contraband?source=booth-verdict"
                 target="_blank"
                 rel="noopener"
-                className="text-sm font-mono-light tracking-wide text-muted-foreground/70 hover:text-foreground transition-colors"
+                className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-colors"
               >
                 THE FIRST OFFENCE — $45 →
               </a>
