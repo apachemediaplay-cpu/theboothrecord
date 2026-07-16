@@ -181,7 +181,7 @@ const TheWall = () => {
           <p className="text-ritual/70 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 text-center">
             YOUR TURN.
           </p>
-          <Link to="/confess" className="btn-booth block text-center">
+          <Link to="/confess" className="btn-booth text-base block text-center">
             ENTER THE BOOTH →
           </Link>
         </div>
