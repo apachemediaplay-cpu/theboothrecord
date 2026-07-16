@@ -138,7 +138,7 @@ const TheWall = () => {
 
       {/* Confession feed. Top padding clears the FIXED header (≈202px mobile, taller at md
           where its paddings/type grow) so the first confession isn't hidden underneath. */}
-      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-40">
+      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-44">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -173,7 +173,7 @@ const TheWall = () => {
           and the dim end-of-scroll link. Booth palette, not a browser dialog.
           No ?source= needed: captureSourceFromUrl() falls back to sessionStorage on a
           param-less URL, so the venue still carries through to the confession. */}
-      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background/95 backdrop-blur-sm">
+      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background/95 backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="px-6 py-3">
           {/* YOUR TURN. stays the small green lead-in; ENTER THE BOOTH promoted from muted
               text to the btn-booth primary (bordered, prominent) so it reads as THE action.

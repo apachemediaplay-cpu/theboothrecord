@@ -535,7 +535,7 @@ const Verdict = () => {
                 href="https://houseofguilty.com/contraband?source=booth-verdict"
                 target="_blank"
                 rel="noopener"
-                className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-colors"
+                className="mt-4 text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-colors"
               >
                 THE FIRST OFFENCE — $45 →
               </a>
