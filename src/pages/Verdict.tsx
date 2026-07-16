@@ -406,7 +406,7 @@ const Verdict = () => {
 
   return (
     <div className="screen-container animate-fade-in">
-      <div className="flex-1 flex flex-col justify-center items-start text-left pb-48">
+      <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
         <p className="text-ritual text-xl font-mono-light tracking-wide mb-6 min-h-[1.75rem] relative">
           <span className="relative inline-block">
             {typedText}
@@ -454,7 +454,7 @@ const Verdict = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-20 left-0 right-0 px-6 flex flex-col items-center gap-6">
+      <div className="shrink-0 flex flex-col items-center gap-6">
         {/* Feature 2 — email capture (currently gated OFF via ENABLE_EMAIL_CAPTURE) */}
         {ENABLE_EMAIL_CAPTURE &&
           (claimState === "claimed" ? (
