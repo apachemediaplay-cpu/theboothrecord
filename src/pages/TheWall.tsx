@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { Instagram } from "lucide-react";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
@@ -127,16 +128,17 @@ const TheWall = () => {
             href="https://instagram.com/houseofguilty"
             target="_blank"
             rel="noopener"
-            className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-opacity"
+            className="inline-flex items-center gap-1.5 text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-opacity"
           >
-            @houseofguilty →
+            <Instagram size={15} strokeWidth={1.75} aria-hidden="true" />
+            @houseofguilty
           </a>
         </div>
       </div>
 
       {/* Confession feed. Top padding clears the FIXED header (≈202px mobile, taller at md
           where its paddings/type grow) so the first confession isn't hidden underneath. */}
-      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-28">
+      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-40">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -172,14 +174,17 @@ const TheWall = () => {
           No ?source= needed: captureSourceFromUrl() falls back to sessionStorage on a
           param-less URL, so the venue still carries through to the confession. */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background/95 backdrop-blur-sm">
-        <Link to="/confess" className="group block py-4 text-center">
-          <p className="text-ritual/70 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-1 group-hover:text-ritual transition-colors">
+        <div className="px-6 py-3">
+          {/* YOUR TURN. stays the small green lead-in; ENTER THE BOOTH promoted from muted
+              text to the btn-booth primary (bordered, prominent) so it reads as THE action.
+              Bar position/z/border/blur unchanged — only the button's visual weight. */}
+          <p className="text-ritual/70 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 text-center">
             YOUR TURN.
           </p>
-          <p className="text-foreground/80 text-[12px] tracking-[0.3em] uppercase font-mono-light group-hover:text-foreground transition-colors">
+          <Link to="/confess" className="btn-booth block text-center">
             ENTER THE BOOTH →
-          </p>
-        </Link>
+          </Link>
+        </div>
       </div>
 
       <BoothFooter />

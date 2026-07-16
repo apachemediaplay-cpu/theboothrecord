@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { Instagram } from "lucide-react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { venueDisplayName, venueForceStamp, isPhysicalScan } from "@/lib/source";
 import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
@@ -397,10 +398,11 @@ const Verdict = () => {
   // SAVE IMAGE pairs with the share button — brighter than the exit links below it.
   const shareSecondary =
     "text-sm text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
-  // SEE THE GUILTY — same size as POST TO STORY so it's findable, but NOT underlined,
-  // so it reads as a door rather than a share action.
+  // SEE THE GUILTY — the quietest thing on the screen (footer-like): text-xs, heavily
+  // muted, extra space above (mt-10). Bottom of the size ladder below SHARE VERDICT (boxed)
+  // → POST TO STORY / follow group (text-sm) → this. Never competes with the share action.
   const wallLink =
-    "text-sm text-foreground/70 hover:text-foreground transition-colors tracking-wide";
+    "text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors tracking-wide";
 
   return (
     <div className="screen-container animate-fade-in">
@@ -514,14 +516,15 @@ const Verdict = () => {
         {/* Instagram follow — appears ONLY after a share is tapped. The share block above
             stays visible and working (they may still want to save the image). */}
         {hasShared && (
-          <div className="flex flex-col items-center gap-1">
+          <div className="mt-3 flex flex-col items-center gap-1">
             <a
               href="https://instagram.com/houseofguilty"
               target="_blank"
               rel="noopener"
-              className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-opacity"
+              className="inline-flex items-center gap-1.5 text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-opacity"
             >
-              @houseofguilty →
+              <Instagram size={15} strokeWidth={1.75} aria-hidden="true" />
+              @houseofguilty
             </a>
             {/* Sampler CTA — NOT for in-venue scanners (physical ?venue= card): showing a
                 "buy online" link there poaches the host. isPhysicalScan() is false for
@@ -550,7 +553,7 @@ const Verdict = () => {
             SHARE VERDICT, and sharing is the PERISHABLE action — once they leave for
             the wall, Confess.tsx's mount reset wipes the card and it can never be
             shared. The wall is always available; the share is not. */}
-        <div className="mt-6 flex flex-col items-center">
+        <div className="mt-10 flex flex-col items-center">
           {verdictResponse !== "Entry withheld" && (
             <button onClick={() => handleNavigate("/thewall")} className={wallLink}>
               SEE THE GUILTY →
