@@ -402,7 +402,7 @@ const Verdict = () => {
   // muted, extra space above (mt-10). Bottom of the size ladder below SHARE VERDICT (boxed)
   // → POST TO STORY / follow group (text-sm) → this. Never competes with the share action.
   const wallLink =
-    "text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors tracking-wide";
+    "text-xs text-muted-foreground hover:text-foreground transition-colors tracking-wide";
 
   return (
     <div className="screen-container animate-fade-in">
