@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { fetchSharedVerdict, type SharedVerdict } from "@/lib/metrics";
-import { venueDisplayName, venueForceStamp } from "@/lib/source";
+import { venueDisplayName } from "@/lib/source";
 
 // Public landing for a shared verdict link (/v/:id). A recipient — not the confessor —
 // lands here. Reads the verdict by its unguessable uuid via get_share_verdict; an unknown
@@ -30,9 +30,7 @@ const VerdictShare = () => {
   const ctaHref =
     source && source !== "direct" ? `/confess?source=${encodeURIComponent(source)}` : "/confess";
   // stamp_venue === false suppresses the venue name → "" → existing "Location withheld".
-  // A venue with forceStamp overrides that suppression (venue-name display only).
-  const venue =
-    row?.stamp_venue === false && !venueForceStamp(source) ? "" : venueDisplayName("", source);
+  const venue = row?.stamp_venue === false ? "" : venueDisplayName("", source);
 
   if (status === "loading") {
     return (

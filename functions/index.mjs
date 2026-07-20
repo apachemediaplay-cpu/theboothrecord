@@ -36,12 +36,6 @@ async function venueFor(source) {
   const m = await loadVenues();
   return m[(source || "").toLowerCase()]?.displayName || "";
 }
-// forceStamp override: always stamp this venue's name even when stamp_venue = false.
-// Venue-name display only; the classifier / stamp_venue value are untouched. Absent → false.
-async function venueForceStamp(source) {
-  const m = await loadVenues();
-  return m[(source || "").toLowerCase()]?.forceStamp === true;
-}
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -103,8 +97,7 @@ export const ogImage = onRequest(
       if (!row) { res.status(404).send("Not found"); return; }
       // stamp_venue === false suppresses the venue name → "" makes card.mjs render the
       // existing "LOCATION WITHHELD" fallback. Absent/true behaves exactly as before.
-      // forceStamp overrides suppression for opted-in venues (venue-name display only).
-      const suppress = row.stamp_venue === false && !(await venueForceStamp(row.source));
+      const suppress = row.stamp_venue === false;
       const venue = suppress ? "" : await venueFor(row.source);
       const png = await renderCardPng({
         confession: row.confession_text || "",
@@ -135,8 +128,7 @@ export const share = onRequest(
       res.set("Content-Type", "text/html; charset=utf-8");
       if (!row) { res.status(200).send(html); return; } // unknown uuid -> plain app (VerdictShare shows not-found)
       // stamp_venue === false suppresses the venue → og:title uses the non-venue hook.
-      // forceStamp overrides suppression for opted-in venues (venue-name display only).
-      const suppress = row.stamp_venue === false && !(await venueForceStamp(row.source));
+      const suppress = row.stamp_venue === false;
       const venue = suppress ? "" : await venueFor(row.source);
       const out = injectOg(html, {
         title: venue ? `Guilty as charged at ${venue}.` : "The booth noticed.",

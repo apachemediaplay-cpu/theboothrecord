@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Instagram } from "lucide-react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
-import { venueDisplayName, venueForceStamp, isPhysicalScan } from "@/lib/source";
+import { venueDisplayName, isPhysicalScan } from "@/lib/source";
 import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
 import { useToast } from "@/hooks/use-toast";
 
@@ -349,14 +349,12 @@ const Verdict = () => {
       // (it never shows the venue and then swaps). The Edge Function response doesn't include
       // it, so read the row via the uuid above. Cached in state for repeat taps; on any
       // failure suppress stays false → the venue shows as normal.
-      // forceStamp overrides suppression for opted-in venues (venue-name display only).
-      const forceStamp = venueForceStamp(rowSource);
-      let suppress = stampVenue === false && !forceStamp;
+      let suppress = stampVenue === false;
       if (stampVenue === undefined && uuid) {
         const row = await fetchSharedVerdict(uuid);
         if (row) {
           setStampVenue(row.stamp_venue);
-          suppress = row.stamp_venue === false && !forceStamp;
+          suppress = row.stamp_venue === false;
         }
       }
       const blob = await generateShareCard(computeFiledVenue(suppress));
