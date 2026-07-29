@@ -497,11 +497,11 @@
    alpha) rises and falls on a 2s cycle; the dot swings harder and
    scales. Every green value comes from the --ritual-green token. */
 .listen-glow-text {
-  animation: listenGlowText 2s ease-in-out infinite;
+  animation: listenGlowText 2.8s ease-in-out infinite;
 }
 
 .listen-glow-dot {
-  animation: listenGlowDot 2s ease-in-out infinite;
+  animation: listenGlowDot 2.8s ease-in-out infinite;
 }
 
 @keyframes listenGlowText {
@@ -513,9 +513,9 @@
   }
   50% {
     text-shadow:
-      0 0 3px hsl(var(--ritual-green) / 1),
-      0 0 11px hsl(var(--ritual-green) / 0.70),
-      0 0 24px hsl(var(--ritual-green) / 0.45);
+      0 0 2.8px hsl(var(--ritual-green) / 0.97),
+      0 0 10px hsl(var(--ritual-green) / 0.65),
+      0 0 22px hsl(var(--ritual-green) / 0.42);
   }
 }
 
@@ -528,10 +528,10 @@
       0 0 15px hsl(var(--ritual-green) / 0.30);
   }
   50% {
-    transform: scale(1.18);
+    transform: scale(1.15);
     box-shadow:
-      0 0 5px hsl(var(--ritual-green) / 1),
-      0 0 15px hsl(var(--ritual-green) / 0.90),
-      0 0 30px hsl(var(--ritual-green) / 0.60);
+      0 0 4.7px hsl(var(--ritual-green) / 1),
+      0 0 14px hsl(var(--ritual-green) / 0.85),
+      0 0 28px hsl(var(--ritual-green) / 0.56);
   }
 }
