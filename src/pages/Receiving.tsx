@@ -64,6 +64,11 @@ const Receiving = () => {
           // The share card's FILED AT reads THIS (the source persisted to the row,
           // as returned by the function), never the client-captured source.
           sessionStorage.setItem("verdictSource", typeof data.source === "string" ? data.source : "");
+          // stamp_venue for THIS confession, so the save-image path doesn't depend on the
+          // fallback fetch. Written unconditionally on every ok, so a previous confession's
+          // value can never leak into this one. Fail closed: anything but an explicit true
+          // stores "false" (including an older function build that omits the field).
+          sessionStorage.setItem("stampVenue", data.stamp_venue === true ? "true" : "false");
           navigate("/verdict");
           break;
         case "blocked":

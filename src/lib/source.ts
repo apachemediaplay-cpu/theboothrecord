@@ -92,23 +92,35 @@ export function getPrompt(source?: string | null): Prompt {
   return VENUES[s] ?? DEFAULT_PROMPT;
 }
 
-// Resolve the share-card display name in strict priority order:
-//   1. an explicit venue= captured from the URL → use it directly.
-//   2. else, frozen table lookup on the source slug.
-//   3. else (unknown slug, or direct/empty) → "" → caller renders LOCATION WITHHELD.
-// NEVER returns a raw uppercased slug.
+// Resolve the display name from the SOURCE SLUG ONLY — venues.json is the single source
+// of truth for venue names.
+//
+// SECURITY: the ?venue= URL param is deliberately NOT consulted. It used to be trusted
+// verbatim and take priority, which meant (a) any crafted URL could print any venue's name
+// onto a share card, and (b) deleting a venue from venues.json did NOT stop its name
+// printing, because physical cards carry ?venue= (this is why "Rye High Society" kept
+// appearing after the venue was removed). Resolving from the slug alone makes venues.json
+// a real kill switch. ?venue= is still captured by captureSourceFromUrl because
+// isPhysicalScan() depends on it — it just never reaches a rendered card.
+//
+// NOTE: the first parameter is retained and IGNORED so the existing call sites keep
+// compiling unchanged. Do not reintroduce it into the resolution — that is the vulnerability.
+//
+// Unknown / absent / "direct" slug → "" → caller renders LOCATION WITHHELD (never a raw slug).
 export function venueDisplayName(
-  venueParam: string | null | undefined,
+  _venueParamIgnored: string | null | undefined,
   source: string | null | undefined,
 ): string {
-  const v = (venueParam || "").trim();
-  if (v) return v; // priority 1
-
   const s = (source || "").trim().toLowerCase();
-  if (s && s !== "direct" && VENUES[s]) return VENUES[s].displayName; // priority 2
+  if (s && s !== "direct" && VENUES[s]) return VENUES[s].displayName;
 
-  return ""; // priority 3 → LOCATION WITHHELD (never the raw slug)
+  return ""; // → LOCATION WITHHELD (never the raw slug, never the URL param)
 }
+
+// Fail closed: ONLY an explicit true permits stamping a venue name onto a card. undefined,
+// null, a missing column, or a failed fetch all mean "do not stamp". Used by every read site
+// (save-image card, /v/:id page, OG image, og:title) so the default is never to stamp.
+export const mayStampVenue = (v: unknown): boolean => v === true;
 
 // True when this session arrived via a printed venue card. Physical cards ALWAYS carry
 // ?venue= (print spec); share-through and IG links carry ?source= only. captureSourceFromUrl

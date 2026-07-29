@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Instagram } from "lucide-react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
-import { venueDisplayName, isPhysicalScan } from "@/lib/source";
+import { venueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
 import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,9 +16,12 @@ const Verdict = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [sharingLink, setSharingLink] = useState(false);
-  // stamp_venue for THIS confession. undefined until fetched → treated as "show venue"
-  // (default/true). Only false suppresses the venue on the SAVE IMAGE card.
-  const [stampVenue, setStampVenue] = useState<boolean | undefined>(undefined);
+  // stamp_venue for THIS confession, seeded from what the Edge Function returned (stored by
+  // Receiving). FAIL CLOSED: only an explicit true permits stamping — undefined means "not
+  // positively confirmed" and suppresses the venue on the POST TO STORY card.
+  const [stampVenue, setStampVenue] = useState<boolean | undefined>(
+    sessionStorage.getItem("stampVenue") === "true" ? true : undefined,
+  );
   const [typedText, setTypedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const [isGlitching, setIsGlitching] = useState(false);
@@ -33,17 +36,14 @@ const Verdict = () => {
   const subjectNumber = sessionStorage.getItem("subjectNumber") || "";
   const fullText = "The booth noticed.";
 
-  // Share card "AS CHARGED AT" venue, resolved in priority order by venueDisplayName:
-  //   1. an explicit ?venue= captured from the URL (used directly), else
-  //   2. the frozen table lookup on the persisted row source, else
-  //   3. "" → the card renders LOCATION WITHHELD (never a raw slug).
-  // The venue stamp is decided at SAVE IMAGE time (after stamp_venue loads) so the card is
-  // rendered once with the correct value — see handleOnRecordConfirm. suppress === true (i.e.
-  // stamp_venue === false) → "" → the card's existing LOCATION WITHHELD path.
-  const venueName = sessionStorage.getItem("venueName") || "";
+  // Share card "AS CHARGED AT" venue, resolved by venueDisplayName from the PERSISTED ROW
+  // SOURCE only — venues.json is the single source of display names and the ?venue= URL param
+  // is never trusted for display. Unknown/absent slug → "" → the card renders LOCATION WITHHELD.
+  // The venue stamp is decided at POST TO STORY time so the card is rendered once with the
+  // correct value — see handleOnRecordConfirm. suppress === true → "" → LOCATION WITHHELD.
   const rowSource = sessionStorage.getItem("verdictSource") || "";
   const computeFiledVenue = (suppress: boolean) =>
-    (suppress ? "" : venueDisplayName(venueName, rowSource)).toUpperCase();
+    (suppress ? "" : venueDisplayName("", rowSource)).toUpperCase();
 
   // Feature 2: optional email capture — gated behind ENABLE_EMAIL_CAPTURE, kept for later.
   // (Dormant: confessions are now saved by the Edge Function, which has no email field.)
@@ -345,16 +345,16 @@ const Verdict = () => {
         uuid = await resolveShareId(Number(subjectNumber), verdictResponse);
         if (uuid) setShareId(uuid);
       }
-      // Load stamp_venue BEFORE rendering, so the card is drawn ONCE with the correct venue
-      // (it never shows the venue and then swaps). The Edge Function response doesn't include
-      // it, so read the row via the uuid above. Cached in state for repeat taps; on any
-      // failure suppress stays false → the venue shows as normal.
-      let suppress = stampVenue === false;
+      // stamp_venue is seeded from the Edge Function response (stored by Receiving), so the
+      // card is drawn ONCE with the correct venue and never swaps. This fetch is now only a
+      // FALLBACK for a function build that omits the field; it can only ever UNLOCK stamping,
+      // never re-suppress. FAIL CLOSED: on any failure suppress stays TRUE → venue withheld.
+      let suppress = !mayStampVenue(stampVenue);
       if (stampVenue === undefined && uuid) {
         const row = await fetchSharedVerdict(uuid);
         if (row) {
           setStampVenue(row.stamp_venue);
-          suppress = row.stamp_venue === false;
+          suppress = !mayStampVenue(row.stamp_venue);
         }
       }
       const blob = await generateShareCard(computeFiledVenue(suppress));

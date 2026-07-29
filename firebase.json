@@ -2,6 +2,9 @@
   "hosting": {
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      { "source": "/plead", "destination": "/confess?source=ig_comment", "type": 302 }
+    ],
     "rewrites": [
       { "source": "/og/**", "function": { "functionId": "ogImage", "region": "us-central1" } },
       { "source": "/v/**", "function": { "functionId": "share", "region": "us-central1" } },

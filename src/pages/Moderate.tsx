@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   topic: string | null;
   is_test: boolean | null;
+  homepage_featured: boolean | null;
 };
 type Status = "pending" | "approved" | "rejected";
 
@@ -521,6 +522,25 @@ const Moderate = () => {
           Undo
         </ToastAction>
       ),
+    });
+  };
+
+  // Feature/unfeature on the homepage. Keeps the row in place (unlike status changes);
+  // optimistic flip, reverted on failure. Same admin gate as approve/reject (is_admin()).
+  const toggleFeatured = async (row: Confession) => {
+    const next = !row.homepage_featured;
+    setBusyId(row.id);
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, homepage_featured: next } : r)));
+    const { error } = await rpc("set_homepage_featured", { target_id: row.id, value: next });
+    setBusyId(null);
+    if (error) {
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, homepage_featured: !next } : r)));
+      toast({ title: "Couldn't update feature", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: next ? "Featured on homepage" : "Removed from homepage",
+      description: `#${row.subject_number}`,
     });
   };
 
@@ -1071,6 +1091,25 @@ const Moderate = () => {
                           Restore to pending
                         </Button>
                       ) : null}
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busyId === row.id}
+                        aria-pressed={!!row.homepage_featured}
+                        title={
+                          row.homepage_featured
+                            ? "Featured on homepage — click to remove"
+                            : "Feature on homepage"
+                        }
+                        onClick={() => toggleFeatured(row)}
+                        className={cn(
+                          "ml-auto",
+                          row.homepage_featured ? "text-ritual" : "text-muted-foreground",
+                        )}
+                      >
+                        {row.homepage_featured ? "★ Featured" : "☆ Feature"}
+                      </Button>
                     </div>
                   </li>
                 );

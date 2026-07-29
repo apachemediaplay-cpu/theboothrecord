@@ -95,9 +95,10 @@ export const ogImage = onRequest(
       const m = req.path.match(/\/og\/([^/.]+)\.png$/);
       const row = m && (await fetchVerdict(m[1]));
       if (!row) { res.status(404).send("Not found"); return; }
-      // stamp_venue === false suppresses the venue name → "" makes card.mjs render the
-      // existing "LOCATION WITHHELD" fallback. Absent/true behaves exactly as before.
-      const suppress = row.stamp_venue === false;
+      // FAIL CLOSED: only an explicit stamp_venue === true stamps the venue. Absent (older
+      // get_share_verdict), null, or false → suppress → "" makes card.mjs render the existing
+      // "LOCATION WITHHELD" fallback.
+      const suppress = row.stamp_venue !== true;
       const venue = suppress ? "" : await venueFor(row.source);
       const png = await renderCardPng({
         confession: row.confession_text || "",
@@ -127,8 +128,9 @@ export const share = onRequest(
       const row = id && (await fetchVerdict(id));
       res.set("Content-Type", "text/html; charset=utf-8");
       if (!row) { res.status(200).send(html); return; } // unknown uuid -> plain app (VerdictShare shows not-found)
-      // stamp_venue === false suppresses the venue → og:title uses the non-venue hook.
-      const suppress = row.stamp_venue === false;
+      // FAIL CLOSED: only an explicit stamp_venue === true stamps the venue; anything else
+      // (absent/null/false) suppresses → og:title uses the non-venue hook.
+      const suppress = row.stamp_venue !== true;
       const venue = suppress ? "" : await venueFor(row.source);
       const out = injectOg(html, {
         title: venue ? `Guilty as charged at ${venue}.` : "The booth noticed.",

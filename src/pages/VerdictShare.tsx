@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { fetchSharedVerdict, type SharedVerdict } from "@/lib/metrics";
-import { venueDisplayName } from "@/lib/source";
+import { venueDisplayName, mayStampVenue } from "@/lib/source";
 
 // Public landing for a shared verdict link (/v/:id). A recipient — not the confessor —
 // lands here. Reads the verdict by its unguessable uuid via get_share_verdict; an unknown
@@ -29,8 +29,10 @@ const VerdictShare = () => {
   const source = row?.source ?? "";
   const ctaHref =
     source && source !== "direct" ? `/confess?source=${encodeURIComponent(source)}` : "/confess";
-  // stamp_venue === false suppresses the venue name → "" → existing "Location withheld".
-  const venue = row?.stamp_venue === false ? "" : venueDisplayName("", source);
+  // FAIL CLOSED: only an explicit stamp_venue === true shows the venue. A missing field (older
+  // get_share_verdict), a null row, or a failed fetch all fall through to "" → the existing
+  // "Location withheld". Venue name resolves from the source slug via venues.json only.
+  const venue = mayStampVenue(row?.stamp_venue) ? venueDisplayName("", source) : "";
 
   if (status === "loading") {
     return (

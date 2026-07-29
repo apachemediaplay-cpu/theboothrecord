@@ -164,6 +164,20 @@ const Confess = () => {
 
   return (
     <div className="screen-container animate-fade-in">
+      {/* Listening status line — occupies the SAME fixed top slot BoothHeader uses on the
+          gate (same top margin + left edge), so the gate's "Location: X" hands off to this
+          on /confess. Confess-only: deliberately not on gate, receiving, verdict or the wall. */}
+      <div className="fixed top-0 left-0 right-0 pt-6 pb-4">
+        <div className="max-w-md mx-auto px-6">
+          <p className="flex items-center gap-2 text-[17px] font-mono-light tracking-wide text-ritual">
+            <span className="listen-glow-dot inline-block w-[9px] h-[9px] rounded-full bg-[hsl(var(--ritual-green))]" />
+            <span className="listen-glow-text">
+              the booth is listening
+            </span>
+          </p>
+        </div>
+      </div>
+
       <div className="flex-1 flex flex-col justify-center">
         <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
           {prompt.headline}
