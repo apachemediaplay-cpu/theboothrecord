@@ -27,7 +27,8 @@
     "source": "functions",
     "runtime": "nodejs20",
     "predeploy": [
-      "node scripts/copy-venues.mjs"
+      "node scripts/copy-venues.mjs",
+      "node scripts/copy-index-html.mjs"
     ]
   }
 }
