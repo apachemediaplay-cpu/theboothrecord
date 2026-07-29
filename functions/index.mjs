@@ -133,7 +133,7 @@ export const share = onRequest(
       const suppress = row.stamp_venue !== true;
       const venue = suppress ? "" : await venueFor(row.source);
       const out = injectOg(html, {
-        title: venue ? `Guilty as charged at ${venue}.` : "The booth noticed.",
+        title: venue ? `Guilty as charged at ${venue}.` : "Your turn.",
         description: row.verdict_text || "You've been summoned. You know what you did.",
         image: `${ORIGIN}/og/${id}.png`,
         url: `${ORIGIN}/v/${id}`,

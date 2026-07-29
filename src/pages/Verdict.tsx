@@ -314,8 +314,7 @@ const Verdict = () => {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
           title: "GUILTY",
-          text: "You've been summoned. You know what you did.",
-          url,
+          text: url,
         });
       } else if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(url);
@@ -374,7 +373,7 @@ const Verdict = () => {
       const shareUrl = uuid ? `https://theboothrecord.com/v/${uuid}` : "https://theboothrecord.com";
 
       if (canShareFiles) {
-        await navigator.share({ files: [file], title: "GUILTY", text: "You've been summoned. You know what you did.", url: shareUrl });
+        await navigator.share({ files: [file], title: "GUILTY", text: shareUrl });
       } else {
         // Desktop fallback: download the PNG.
         const url = URL.createObjectURL(blob);
