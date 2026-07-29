@@ -94,7 +94,7 @@ const VerdictShare = () => {
           rel="noopener"
           className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-colors"
         >
-          THE FIRST OFFENCE — $45 →
+          THE FIRST OFFENCE — $55
         </a>
       </div>
 
