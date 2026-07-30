@@ -243,7 +243,7 @@ const Confess = () => {
                 }
               }}
               placeholder=""
-              className="block w-full bg-transparent text-ritual text-xl font-mono-light tracking-wide resize-none outline-none border-0 border-b border-border/75 pb-2 pr-12 overflow-hidden"
+              className="block w-full bg-transparent text-ritual text-xl font-mono-light tracking-wide resize-none outline-none border-0 border-b border-muted-foreground/40 pb-2 pr-12 overflow-hidden"
               rows={2}
               readOnly={isRecording}
             />
