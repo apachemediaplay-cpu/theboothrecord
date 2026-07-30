@@ -218,7 +218,7 @@ const Confess = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-start pt-16">
+      <div className="flex-1 flex flex-col justify-start pt-[calc(4rem+10dvh)]">
         <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
           {prompt.headline}
         </h2>
