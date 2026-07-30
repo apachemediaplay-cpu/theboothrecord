@@ -613,8 +613,11 @@ const Moderate = () => {
   const [focusIdx, setFocusIdx] = useState(0);
   const [confirmBulk, setConfirmBulk] = useState<{ status: Status; label: string } | null>(null);
 
-  // Cross-venue rollup (venue === "all").
-  const [rollupOpen, setRollupOpen] = useState(true);
+  // Cross-venue rollup (venue === "all"). Stats-tab disclosure toggles: full topic
+  // list, zero-confession sources, and the nightly table (all default collapsed).
+  const [topicsOpen, setTopicsOpen] = useState(false);
+  const [zeroOpen, setZeroOpen] = useState(false);
+  const [nightTableOpen, setNightTableOpen] = useState(false);
   const [rollup, setRollup] = useState<{
     conf: ConfCount[];
     scans: ScanCount[] | null;
@@ -1041,10 +1044,33 @@ const Moderate = () => {
           a.source.localeCompare(b.source),
       );
 
+    // Unified per-source join for the Stats "BY SOURCE" table: scans ∪ confessions ∪
+    // share taps on the common source key. A failed scans/shares RPC yields null for
+    // that column ("—"), never a fake 0. direct is kept separate — always rendered
+    // last, labelled as the operator's own traffic.
+    const allSources = new Set([...scanMap.keys(), ...shareMap.keys(), ...byVenue.keys()]);
+    allSources.delete("direct");
+    const sourceRows = [...allSources]
+      .map((source) => ({
+        source,
+        scans: rollup.scans === null ? null : (scanMap.get(source) ?? 0),
+        conf: byVenue.get(source) ?? 0,
+        taps: rollup.shares === null ? null : (shareMap.get(source) ?? 0),
+      }))
+      .sort((a, b) => b.conf - a.conf || a.source.localeCompare(b.source));
+    const directRow = {
+      source: "direct",
+      scans: rollup.scans === null ? null : (scanMap.get("direct") ?? 0),
+      conf: byVenue.get("direct") ?? 0,
+      taps: rollup.shares === null ? null : (shareMap.get("direct") ?? 0),
+    };
+
     return {
       totalAll,
       totalCompleted,
       byStatus,
+      sourceRows,
+      directRow,
       directCount: byVenue.get("direct") ?? 0,
       venueRows: [...byVenue].filter(([s]) => s !== "direct").sort(byCountDesc),
       topicRows: [...byTopic].sort(byCountDesc),
@@ -1067,6 +1093,45 @@ const Moderate = () => {
       nightRows,
     };
   }, [rollup]);
+
+  // Bars for the Stats BY NIGHT strip — derived from dash.nightRows only (no fetch).
+  // For a bounded range (7/30) every night bucket in the window renders, using the
+  // same 4am shift as nightBucketFrom; for "all", every night between the earliest
+  // and latest data night (nightRows caps at the most recent 30, so the span does
+  // too). Empty nights always render with conf 0 — bars must represent real time.
+  const nightBars = useMemo(() => {
+    if (!dash) return null;
+    const totals = new Map<string, number>();
+    for (const r of dash.nightRows) totals.set(r.night, (totals.get(r.night) ?? 0) + r.confessions);
+    let nights: string[];
+    const span = RANGE_NIGHTS[range];
+    if (Number.isFinite(span)) {
+      nights = [];
+      const d = new Date();
+      d.setHours(d.getHours() - 4);
+      for (let i = span - 1; i >= 0; i--) {
+        const dd = new Date(d);
+        dd.setDate(d.getDate() - i);
+        nights.push(fmtYmd(dd));
+      }
+    } else {
+      // "All": fill EVERY night between the earliest and latest data night — sparse
+      // bars evenly spaced would misrepresent time (13 Jul next to 28 Jul).
+      const present = [...totals.keys()].sort();
+      nights = [];
+      if (present.length) {
+        const end = new Date(`${present[present.length - 1]}T00:00:00`);
+        for (
+          const d = new Date(`${present[0]}T00:00:00`);
+          d <= end;
+          d.setDate(d.getDate() + 1)
+        ) {
+          nights.push(fmtYmd(d));
+        }
+      }
+    }
+    return nights.map((night) => ({ night, conf: totals.get(night) ?? 0 }));
+  }, [dash, range]);
 
   // ── Actions ──
   const changeVenue = (v: string) => {
@@ -1734,170 +1799,191 @@ const Moderate = () => {
             ) : null}
           </section>
         ) : (
-          /* ── ROLLUP (all venues) — cross-venue dashboard. ── */
-          <section className="rounded-lg border border-border">
-            <button
-              type="button"
-              onClick={() => setRollupOpen((o) => !o)}
-              className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
-            >
-              <span>Rollup · {RANGE_LABELS[range]}</span>
-              <span className="text-xs text-muted-foreground">{rollupOpen ? "Hide" : "Show"}</span>
-            </button>
+          /* ── ROLLUP (all venues) — flat Stats-tab render; the filter chips above
+             the tabs already state the window. ── */
+          <div className="text-xs">
+            {rollupLoading ? (
+              <p className="text-sm text-muted-foreground">Loading stats…</p>
+            ) : rollupError ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Couldn't load stats.</p>
+                <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                  Retry
+                </Button>
+              </div>
+            ) : dash ? (
+              <>
+                {/* Summary strip: hairline dividers via gap-px on a border background. */}
+                <div className="mb-[18px] grid grid-cols-2 gap-px bg-border min-[480px]:grid-cols-4">
+                  {/* Funnel order: scanned → confessed → shared → published. */}
+                  {[
+                    { label: "Scans", value: dash.scansAvailable ? dash.totalScans : "—" },
+                    { label: "Confessions", value: dash.totalCompleted },
+                    { label: "Share taps", value: dash.sharesAvailable ? dash.totalShares : "—" },
+                    { label: "On the wall", value: dash.byStatus.approved },
+                  ].map((cell) => (
+                    <div key={cell.label} className="bg-background px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-[0.04em] text-muted-foreground">
+                        {cell.label}
+                      </p>
+                      <p className="text-[26px] text-foreground tabular-nums">{cell.value}</p>
+                    </div>
+                  ))}
+                </div>
 
-            {rollupOpen ? (
-              <div className="space-y-5 border-t border-border px-4 py-4 text-xs">
-                {rollupLoading ? (
-                  <p className="text-muted-foreground">Loading rollup…</p>
-                ) : rollupError ? (
-                  <div className="space-y-2">
-                    <p className="text-muted-foreground">Couldn't load the rollup.</p>
-                    <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
-                      Retry
-                    </Button>
-                  </div>
-                ) : dash ? (
-                  <>
-                    <p className="text-muted-foreground">
-                      Completed confessions across all venues, {RANGE_LABELS[range].toLowerCase()}.
+                <div className="space-y-[26px]">
+                  {/* WHAT THEY CONFESS — topic bars behind text, top 5 + toggle. */}
+                  <div>
+                    <p className="mb-2 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                      What they confess
                     </p>
+                    {dash.topicRows.length === 0 ? (
+                      <p className="text-muted-foreground">No confessions in range.</p>
+                    ) : (
+                      <>
+                        {(topicsOpen ? dash.topicRows : dash.topicRows.slice(0, 5)).map(([key, n]) => (
+                          <div key={key} className="relative border-b border-border px-[10px] py-[5px]">
+                            <div
+                              className="absolute inset-y-0 left-0 bg-muted"
+                              style={{ width: `${(n / (dash.topicRows[0]?.[1] || 1)) * 100}%` }}
+                            />
+                            <div className="relative flex justify-between">
+                              <span className={key === "untagged" ? "text-muted-foreground" : ""}>
+                                {topicLabel(key)}
+                              </span>
+                              <span className="tabular-nums">
+                                {n}{" "}
+                                <span className="text-muted-foreground">
+                                  {Math.round((n / (dash.totalCompleted || 1)) * 100)}%
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {dash.topicRows.length > 5 ? (
+                          <button
+                            type="button"
+                            onClick={() => setTopicsOpen((o) => !o)}
+                            className="mt-2 text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                          >
+                            {topicsOpen ? "Show top 5 only" : `+ ${dash.topicRows.length - 5} more`}
+                          </button>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
 
-                    {/* Totals */}
-                    <div>
-                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">Totals</p>
-                      <p>
-                        Completed: <span className="font-semibold">{dash.totalCompleted}</span>{" "}
-                        <span className="text-muted-foreground">of {dash.totalAll} total</span>
+                  {/* BY SOURCE — one table joining scans ∪ confessions ∪ taps per source. */}
+                  <div>
+                    <p className="mb-2 text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                      By source
+                    </p>
+                    <table className="w-full max-w-md">
+                      <thead>
+                        <tr className="text-[11px] uppercase tracking-[0.04em] text-muted-foreground">
+                          <th className="py-0.5 text-left font-normal">Source</th>
+                          <th className="hidden w-[70px] py-0.5 text-right font-normal min-[480px]:table-cell">
+                            Scans
+                          </th>
+                          <th className="w-[70px] py-0.5 text-right font-normal">Conf.</th>
+                          <th className="w-[70px] py-0.5 text-right font-normal">Taps</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          ...dash.sourceRows.filter((r) => r.conf > 0),
+                          ...(zeroOpen
+                            ? dash.sourceRows.filter((r) => r.conf === 0)
+                            : dash.sourceRows.filter((r) => r.conf === 0).slice(0, 2)),
+                        ].map((r) => (
+                          <tr key={r.source} className={r.conf === 0 ? "text-muted-foreground" : ""}>
+                            <td className="py-0.5">{r.source}</td>
+                            <td className="hidden py-0.5 text-right tabular-nums min-[480px]:table-cell">
+                              {r.scans ?? "—"}
+                            </td>
+                            <td className="py-0.5 text-right tabular-nums">{r.conf}</td>
+                            <td className="py-0.5 text-right tabular-nums">{r.taps ?? "—"}</td>
+                          </tr>
+                        ))}
+                        {dash.sourceRows.filter((r) => r.conf === 0).length > 2 ? (
+                          <tr>
+                            <td colSpan={4} className="py-0.5">
+                              <button
+                                type="button"
+                                onClick={() => setZeroOpen((o) => !o)}
+                                className="text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                              >
+                                {zeroOpen
+                                  ? "Collapse zero-confession sources"
+                                  : `+ ${dash.sourceRows.filter((r) => r.conf === 0).length - 2} more with no confessions`}
+                              </button>
+                            </td>
+                          </tr>
+                        ) : null}
+                        <tr className="text-muted-foreground">
+                          <td className="border-t-2 border-border py-0.5">direct (you)</td>
+                          <td className="hidden border-t-2 border-border py-0.5 text-right tabular-nums min-[480px]:table-cell">
+                            {dash.directRow.scans ?? "—"}
+                          </td>
+                          <td className="border-t-2 border-border py-0.5 text-right tabular-nums">
+                            {dash.directRow.conf}
+                          </td>
+                          <td className="border-t-2 border-border py-0.5 text-right tabular-nums">
+                            {dash.directRow.taps ?? "—"}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* BY NIGHT — bar strip; the nightly table (unchanged, Copy included)
+                      sits behind a toggle, default collapsed. */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+                        By night
+                        {nightBars && nightBars.length > 0
+                          ? ` · peak ${Math.max(...nightBars.map((b) => b.conf))}`
+                          : ""}
                       </p>
-                      <p className="text-muted-foreground">
-                        pending {dash.byStatus.pending} · approved {dash.byStatus.approved} · rejected{" "}
-                        {dash.byStatus.rejected}
-                      </p>
+                      {nightBars ? (
+                        <p className="text-muted-foreground">
+                          {nightBars.length} nights · {nightBars.filter((b) => b.conf > 0).length}{" "}
+                          active
+                        </p>
+                      ) : null}
                     </div>
-
-                    {/* By venue */}
-                    <div>
-                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">By venue</p>
-                      {dash.venueRows.length === 0 ? (
-                        <p className="text-muted-foreground">No venue traffic in range.</p>
-                      ) : (
-                        <table className="w-full max-w-xs">
-                          <tbody>
-                            {dash.venueRows.map(([slug, n]) => (
-                              <tr key={slug}>
-                                <td className="py-0.5">{slug}</td>
-                                <td className="py-0.5 text-right tabular-nums">{n}</td>
-                              </tr>
-                            ))}
-                            <tr className="text-muted-foreground">
-                              <td className="border-t border-border py-0.5">direct</td>
-                              <td className="border-t border-border py-0.5 text-right tabular-nums">
-                                {dash.directCount}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-
-                    {/* By topic */}
-                    <div>
-                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">By topic</p>
-                      {dash.topicRows.length === 0 ? (
-                        <p className="text-muted-foreground">No confessions in range.</p>
-                      ) : (
-                        <table className="w-full max-w-xs">
-                          <tbody>
-                            {dash.topicRows.map(([key, n]) => (
-                              <tr key={key} className={key === "untagged" ? "text-muted-foreground" : ""}>
-                                <td className="py-0.5">{topicLabel(key)}</td>
-                                <td className="py-0.5 text-right tabular-nums">{n}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-
-                    {/* Scans & completion */}
-                    <div>
-                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">Scans &amp; completion</p>
-                      {!dash.scansAvailable ? (
-                        <p className="text-muted-foreground">Scan counts unavailable.</p>
-                      ) : dash.completionRows.length === 0 ? (
-                        <p className="text-muted-foreground">No scans in range.</p>
-                      ) : (
-                        <>
-                          <p className="mb-1 text-muted-foreground">
-                            Total scans:{" "}
-                            <span className="font-semibold text-foreground">{dash.totalScans}</span> · completion =
-                            confessions ÷ scans.
-                          </p>
-                          <table className="w-full max-w-sm">
-                            <thead>
-                              <tr className="text-muted-foreground">
-                                <td className="py-0.5">source</td>
-                                <td className="py-0.5 text-right">scans</td>
-                                <td className="py-0.5 text-right">conf.</td>
-                                <td className="py-0.5 text-right">rate</td>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {dash.completionRows.map(({ source, scans, confessions, rate }) => (
-                                <tr key={source}>
-                                  <td className="py-0.5">{source}</td>
-                                  <td className="py-0.5 text-right tabular-nums">{scans}</td>
-                                  <td className="py-0.5 text-right tabular-nums">{confessions}</td>
-                                  <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Share rate */}
-                    <div>
-                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">Share rate</p>
-                      {!dash.sharesAvailable ? (
-                        <p className="text-muted-foreground">Share counts unavailable.</p>
-                      ) : (
-                        <>
-                          <p className="mb-1 text-muted-foreground">
-                            Overall:{" "}
-                            <span className="font-semibold text-foreground">{fmtPct(dash.overallShareRate)}</span> (
-                            {dash.totalShares} taps ÷ {dash.totalCompleted} confessions · counts every tap)
-                          </p>
-                          <table className="w-full max-w-sm">
-                            <thead>
-                              <tr className="text-muted-foreground">
-                                <td className="py-0.5">source</td>
-                                <td className="py-0.5 text-right">shares</td>
-                                <td className="py-0.5 text-right">conf.</td>
-                                <td className="py-0.5 text-right">rate</td>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {dash.shareRows.map(({ source, shares, completed, rate }) => (
-                                <tr key={source}>
-                                  <td className="py-0.5">{source}</td>
-                                  <td className="py-0.5 text-right tabular-nums">{shares}</td>
-                                  <td className="py-0.5 text-right tabular-nums">{completed}</td>
-                                  <td className="py-0.5 text-right tabular-nums">{fmtPct(rate)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </>
-                      )}
-                    </div>
-
-                    {/* By night */}
-                    <div>
-                      <p className="mb-1 uppercase tracking-wide text-muted-foreground">By night</p>
-                      {dash.nightRows.length === 0 ? (
-                        <p className="text-muted-foreground">No venue nights in range.</p>
+                    {nightBars && nightBars.length > 0 ? (
+                      /* Flex bars: widths solve themselves at any night count. Empty
+                         nights render as the 2px min-height floor tick at low contrast. */
+                      <div className="mt-2 flex h-[54px] items-end gap-[2px]">
+                        {nightBars.map((b) => (
+                          <div
+                            key={b.night}
+                            title={`${formatNightLabel(b.night)} · ${b.conf}`}
+                            className={cn(
+                              "min-h-[2px] flex-1",
+                              b.conf > 0 ? "bg-muted-foreground" : "bg-muted",
+                            )}
+                            style={{
+                              height: `${(b.conf / Math.max(1, ...nightBars.map((x) => x.conf))) * 100}%`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-muted-foreground">No venue nights in range.</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setNightTableOpen((o) => !o)}
+                      className="mt-2 text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                    >
+                      {nightTableOpen ? "Hide nightly table" : "Show nightly table"}
+                    </button>
+                    {nightTableOpen ? (
+                      dash.nightRows.length === 0 ? (
+                        <p className="mt-2 text-muted-foreground">No venue nights in range.</p>
                       ) : (
                         <table className="w-full max-w-md">
                           <thead>
@@ -1932,15 +2018,15 @@ const Moderate = () => {
                             })}
                           </tbody>
                         </table>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground">Loading rollup…</p>
-                )}
-              </div>
-            ) : null}
-          </section>
+                      )
+                    ) : null}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading stats…</p>
+            )}
+          </div>
         )
         ) : null}
 
