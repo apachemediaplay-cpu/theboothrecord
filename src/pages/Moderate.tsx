@@ -181,6 +181,20 @@ const formatNightLabel = (night: string | null) => {
   return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 };
 
+// Copy-report date line: real dates, locale-stable (same approach as formatNightLabel).
+// "1–30 July" within one month; month (and year, when they differ) spelled out otherwise.
+const MONTHS_FULL = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+const fmtReportDay = (d: Date, withYear: boolean) =>
+  `${d.getDate()} ${MONTHS_FULL[d.getMonth()]}${withYear ? ` ${d.getFullYear()}` : ""}`;
+const fmtReportRange = (a: Date, b: Date) => {
+  if (a.getFullYear() !== b.getFullYear()) return `${fmtReportDay(a, true)} – ${fmtReportDay(b, true)}`;
+  if (a.getMonth() !== b.getMonth()) return `${fmtReportDay(a, false)} – ${fmtReportDay(b, false)}`;
+  return `${a.getDate()}–${b.getDate()} ${MONTHS_FULL[a.getMonth()]}`;
+};
+
 // _from for a range: the night bucket N−1 days before tonight's bucket (so "7 nights" =
 // tonight + the 6 before it). All time → null. Same 4am shift as the server.
 const nightBucketFrom = (nightsBack: number): string | null => {
@@ -246,6 +260,7 @@ const VenueOverviewRow = ({
   onRegister,
   onActive,
   onSaveGreeting,
+  onCopyReport,
   onDelete,
 }: {
   row: VenueAdminRow;
@@ -257,8 +272,12 @@ const VenueOverviewRow = ({
   onRegister: (value: string) => void;
   onActive: (next: boolean) => void;
   onSaveGreeting: (headline: string, guidance: string) => void;
+  onCopyReport: () => Promise<void>;
   onDelete: () => void;
 }) => {
+  // Reentrancy guard for Copy report — the button is NEVER disabled (a venue with
+  // no data still copies an honest report); in-flight clicks are just ignored.
+  const [copying, setCopying] = useState(false);
   const [headline, setHeadline] = useState(row.headline ?? "");
   const [guidance, setGuidance] = useState(row.guidance ?? "");
   const dirty =
@@ -353,6 +372,17 @@ const VenueOverviewRow = ({
             </Button>
             <Button size="sm" variant="ghost" onClick={toggleQr}>
               {qrOpen ? "Hide QR" : "QR"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                if (copying) return;
+                setCopying(true);
+                onCopyReport().finally(() => setCopying(false));
+              }}
+            >
+              {copying ? "Copying…" : "Copy report"}
             </Button>
             {/* Delete — the console's ONE destructive action: recessive red text on the
                 far right, gated behind its confirm dialog. Mistakes/test venues only;
@@ -1397,6 +1427,91 @@ const Moderate = () => {
     toast({ title: "Venue deleted", description: `${displayName} (${source})` });
   };
 
+  // "Copy report" (Venues tab): ONE page-loop of admin_list_confessions with
+  // _status: null (all statuses) for the venue in the ACTIVE window. Filtering is
+  // all server-side (_source / _from / _to / _tz / _include_test: false); the client
+  // only splits by status, counts, and formats — never re-filters what the RPC
+  // filtered. 200/page (server cap), loop until a short page; 4000-row backstop.
+  const fetchVenueReportRows = async (source: string): Promise<Confession[] | null> => {
+    const out: Confession[] = [];
+    let offset = 0;
+    for (;;) {
+      const { data, error } = await safe(
+        rpc("admin_list_confessions", {
+          _status: null,
+          _source: source,
+          ...rangeArgs,
+          _include_test: false,
+          _limit: 200,
+          _offset: offset,
+        }),
+      );
+      if (error) return null;
+      const batch = (data as Confession[]) ?? [];
+      out.push(...batch);
+      offset += batch.length;
+      if (batch.length < 200 || offset >= 4000) break;
+    }
+    return out; // RPC order: created_at desc
+  };
+
+  // Date line for the report: the active window's real endpoints for 7/30 (the same
+  // _from the RPC was given, through tonight's bucket); for All time, the span of
+  // the returned rows. Zero rows on All time → "All time".
+  const reportDateLine = (rows: Confession[]): string => {
+    if (fromDate) {
+      const a = new Date(`${fromDate}T00:00:00`);
+      const b = new Date();
+      b.setHours(b.getHours() - 4);
+      return fmtReportRange(a, b);
+    }
+    if (!rows.length) return "All time";
+    const times = rows.map((r) => new Date(r.created_at).getTime());
+    return fmtReportRange(new Date(Math.min(...times)), new Date(Math.max(...times)));
+  };
+
+  // Build the venue's plain-text report and copy it. Starts mid-flow (pasted into a
+  // personal email — no title line). N counts pending + approved only: material we
+  // refused to publish is not "guests confessed". No taps, no rates, no percentages.
+  const copyVenueReport = async (source: string, displayName: string) => {
+    const rows = await fetchVenueReportRows(source);
+    if (!rows) {
+      toast({
+        title: "Couldn't build report",
+        description: "Loading confessions failed.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const n = rows.filter((r) => r.status === "pending" || r.status === "approved").length;
+    const approved = rows.filter((r) => r.status === "approved").slice(0, 3); // order kept: created_at desc
+    const HEADINGS = ["One", "Two", "Three"];
+    const block =
+      approved.length === 0
+        ? "No confessions cleared for sharing yet."
+        : [
+            `${HEADINGS[approved.length - 1]} from this month — post any of them you like:`,
+            ...approved.map((r) => `"${r.confession_text}"\ntheboothrecord.com/og/${r.id}.png`),
+          ].join("\n\n");
+    const text = [
+      "The Booth is a QR card on your tables. Guests confess something, get a verdict back, and can share it with your name on it.",
+      reportDateLine(rows),
+      `${n} guests confessed`,
+      block,
+    ].join("\n\n");
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      toast({
+        title: "Couldn't copy report",
+        description: "Clipboard blocked.",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: "Report copied", description: `${displayName} (${source})` });
+  };
+
   // Create a venue via admin_add_venue (server re-validates slug shape, duplicates,
   // register, and the is_admin() gate). Not optimistic — the row only enters the
   // overview once the server has returned it, so what's shown is what's stored.
@@ -1688,6 +1803,7 @@ const Moderate = () => {
                         onRegister={(v) => overviewSetRegister(row.source, v)}
                         onActive={(next) => overviewSetActive(row.source, next)}
                         onSaveGreeting={(h, g) => overviewSaveGreeting(row.source, h, g)}
+                        onCopyReport={() => copyVenueReport(row.source, row.display_name)}
                         onDelete={() => deleteVenue(row.source, row.display_name)}
                       />
                     ))}
