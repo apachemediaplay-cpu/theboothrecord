@@ -284,7 +284,7 @@ const VenueOverviewRow = ({
     }
   };
   return (
-    <li className={cn("py-2", !active && "opacity-50")}>
+    <li className={cn("py-4", !active && "opacity-50")}>
       {/* Collapsed row: chevron + name + slug + muted register·scans·completion, with
           the active toggle on the right. The whole row toggles expand EXCEPT the
           toggle — flipping active/inactive must never require expanding. */}
@@ -311,7 +311,7 @@ const VenueOverviewRow = ({
         </label>
       </div>
       {expanded ? (
-        <div className="mt-2 space-y-3 pl-7">
+        <div className="mt-3 space-y-5 pb-2 pl-7">
           <Field label="Register">
             <Select value={row.register ?? "default"} onValueChange={onRegister} disabled={busy}>
               <SelectTrigger className="h-8 w-44 text-xs">
@@ -422,7 +422,7 @@ const VenueOverviewRow = ({
 // Labelled field for AddVenueForm. Module-level so its identity is stable — defined
 // inside the form it would remount its Input child (and drop focus) on every keystroke.
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
-  <label className="space-y-1">
+  <label className="block space-y-1.5">
     <span className="block text-[11px] uppercase tracking-wide text-muted-foreground">
       {label}
     </span>
