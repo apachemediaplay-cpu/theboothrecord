@@ -5,7 +5,8 @@ import { Camera } from "lucide-react";
 import micButtonSvg from "@/assets/mic-button.svg";
 import enterArrowSvg from "@/assets/enter-arrow.svg";
 import { useToast } from "@/hooks/use-toast";
-import { captureSourceFromUrl, getPrompt } from "@/lib/source";
+import { captureSourceFromUrl, promptFromVenue, DEFAULT_PROMPT } from "@/lib/source";
+import { fetchVenueConfig, getPlaceholderLines } from "@/lib/registers";
 
 const Confess = () => {
   const navigate = useNavigate();
@@ -16,7 +17,11 @@ const Confess = () => {
   // prompt and the source persisted to the row correct across repeats — the same
   // stored source Receiving.tsx writes to every insert.
   const [source] = useState(() => captureSourceFromUrl());
-  const prompt = getPrompt(source);
+  // Greeting now comes from public.venues (headline/guidance), resolved by the same
+  // async venues lookup as the register below. Starts on the DEFAULT_PROMPT fail-safe
+  // and swaps in the venue greeting when the lookup lands — identical lifecycle to
+  // the placeholder set, and every failure path stays on the default.
+  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [confession, setConfession] = useState("");
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -25,7 +30,23 @@ const Confess = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const fullPlaceholder = "Begin your confession...";
+  // Placeholder set by venue register: starts on DTC, swaps in the venue's set when
+  // the venues lookup resolves. Content only — rotation/typing stay as-is. Any
+  // lookup failure resolves to null → getPlaceholderLines → DTC (never empty).
+  const [placeholderLines, setPlaceholderLines] = useState(() => getPlaceholderLines(null));
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchVenueConfig(source).then((cfg) => {
+      if (cancelled) return;
+      setPlaceholderLines(getPlaceholderLines(cfg.register));
+      setPrompt(promptFromVenue(cfg.headline, cfg.guidance));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -48,26 +69,38 @@ const Confess = () => {
     sessionStorage.removeItem("verdictSource");
   }, []);
 
-  // Typing animation for placeholder
+  // Typing animation for placeholder: type the current line, hold ~2s, then
+  // advance to the next line (looping), which re-runs this effect and retypes.
   useEffect(() => {
     if (confession || interimText) return;
-    
+
+    const line = placeholderLines[placeholderIndex];
     let index = 0;
+    let holdTimeout: number | undefined;
     setPlaceholderText("");
     setTypingComplete(false);
-    
+
     const typeInterval = setInterval(() => {
-      if (index < fullPlaceholder.length) {
-        setPlaceholderText(fullPlaceholder.slice(0, index + 1));
+      if (index < line.length) {
+        setPlaceholderText(line.slice(0, index + 1));
         index++;
       } else {
         clearInterval(typeInterval);
         setTypingComplete(true);
+        holdTimeout = window.setTimeout(() => {
+          setPlaceholderIndex((i) => (i + 1) % placeholderLines.length);
+        }, 2000);
       }
     }, 50);
 
-    return () => clearInterval(typeInterval);
-  }, [confession, interimText]);
+    return () => {
+      clearInterval(typeInterval);
+      window.clearTimeout(holdTimeout);
+    };
+    // placeholderLines is state now (register lookup can swap the set mid-type);
+    // including it restarts the current line from the NEW set on swap, so DTC and
+    // venue lines never interleave. Identity only changes when the lookup resolves.
+  }, [confession, interimText, placeholderIndex, placeholderLines]);
 
   useEffect(() => {
     // Check for browser support

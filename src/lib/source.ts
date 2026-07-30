@@ -68,28 +68,39 @@ export function isTestSession(): boolean {
   return sessionStorage.getItem("is_test") === "1";
 }
 
-// Venue config — the ONE source of truth for both the share-card display name AND the
-// on-screen /confess prompt, per slug. Slugs MUST match the QR and the DB `source` column.
+// Venue config — venues.json is the source of truth for the share-card DISPLAY NAME,
+// per slug. Slugs MUST match the QR and the DB `source` column.
 //
-// SINGLE SOURCE: the data lives in src/data/venues.json. This client imports it directly
-// (bundled at build → prompt resolution stays synchronous). The share-card OG function
-// (functions/index.mjs) reads the SAME file via a copy (functions/venues.json), because a
-// deployed Cloud Function can only read files inside its own bundle — the copy is made by
-// functions/prep.mjs and the deploy predeploy hook. Add a venue in venues.json ONLY.
+// SINGLE SOURCE (display name): the data lives in src/data/venues.json. This client
+// imports it directly. The share-card OG function (functions/index.mjs) reads the SAME
+// file via a copy (functions/venues.json), because a deployed Cloud Function can only
+// read files inside its own bundle — the copy is made by functions/prep.mjs and the
+// deploy predeploy hook. Add a venue in venues.json ONLY.
+//
+// The /confess GREETING (headline + guidance) no longer reads from venues.json — it
+// lives in public.venues (headline, guidance), fetched by the confess screen via
+// fetchVenueConfig() and mapped through promptFromVenue() below. The json's headline/
+// guidance fields are dormant, kept only until the share-card path is migrated too.
 export type Venue = { displayName: string; headline: string; guidance?: string };
 
 const VENUES = venuesData as Record<string, Venue>;
 
-// Confess-page prompt resolution. Unknown or absent source → headline only, no guidance.
-type Prompt = { headline: string; guidance?: string };
-const DEFAULT_PROMPT: Prompt = { headline: "Confess something." };
+// Confess-page prompt shape. DEFAULT_PROMPT is the universal fail-safe: no source,
+// unknown source, null greeting, or a failed venues lookup all render this.
+export type Prompt = { headline: string; guidance?: string };
+export const DEFAULT_PROMPT: Prompt = { headline: "Confess something." };
 
-export function getPrompt(source?: string | null): Prompt {
-  // Lowercase to match venueDisplayName()'s lookup casing — slugs are canonically
-  // lowercase, so a mixed-case source still resolves to the same venue.
-  const s = (source || "").trim().toLowerCase();
-  if (!s) return DEFAULT_PROMPT;
-  return VENUES[s] ?? DEFAULT_PROMPT;
+// The ONE mapping from a venues-table greeting to a renderable prompt. Missing/blank
+// headline → DEFAULT_PROMPT, and guidance is dropped WITH it — a venue's guidance
+// line must never render under the default headline.
+export function promptFromVenue(
+  headline?: string | null,
+  guidance?: string | null,
+): Prompt {
+  const h = (headline || "").trim();
+  if (!h) return DEFAULT_PROMPT;
+  const g = (guidance || "").trim();
+  return g ? { headline: h, guidance: g } : { headline: h };
 }
 
 // Resolve the display name from the SOURCE SLUG ONLY — venues.json is the single source

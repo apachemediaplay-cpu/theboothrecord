@@ -12,9 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
 import { venueDisplayName } from "@/lib/source";
+import { fetchVenueRegister } from "@/lib/registers";
 import { cn } from "@/lib/utils";
 
 // `topic`/`is_test` are forward-only columns not in the generated types; the frontend
@@ -64,6 +66,17 @@ type VenueReport = {
   top_topics: { topic: string; n: number }[] | null;
 };
 
+// public.venues row as read by the overview (not in the generated types — forward-only
+// table, same situation as the admin_* RPCs).
+type VenueAdminRow = {
+  source: string;
+  display_name: string;
+  register: string | null;
+  headline: string | null;
+  guidance: string | null;
+  active: boolean | null;
+};
+
 const PAGE_SIZE = 50;
 
 // Date-range control. _from is a NIGHT-BUCKET date (not a calendar date): a bucket is
@@ -101,6 +114,18 @@ const TOPIC_LABELS: Record<string, string> = {
   other: "Other",
 };
 const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key;
+
+// Venue register (venues.register): which /confess placeholder set the venue shows.
+// "default" is the UI stand-in for null (Radix Select can't hold an empty value);
+// it maps back to null on write → the DTC set.
+const REGISTER_OPTIONS = [
+  { value: "default", label: "Default (DTC)" },
+  { value: "social", label: "Social" },
+  { value: "intimate", label: "Intimate" },
+  { value: "edgy", label: "Edgy" },
+] as const;
+const registerLabel = (value: string) =>
+  REGISTER_OPTIONS.find((o) => o.value === value)?.label ?? value;
 
 // Venue selector options (the primary axis). Known venues only; slug shown to disambiguate
 // the several Frenchie slugs. "All venues" is prepended in the JSX.
@@ -169,6 +194,89 @@ const TopicBadge = ({ topic }: { topic: string | null }) => (
   </span>
 );
 
+// One venue row in the overview. Module-level (NOT inside Moderate) so its identity is
+// stable across parent re-renders — an inline definition would remount on every render
+// and drop input focus mid-keystroke. Headline/subline are local DRAFTS committed by
+// the Save button (dirty-gated); register/active write immediately. Saved values live
+// in the parent's venuesRows — a failed write reverts props while the drafts survive,
+// so the operator can retry without retyping.
+const VenueOverviewRow = ({
+  row,
+  scans,
+  completed,
+  busy,
+  onRegister,
+  onActive,
+  onSaveGreeting,
+}: {
+  row: VenueAdminRow;
+  scans: number | null; // null = scan counts unavailable
+  completed: number | null; // null = confession counts unavailable
+  busy: boolean;
+  onRegister: (value: string) => void;
+  onActive: (next: boolean) => void;
+  onSaveGreeting: (headline: string, guidance: string) => void;
+}) => {
+  const [headline, setHeadline] = useState(row.headline ?? "");
+  const [guidance, setGuidance] = useState(row.guidance ?? "");
+  const dirty =
+    headline.trim() !== (row.headline ?? "") || guidance.trim() !== (row.guidance ?? "");
+  // Fail-safe: a missing/null status is treated as active — dimming is opt-in only.
+  const active = row.active !== false;
+  const completion = scans !== null && scans > 0 && completed !== null ? completed / scans : null;
+  return (
+    <li className={cn("space-y-2 py-3", !active && "opacity-50")}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="text-sm font-semibold">{row.display_name}</span>
+        <SourceBadge source={row.source} />
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          scans {scans === null ? "—" : scans} · completion {fmtPct(completion)}
+        </span>
+        <label className="ml-auto flex items-center gap-2">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {active ? "Active" : "Inactive"}
+          </span>
+          <Switch checked={active} onCheckedChange={onActive} disabled={busy} />
+        </label>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={row.register ?? "default"} onValueChange={onRegister} disabled={busy}>
+          <SelectTrigger className="h-8 w-36 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {REGISTER_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          value={headline}
+          onChange={(e) => setHeadline(e.target.value)}
+          placeholder="Headline (blank → default prompt)"
+          className="h-8 min-w-40 flex-1 text-xs"
+        />
+        <Input
+          value={guidance}
+          onChange={(e) => setGuidance(e.target.value)}
+          placeholder="Subline (optional)"
+          className="h-8 min-w-40 flex-1 text-xs"
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!dirty || busy}
+          onClick={() => onSaveGreeting(headline, guidance)}
+        >
+          Save
+        </Button>
+      </div>
+    </li>
+  );
+};
+
 const Moderate = () => {
   const { toast } = useToast();
 
@@ -212,6 +320,24 @@ const Moderate = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState(false);
   const [reportCopied, setReportCopied] = useState(false);
+
+  // Register picker (venue !== "all"). null = default/DTC. Ready gates the Select so a
+  // slow read can't briefly show "Default (DTC)" for a venue that has a register set.
+  const [register, setRegister] = useState<string | null>(null);
+  const [registerReady, setRegisterReady] = useState(false);
+  const [registerSaving, setRegisterSaving] = useState(false);
+
+  // Venues overview: every venue as an editable row, independent of the venue axis.
+  const [overviewOpen, setOverviewOpen] = useState(true);
+  const [venuesRows, setVenuesRows] = useState<VenueAdminRow[] | null>(null);
+  const [venuesLoading, setVenuesLoading] = useState(false);
+  const [venuesError, setVenuesError] = useState(false);
+  // null map = that stat's RPC failed → the column renders "—", never 0.
+  const [venueStats, setVenueStats] = useState<{
+    scans: Map<string, number> | null;
+    completed: Map<string, number> | null;
+  } | null>(null);
+  const [venueBusy, setVenueBusy] = useState<string | null>(null);
 
   const tz = useMemo(() => {
     try {
@@ -338,6 +464,75 @@ const Moderate = () => {
       cancelled = true;
     };
   }, [session, venue, rangeArgs, refreshTick]);
+
+  // ── Venue register (only when a venue is selected) ──
+  // Read via the same public-read path the confess screen uses; a failed read resolves
+  // null → shows Default. Writes below go through the admin RPC.
+  useEffect(() => {
+    if (!session || venue === "all") return;
+    let cancelled = false;
+    setRegisterReady(false);
+    fetchVenueRegister(venue).then((r) => {
+      if (cancelled) return;
+      setRegister(r);
+      setRegisterReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, venue]);
+
+  // ── Venues overview: all venues + range-scoped scans/completion ──
+  // The venues read uses the table's public-read policy (same path as the confess
+  // screen); stats reuse the admin scan/confession RPCs. A failed stats fetch degrades
+  // that column to "—" — only a failed venues read fails the table itself.
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    setVenuesLoading(true);
+    setVenuesError(false);
+    const from = sb.from.bind(sb) as unknown as (table: string) => {
+      select(cols: string): PromiseLike<{ data: VenueAdminRow[] | null; error: unknown }>;
+    };
+    Promise.all([
+      Promise.resolve(
+        from("venues").select("source,display_name,register,headline,guidance,active"),
+      ).then(
+        (r) => r,
+        () => ({ data: null, error: { message: "request failed" } }),
+      ),
+      safe(rpc("admin_scan_counts", rangeArgs)),
+      safe(rpc("admin_confession_counts", rangeArgs)),
+    ]).then(([v, scans, conf]) => {
+      if (cancelled) return;
+      setVenuesLoading(false);
+      if (v.error || !v.data) {
+        setVenuesError(true);
+        setVenuesRows(null);
+        return;
+      }
+      setVenuesRows(
+        [...v.data].sort(
+          (a, b) => a.display_name.localeCompare(b.display_name) || a.source.localeCompare(b.source),
+        ),
+      );
+      const completed = new Map<string, number>();
+      if (!conf.error) {
+        for (const r of (conf.data as ConfCount[]) ?? []) {
+          completed.set(r.source, (completed.get(r.source) ?? 0) + num(r.completed));
+        }
+      }
+      setVenueStats({
+        scans: scans.error
+          ? null
+          : new Map(((scans.data as ScanCount[]) ?? []).map((r) => [r.source, num(r.scans)])),
+        completed: conf.error ? null : completed,
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, rangeArgs, refreshTick]);
 
   // Pivot admin_confession_counts (long form) into the rollup dashboard shape. This REPLACES
   // the old client-side row counting — the list is now paged, so totals must come from here.
@@ -544,6 +739,98 @@ const Moderate = () => {
     });
   };
 
+  // Optimistic register change; reverted on failure (same pattern as toggleFeatured).
+  const changeRegister = async (value: string) => {
+    const next = value === "default" ? null : value;
+    const prev = register;
+    if (next === prev) return;
+    setRegister(next);
+    setRegisterSaving(true);
+    const { error } = await rpc("admin_set_venue_register", { _source: venue, _register: next });
+    setRegisterSaving(false);
+    if (error) {
+      setRegister(prev);
+      toast({ title: "Couldn't update register", description: error.message, variant: "destructive" });
+      return;
+    }
+    patchVenueRow(venue, { register: next }); // keep the overview row in sync
+    toast({
+      title: "Register updated",
+      description: `${venueDisplayName("", venue) || venue} → ${registerLabel(value)}`,
+    });
+  };
+
+  // ── Venues overview writes: optimistic update + revert-on-failure + toast, the
+  // same pattern as changeRegister/toggleFeatured. One in-flight write per row. ──
+  const patchVenueRow = (source: string, patch: Partial<VenueAdminRow>) =>
+    setVenuesRows((prev) => prev?.map((r) => (r.source === source ? { ...r, ...patch } : r)) ?? prev);
+
+  const overviewSetRegister = async (source: string, value: string) => {
+    const next = value === "default" ? null : value;
+    const prev = venuesRows?.find((r) => r.source === source)?.register ?? null;
+    if (next === prev) return;
+    setVenueBusy(source);
+    patchVenueRow(source, { register: next });
+    const { error } = await rpc("admin_set_venue_register", { _source: source, _register: next });
+    setVenueBusy(null);
+    if (error) {
+      patchVenueRow(source, { register: prev });
+      toast({ title: "Couldn't update register", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (venue === source) setRegister(next); // keep the report-card dropdown in sync
+    toast({
+      title: "Register updated",
+      description: `${venueDisplayName("", source) || source} → ${registerLabel(value)}`,
+    });
+  };
+
+  const overviewSetActive = async (source: string, nextActive: boolean) => {
+    const prev = venuesRows?.find((r) => r.source === source)?.active !== false;
+    if (nextActive === prev) return;
+    setVenueBusy(source);
+    patchVenueRow(source, { active: nextActive });
+    const { error } = await rpc("admin_set_venue_active", { _source: source, _active: nextActive });
+    setVenueBusy(null);
+    if (error) {
+      patchVenueRow(source, { active: prev });
+      toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: nextActive ? "Venue active" : "Venue inactive",
+      description: venueDisplayName("", source) || source,
+    });
+  };
+
+  const overviewSaveGreeting = async (source: string, headline: string, guidance: string) => {
+    const row = venuesRows?.find((r) => r.source === source);
+    if (!row) return;
+    // Blank → null, matching the RPC's own nullif(trim(...)) — so the optimistic
+    // value equals what the server will store and the confess screen falls back to
+    // the default prompt.
+    const nextHeadline = headline.trim() || null;
+    const nextGuidance = guidance.trim() || null;
+    const prev = { headline: row.headline, guidance: row.guidance };
+    setVenueBusy(source);
+    patchVenueRow(source, { headline: nextHeadline, guidance: nextGuidance });
+    const { error } = await rpc("admin_set_venue_greeting", {
+      _source: source,
+      _headline: nextHeadline,
+      _guidance: nextGuidance,
+    });
+    setVenueBusy(null);
+    if (error) {
+      patchVenueRow(source, prev);
+      toast({ title: "Couldn't update greeting", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Greeting updated",
+      description: `${venueDisplayName("", source) || source} → ${nextHeadline ?? "default prompt"}`,
+    });
+  };
+
   const copyNight = async (row: { night: string; source: string; confessions: number; shares: number }) => {
     const key = `${row.night}|${row.source}`;
     const name = venueDisplayName("", row.source) || row.source;
@@ -684,6 +971,57 @@ const Moderate = () => {
           </Select>
         </div>
 
+        {/* ── VENUES OVERVIEW — every venue as a row: register, greeting, status. ── */}
+        <section className="rounded-lg border border-border">
+          <button
+            type="button"
+            onClick={() => setOverviewOpen((o) => !o)}
+            className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+          >
+            <span>Venues{venuesRows ? ` · ${venuesRows.length}` : ""}</span>
+            <span className="text-xs text-muted-foreground">{overviewOpen ? "Hide" : "Show"}</span>
+          </button>
+          {overviewOpen ? (
+            <div className="border-t border-border px-4 pb-2">
+              {venuesLoading ? (
+                <p className="py-3 text-sm text-muted-foreground">Loading venues…</p>
+              ) : venuesError ? (
+                <div className="space-y-2 py-3">
+                  <p className="text-sm text-muted-foreground">Couldn't load venues.</p>
+                  <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                    Retry
+                  </Button>
+                </div>
+              ) : venuesRows && venuesRows.length > 0 ? (
+                <>
+                  <p className="pt-2 text-xs text-muted-foreground">
+                    Scans &amp; completion: {RANGE_LABELS[range].toLowerCase()}. Blank headline →
+                    default prompt.
+                  </p>
+                  <ul className="divide-y divide-border">
+                    {venuesRows.map((row) => (
+                      <VenueOverviewRow
+                        key={row.source}
+                        row={row}
+                        scans={venueStats?.scans ? (venueStats.scans.get(row.source) ?? 0) : null}
+                        completed={
+                          venueStats?.completed ? (venueStats.completed.get(row.source) ?? 0) : null
+                        }
+                        busy={venueBusy === row.source}
+                        onRegister={(v) => overviewSetRegister(row.source, v)}
+                        onActive={(next) => overviewSetActive(row.source, next)}
+                        onSaveGreeting={(h, g) => overviewSaveGreeting(row.source, h, g)}
+                      />
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="py-3 text-sm text-muted-foreground">No venues.</p>
+              )}
+            </div>
+          ) : null}
+        </section>
+
         {/* ── VENUE REPORT (single venue) — built to be screenshotted for the owner. ── */}
         {venue !== "all" ? (
           <section className="rounded-lg border border-border p-4 space-y-4">
@@ -700,6 +1038,33 @@ const Moderate = () => {
               <Button size="sm" variant="ghost" onClick={copyReport} disabled={!report}>
                 {reportCopied ? "Copied" : "Copy summary"}
               </Button>
+            </div>
+
+            {/* Confess register: which placeholder set this venue's /confess rotates. */}
+            <div className="flex items-center gap-3">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Confess register
+              </p>
+              {registerReady ? (
+                <Select
+                  value={register ?? "default"}
+                  onValueChange={changeRegister}
+                  disabled={registerSaving}
+                >
+                  <SelectTrigger className="h-8 w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REGISTER_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-xs text-muted-foreground">Loading…</p>
+              )}
             </div>
 
             {reportLoading ? (
