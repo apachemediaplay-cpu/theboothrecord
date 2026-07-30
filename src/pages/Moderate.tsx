@@ -4,6 +4,17 @@ import type { Session } from "@supabase/supabase-js";
 import { supabaseModeration as sb } from "@/integrations/supabase/moderation-client";
 import type { Database } from "@/integrations/supabase/types";
 import venuesData from "@/data/venues.json";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -231,6 +242,7 @@ const VenueOverviewRow = ({
   onRegister,
   onActive,
   onSaveGreeting,
+  onDelete,
 }: {
   row: VenueAdminRow;
   scans: number | null; // null = scan counts unavailable
@@ -239,6 +251,7 @@ const VenueOverviewRow = ({
   onRegister: (value: string) => void;
   onActive: (next: boolean) => void;
   onSaveGreeting: (headline: string, guidance: string) => void;
+  onDelete: () => void;
 }) => {
   const [headline, setHeadline] = useState(row.headline ?? "");
   const [guidance, setGuidance] = useState(row.guidance ?? "");
@@ -315,6 +328,39 @@ const VenueOverviewRow = ({
         <Button size="sm" variant="ghost" onClick={toggleQr}>
           {qrOpen ? "Hide QR" : "QR"}
         </Button>
+        {/* Delete — the console's ONE destructive action: deliberately understated
+            (plain muted text, far right) and gated behind an explicit confirm dialog.
+            Mistakes/test venues only; real venues get the active toggle. */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              disabled={busy}
+              className="ml-auto text-[11px] text-muted-foreground underline underline-offset-2 hover:text-destructive transition-colors"
+            >
+              Delete
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {row.display_name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This can't be undone. Real venues should be deactivated, not deleted —
+                delete is only for mistakes and test venues. A venue with real
+                confessions will refuse to delete.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={onDelete}
+              >
+                Delete {row.source}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       {qrOpen ? (
         <div className="flex flex-wrap items-start gap-3 pt-1">
@@ -1042,6 +1088,21 @@ const Moderate = () => {
     });
   };
 
+  // Delete a venue via admin_delete_venue. NOT optimistic — the destructive action
+  // removes the row only after the server confirms. The RPC refuses venues with real
+  // (non-test) confessions; that error surfaces in the toast and the row stays.
+  const deleteVenue = async (source: string, displayName: string) => {
+    setVenueBusy(source);
+    const { error } = await rpc("admin_delete_venue", { _source: source });
+    setVenueBusy(null);
+    if (error) {
+      toast({ title: "Can't delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setVenuesRows((prev) => prev?.filter((r) => r.source !== source) ?? prev);
+    toast({ title: "Venue deleted", description: `${displayName} (${source})` });
+  };
+
   // Create a venue via admin_add_venue (server re-validates slug shape, duplicates,
   // register, and the is_admin() gate). Not optimistic — the row only enters the
   // overview once the server has returned it, so what's shown is what's stored.
@@ -1259,6 +1320,7 @@ const Moderate = () => {
                         onRegister={(v) => overviewSetRegister(row.source, v)}
                         onActive={(next) => overviewSetActive(row.source, next)}
                         onSaveGreeting={(h, g) => overviewSaveGreeting(row.source, h, g)}
+                        onDelete={() => deleteVenue(row.source, row.display_name)}
                       />
                     ))}
                   </ul>
