@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, type FormEvent, type ReactNode } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import QRCode from "qrcode";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseModeration as sb } from "@/integrations/supabase/moderation-client";
@@ -240,6 +241,8 @@ const VenueOverviewRow = ({
   scans,
   completed,
   busy,
+  expanded,
+  onToggleExpand,
   onRegister,
   onActive,
   onSaveGreeting,
@@ -249,6 +252,8 @@ const VenueOverviewRow = ({
   scans: number | null; // null = scan counts unavailable
   completed: number | null; // null = confession counts unavailable
   busy: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
   onRegister: (value: string) => void;
   onActive: (next: boolean) => void;
   onSaveGreeting: (headline: string, guidance: string) => void;
@@ -279,113 +284,135 @@ const VenueOverviewRow = ({
     }
   };
   return (
-    <li className={cn("space-y-2 py-3", !active && "opacity-50")}>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+    <li className={cn("py-2", !active && "opacity-50")}>
+      {/* Collapsed row: chevron + name + slug + muted register·scans·completion, with
+          the active toggle on the right. The whole row toggles expand EXCEPT the
+          toggle — flipping active/inactive must never require expanding. */}
+      <div
+        className="flex cursor-pointer select-none flex-wrap items-center gap-x-3 gap-y-1"
+        onClick={onToggleExpand}
+      >
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        )}
         <span className="text-sm font-semibold">{row.display_name}</span>
         <SourceBadge source={row.source} />
         <span className="text-[11px] text-muted-foreground tabular-nums">
-          scans {scans === null ? "—" : scans} · completion {fmtPct(completion)}
+          {registerLabel(row.register ?? "default")} · scans {scans === null ? "—" : scans} ·{" "}
+          completion {fmtPct(completion)}
         </span>
-        <label className="ml-auto flex items-center gap-2">
+        <label className="ml-auto flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
             {active ? "Active" : "Inactive"}
           </span>
           <Switch checked={active} onCheckedChange={onActive} disabled={busy} />
         </label>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={row.register ?? "default"} onValueChange={onRegister} disabled={busy}>
-          <SelectTrigger className="h-8 w-36 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {REGISTER_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Input
-          value={headline}
-          onChange={(e) => setHeadline(e.target.value)}
-          placeholder="Headline (blank → default prompt)"
-          className="h-8 min-w-40 flex-1 text-xs"
-        />
-        <Input
-          value={guidance}
-          onChange={(e) => setGuidance(e.target.value)}
-          placeholder="Subline (optional)"
-          className="h-8 min-w-40 flex-1 text-xs"
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={!dirty || busy}
-          onClick={() => onSaveGreeting(headline, guidance)}
-        >
-          Save
-        </Button>
-        <Button size="sm" variant="ghost" onClick={toggleQr}>
-          {qrOpen ? "Hide QR" : "QR"}
-        </Button>
-        {/* Delete — the console's ONE destructive action: deliberately understated
-            (plain muted text, far right) and gated behind an explicit confirm dialog.
-            Mistakes/test venues only; real venues get the active toggle. */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <button
-              type="button"
-              disabled={busy}
-              className="ml-auto text-[11px] text-muted-foreground underline underline-offset-2 hover:text-destructive transition-colors"
+      {expanded ? (
+        <div className="mt-2 space-y-3 pl-7">
+          <Field label="Register">
+            <Select value={row.register ?? "default"} onValueChange={onRegister} disabled={busy}>
+              <SelectTrigger className="h-8 w-44 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REGISTER_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          {/* Full-width greeting inputs — the whole line must be readable, never
+              truncated (the old inline flex-1 layout clipped long headlines). */}
+          <Field label="Headline (blank → default prompt)">
+            <Input
+              value={headline}
+              onChange={(e) => setHeadline(e.target.value)}
+              placeholder="Confess something."
+              className="h-8 w-full text-xs"
+            />
+          </Field>
+          <Field label="Subline (optional)">
+            <Input
+              value={guidance}
+              onChange={(e) => setGuidance(e.target.value)}
+              className="h-8 w-full text-xs"
+            />
+          </Field>
+          <div className="flex items-center gap-2 pt-1">
+            <Button
+              size="sm"
+              disabled={!dirty || busy}
+              onClick={() => onSaveGreeting(headline, guidance)}
             >
-              Delete
-            </button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete {row.display_name}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This can't be undone. Real venues should be deactivated, not deleted —
-                delete is only for mistakes and test venues. A venue with real
-                confessions will refuse to delete.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={onDelete}
-              >
-                Delete {row.source}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-      {qrOpen ? (
-        <div className="flex flex-wrap items-start gap-3 pt-1">
-          {qrError ? (
-            <p className="text-xs text-muted-foreground">Couldn't generate the QR.</p>
-          ) : qrDataUrl ? (
-            <>
-              <img
-                src={qrDataUrl}
-                alt={`Scan QR for ${row.display_name}`}
-                className="h-36 w-36 rounded"
-              />
-              <div className="space-y-2 text-[11px] text-muted-foreground">
-                <p className="max-w-64 break-all">{scanUrl}</p>
-                <Button size="sm" variant="outline" asChild>
-                  <a href={qrDataUrl} download={`booth-qr-${row.source}.png`}>
-                    Download PNG
-                  </a>
-                </Button>
-              </div>
-            </>
-          ) : (
-            <p className="text-xs text-muted-foreground">Generating…</p>
-          )}
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={toggleQr}>
+              {qrOpen ? "Hide QR" : "QR"}
+            </Button>
+            {/* Delete — the console's ONE destructive action: recessive red text on the
+                far right, gated behind its confirm dialog. Mistakes/test venues only;
+                real venues get the collapsed-row active toggle. */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="ml-auto text-[11px] text-destructive/80 underline underline-offset-2 hover:text-destructive transition-colors"
+                >
+                  Delete
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {row.display_name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This can't be undone. Real venues should be deactivated, not deleted —
+                    delete is only for mistakes and test venues. A venue with real
+                    confessions will refuse to delete.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={onDelete}
+                  >
+                    Delete {row.source}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+          {qrOpen ? (
+            <div className="flex flex-wrap items-start gap-3 pt-1">
+              {qrError ? (
+                <p className="text-xs text-muted-foreground">Couldn't generate the QR.</p>
+              ) : qrDataUrl ? (
+                <>
+                  <img
+                    src={qrDataUrl}
+                    alt={`Scan QR for ${row.display_name}`}
+                    className="h-36 w-36 rounded"
+                  />
+                  <div className="space-y-2 text-[11px] text-muted-foreground">
+                    <p className="max-w-64 break-all">{scanUrl}</p>
+                    <Button size="sm" variant="outline" asChild>
+                      <a href={qrDataUrl} download={`booth-qr-${row.source}.png`}>
+                        Download PNG
+                      </a>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">Generating…</p>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </li>
@@ -606,8 +633,24 @@ const Moderate = () => {
   } | null>(null);
   const [venueBusy, setVenueBusy] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  // Single expand: at most one venue row open; opening another closes the last.
+  const [expandedVenue, setExpandedVenue] = useState<string | null>(null);
   const takenSlugs = useMemo(
     () => new Set((venuesRows ?? []).map((r) => r.source)),
+    [venuesRows],
+  );
+  // Active venues first, inactive (dimmed) at the bottom; alphabetical within each
+  // group. Missing/null active counts as active (same fail-safe as the row).
+  const sortedVenueRows = useMemo(
+    () =>
+      venuesRows
+        ? [...venuesRows].sort(
+            (a, b) =>
+              (a.active === false ? 1 : 0) - (b.active === false ? 1 : 0) ||
+              a.display_name.localeCompare(b.display_name) ||
+              a.source.localeCompare(b.source),
+          )
+        : null,
     [venuesRows],
   );
 
@@ -1492,7 +1535,7 @@ const Moderate = () => {
                     default prompt.
                   </p>
                   <ul className="divide-y divide-border">
-                    {venuesRows.map((row) => (
+                    {(sortedVenueRows ?? []).map((row) => (
                       <VenueOverviewRow
                         key={row.source}
                         row={row}
@@ -1501,6 +1544,10 @@ const Moderate = () => {
                           venueStats?.completed ? (venueStats.completed.get(row.source) ?? 0) : null
                         }
                         busy={venueBusy === row.source}
+                        expanded={expandedVenue === row.source}
+                        onToggleExpand={() =>
+                          setExpandedVenue((cur) => (cur === row.source ? null : row.source))
+                        }
                         onRegister={(v) => overviewSetRegister(row.source, v)}
                         onActive={(next) => overviewSetActive(row.source, next)}
                         onSaveGreeting={(h, g) => overviewSaveGreeting(row.source, h, g)}
