@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
-import { Camera } from "lucide-react";
-import micButtonSvg from "@/assets/mic-button.svg";
-import enterArrowSvg from "@/assets/enter-arrow.svg";
+import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { captureSourceFromUrl, promptFromVenue, DEFAULT_PROMPT } from "@/lib/source";
 import { fetchVenueConfig, getPlaceholderLines } from "@/lib/registers";
@@ -232,20 +230,45 @@ const Confess = () => {
         ) : null}
         
         <div className="relative min-h-[120px]">
-          <textarea
-            ref={textareaRef}
-            maxLength={140}
-            value={confession + (interimText ? (confession ? ' ' : '') + interimText : '')}
-            onChange={(e) => {
-              if (!isRecording) {
-                setConfession(e.target.value);
-              }
-            }}
-            placeholder=""
-            className="w-full bg-transparent text-ritual text-xl font-mono-light tracking-wide resize-none outline-none border-0 border-b border-border/40 pb-2 overflow-hidden"
-            rows={2}
-            readOnly={isRecording}
-          />
+          {/* Inner wrapper hugs the textarea's auto-grown height, so the absolutely-
+              positioned mic/arrow rides the input rule as the confession wraps. */}
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              maxLength={140}
+              value={confession + (interimText ? (confession ? ' ' : '') + interimText : '')}
+              onChange={(e) => {
+                if (!isRecording) {
+                  setConfession(e.target.value);
+                }
+              }}
+              placeholder=""
+              className="block w-full bg-transparent text-ritual text-xl font-mono-light tracking-wide resize-none outline-none border-0 border-b border-border/75 pb-2 pr-12 overflow-hidden"
+              rows={2}
+              readOnly={isRecording}
+            />
+            {/* One slot on the rule's right end: mic while empty, arrow once there's
+                text. Bare glyphs, no container — the 44×44 hit area is invisible. */}
+            {confession.trim() ? (
+              <button
+                onClick={handleSubmit}
+                aria-label="Submit"
+                className="absolute right-0 bottom-0 flex h-11 w-11 items-center justify-center text-foreground opacity-90 hover:opacity-100 transition-colors"
+              >
+                <ArrowRight size={20} strokeWidth={1.75} />
+              </button>
+            ) : (
+              <button
+                onClick={toggleRecording}
+                aria-label="Microphone"
+                className={`absolute right-0 bottom-0 flex h-11 w-11 items-center justify-center text-foreground transition-colors ${
+                  isRecording ? 'animate-pulse opacity-80' : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <Mic size={20} strokeWidth={1.75} />
+              </button>
+            )}
+          </div>
           {!confession && !interimText && (
             <div 
               className={`absolute top-0 left-0 pointer-events-none text-xl font-mono-light tracking-wide ${typingComplete ? 'animate-[pulse_3s_ease-in-out_infinite]' : ''}`}
@@ -265,31 +288,6 @@ const Confess = () => {
           {" "}&amp;{" "}
           <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy</Link>.
         </p>
-        <div className="flex items-center justify-between">
-          <button className="p-3 text-muted-foreground hover:text-foreground transition-colors">
-            {/* <Camera className="w-6 h-6" /> */}
-          </button>
-          
-          {confession.trim() ? (
-            <button 
-              onClick={handleSubmit}
-              className="transition-colors opacity-90 hover:opacity-100"
-            >
-              <img src={enterArrowSvg} alt="Submit" className="w-[34px] h-[34px]" />
-            </button>
-          ) : (
-            <button 
-              onClick={toggleRecording}
-              className={`transition-colors ${
-                isRecording 
-                  ? 'animate-pulse opacity-80' 
-                  : 'opacity-70 hover:opacity-100'
-              }`}
-            >
-              <img src={micButtonSvg} alt="Microphone" className="w-[34px] h-[34px]" />
-            </button>
-          )}
-        </div>
       </div>
       
       <BoothFooter />
