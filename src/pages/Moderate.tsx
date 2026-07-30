@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -555,6 +556,20 @@ const Moderate = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
+  // Queue redesign state. qTopic filters CLIENT-SIDE on top of the server filters
+  // (the list RPC has no topic param and RPCs are off-limits here); selection spans
+  // pages ("select all matching" fetches every matching page); focusIdx drives the
+  // keyboard A/R/F target; confirmBulk holds the pending bulk action awaiting its
+  // confirmation dialog.
+  const [qTopic, setQTopic] = useState<string>("all");
+  const [selected, setSelected] = useState<Map<string, Confession>>(new Map());
+  const [allMatching, setAllMatching] = useState<Confession[] | null>(null);
+  const [matchingLoading, setMatchingLoading] = useState(false);
+  const [matchingCapped, setMatchingCapped] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(0);
+  const [confirmBulk, setConfirmBulk] = useState<{ status: Status; label: string } | null>(null);
+
   // Cross-venue rollup (venue === "all").
   const [rollupOpen, setRollupOpen] = useState(true);
   const [rollup, setRollup] = useState<{
@@ -791,6 +806,83 @@ const Moderate = () => {
     };
   }, [session, rangeArgs, refreshTick]);
 
+  // ── Queue: derived rows, selection lifecycle, full-filter fetch ──
+  // Topic filter is client-side (the list RPC has no topic param): the visible list is
+  // the current page minus non-matching topics. "untagged" matches topic null.
+  const visibleRows = useMemo(
+    () => (qTopic === "all" ? rows : rows.filter((r) => (r.topic ?? "untagged") === qTopic)),
+    [rows, qTopic],
+  );
+
+  // Any filter/tab/search change invalidates the selection and the fetched
+  // matching set — a selection must never silently survive a filter change.
+  // (Page changes deliberately do NOT clear: "select all matching" spans pages.)
+  useEffect(() => {
+    setSelected(new Map());
+    setAllMatching(null);
+    setMatchingCapped(false);
+  }, [tab, venue, qDebounced, rangeArgs, qTopic]);
+
+  // Keep keyboard focus in range as rows appear/disappear, reset on page flips.
+  useEffect(() => {
+    setFocusIdx((i) => Math.max(0, Math.min(i, visibleRows.length - 1)));
+  }, [visibleRows.length]);
+  useEffect(() => {
+    setFocusIdx(0);
+  }, [page, tab]);
+
+  // Fetch EVERY row matching the current server filters (same list RPC, page loop),
+  // then apply the client topic filter. Powers the real M in "Select all M matching"
+  // and the cross-page selection itself. Hard cap 2000 rows — surfaced via
+  // matchingCapped, never silent.
+  const MATCHING_CAP = 2000;
+  const fetchAllMatching = async (): Promise<Confession[] | null> => {
+    setMatchingLoading(true);
+    const filters = {
+      _status: tab,
+      _source: venue === "all" ? null : venue,
+      _q: qDebounced.trim() || null,
+      ...rangeArgs,
+    };
+    const out: Confession[] = [];
+    let offset = 0;
+    let capped = false;
+    for (;;) {
+      const { data, error } = await safe(
+        rpc("admin_list_confessions", { ...filters, _limit: PAGE_SIZE, _offset: offset }),
+      );
+      if (error) {
+        setMatchingLoading(false);
+        return null;
+      }
+      const batch = (data as Confession[]) ?? [];
+      out.push(...batch);
+      offset += batch.length;
+      if (batch.length < PAGE_SIZE) break;
+      if (out.length >= MATCHING_CAP) {
+        capped = true;
+        break;
+      }
+    }
+    const filtered = qTopic === "all" ? out : out.filter((r) => (r.topic ?? "untagged") === qTopic);
+    setAllMatching(filtered);
+    setMatchingCapped(capped);
+    setMatchingLoading(false);
+    return filtered;
+  };
+
+  // With a topic filter active the server count can't provide M, so resolve the real
+  // count in the background as soon as the filter lands (and after any refetch).
+  useEffect(() => {
+    if (!session || qTopic === "all") return;
+    fetchAllMatching();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, qTopic, tab, venue, qDebounced, rangeArgs, refreshTick]);
+
+  // The real total matching the current filter: exact server count when no topic
+  // filter; the fetched set's length otherwise (null until it resolves).
+  const matchingTotal = qTopic === "all" ? totalCount : (allMatching?.length ?? null);
+
   // Pivot admin_confession_counts (long form) into the rollup dashboard shape. This REPLACES
   // the old client-side row counting — the list is now paged, so totals must come from here.
   const dash = useMemo(() => {
@@ -937,44 +1029,97 @@ const Moderate = () => {
     setLinkSent(false);
   };
 
-  // Undo → set the status back, then refetch (pagination makes local re-insertion unreliable).
-  const undoStatus = async (row: Confession, originalStatus: Status) => {
-    const { error } = await rpc("admin_set_status", { _id: row.id, _status: originalStatus });
-    if (error) {
-      toast({ title: "Undo failed", description: error.message, variant: "destructive" });
-      return;
+  // ── Queue decisions: ONE path for single buttons, keyboard, and bulk. ──
+  // Same admin_set_status RPC the single buttons always used — no parallel path.
+  // Optimistic: rows leave the page (and the selection) immediately; failures
+  // refetch and surface a count. Every decision gets a ~4s Undo toast — that is
+  // what makes keyboard auto-advance and bulk safe.
+  const setStatusChunked = async (targets: Confession[], status: Status) => {
+    const results: { t: Confession; error: { message: string } | null }[] = [];
+    for (let i = 0; i < targets.length; i += 10) {
+      const chunk = targets.slice(i, i + 10);
+      results.push(
+        ...(await Promise.all(
+          chunk.map((t) =>
+            safe(rpc("admin_set_status", { _id: t.id, _status: status })).then((r) => ({
+              t,
+              error: r.error,
+            })),
+          ),
+        )),
+      );
     }
-    setRefreshTick((t) => t + 1);
-    toast({ title: "Restored", description: `#${row.subject_number}` });
+    return results;
   };
 
-  // Optimistically drop the row from the current page; on failure refetch to re-sync.
-  const applyStatus = async (
-    row: Confession,
-    newStatus: Status,
-    opts: { title: string; duration: number },
-  ) => {
-    const original = row.status as Status;
-    setBusyId(row.id);
-    setRows((prev) => prev.filter((r) => r.id !== row.id));
-    setTotalCount((c) => Math.max(0, c - 1));
-    const { error } = await rpc("admin_set_status", { _id: row.id, _status: newStatus });
-    setBusyId(null);
-    if (error) {
-      setRefreshTick((t) => t + 1);
-      toast({ title: "Update failed", description: error.message, variant: "destructive" });
+  // Toast title per transition — matches the old per-tab button copy.
+  const decisionLabel = (newStatus: Status) =>
+    newStatus === "approved" ? "Approved" : newStatus === "pending" ? "Restored to pending" : tab === "approved" ? "Un-approved" : "Rejected";
+
+  const undoMany = async (targets: Confession[], originalStatus: Status) => {
+    const results = await setStatusChunked(targets, originalStatus);
+    const failed = results.filter((r) => r.error).length;
+    setRefreshTick((t) => t + 1);
+    if (failed) {
+      toast({
+        title: `Undo failed for ${failed} of ${targets.length}`,
+        description: results.find((r) => r.error)?.error?.message,
+        variant: "destructive",
+      });
       return;
     }
+    toast({ title: `Restored ${targets.length === 1 ? `#${targets[0].subject_number}` : targets.length}` });
+  };
+
+  const decide = async (targets: Confession[], newStatus: Status) => {
+    if (!targets.length || bulkBusy) return;
+    const original = targets[0].status as Status;
+    const ids = new Set(targets.map((t) => t.id));
+    setBulkBusy(true);
+    setRows((prev) => prev.filter((r) => !ids.has(r.id)));
+    setTotalCount((c) => Math.max(0, c - targets.length));
+    setSelected((prev) => {
+      if (!prev.size) return prev;
+      const next = new Map(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    setAllMatching((prev) => (prev ? prev.filter((r) => !ids.has(r.id)) : prev));
+    const results = await setStatusChunked(targets, newStatus);
+    setBulkBusy(false);
+    const failed = results.filter((r) => r.error);
+    const succeeded = results.filter((r) => !r.error).map((r) => r.t);
+    if (failed.length) {
+      setRefreshTick((t) => t + 1);
+      toast({
+        title: `${failed.length} of ${targets.length} failed`,
+        description: failed[0].error?.message,
+        variant: "destructive",
+      });
+      if (!succeeded.length) return;
+    }
     toast({
-      title: opts.title,
-      description: `#${row.subject_number}`,
-      duration: opts.duration,
+      title: `${decisionLabel(newStatus)} · ${
+        succeeded.length === 1 ? `#${succeeded[0].subject_number}` : succeeded.length
+      }`,
+      duration: 4000,
       action: (
-        <ToastAction altText={`Undo, restore #${row.subject_number}`} onClick={() => undoStatus(row, original)}>
+        <ToastAction altText="Undo" onClick={() => undoMany(succeeded, original)}>
           Undo
         </ToastAction>
       ),
     });
+  };
+
+  // Select every row matching the current filter, across ALL pages — the deliberate
+  // second step after page-level selection. Reuses the fetched set when available.
+  const selectAllMatching = async () => {
+    const all = allMatching ?? (await fetchAllMatching());
+    if (!all) {
+      toast({ title: "Couldn't load matching rows", variant: "destructive" });
+      return;
+    }
+    setSelected(new Map(all.map((r) => [r.id, r])));
   };
 
   // Feature/unfeature on the homepage. Keeps the row in place (unlike status changes);
@@ -1139,6 +1284,45 @@ const Moderate = () => {
     toast({ title: "Venue added", description: `${row.display_name} (${row.source})` });
     return true;
   };
+
+  // Keyboard on the focused card: A approve (pending tab), R reject/un-approve,
+  // F feature, ↑/↓ (or j/k) move focus. Decisions auto-advance because the acted
+  // row leaves the list and the next one inherits its index. Ignored while typing
+  // in a field, while a dialog is open (confirmBulk), or mid-bulk.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "SELECT" ||
+          el.isContentEditable ||
+          el.closest('[role="dialog"]'))
+      )
+        return;
+      if (confirmBulk || !visibleRows.length) return;
+      const k = e.key.toLowerCase();
+      if (k === "arrowdown" || k === "j") {
+        e.preventDefault();
+        setFocusIdx((i) => Math.min(i + 1, visibleRows.length - 1));
+        return;
+      }
+      if (k === "arrowup" || k === "k") {
+        e.preventDefault();
+        setFocusIdx((i) => Math.max(i - 1, 0));
+        return;
+      }
+      const row = visibleRows[Math.min(focusIdx, visibleRows.length - 1)];
+      if (!row || bulkBusy) return;
+      if (k === "a" && tab === "pending") decide([row], "approved");
+      else if (k === "r" && tab !== "rejected") decide([row], "rejected");
+      else if (k === "f") toggleFeatured(row);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   const copyNight = async (row: { night: string; source: string; confessions: number; shares: number }) => {
     const key = `${row.night}|${row.source}`;
@@ -1638,7 +1822,10 @@ const Moderate = () => {
           </section>
         )}
 
-        {/* ── CONFESSION LIST (server-side, paginated). Scanned for good ones, not cleared. ── */}
+        {/* ── CONFESSION LIST (server-side, paginated). Scanned for good ones, not cleared.
+            Queue interactions: page checkbox → bulk bar → optional "select all M matching"
+            (explicit, real count, spans pages). Keyboard: A/R/F on the focused card,
+            ↑/↓ move focus, decisions auto-advance. Every decision has a ~4s Undo. ── */}
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex gap-1">
@@ -1659,12 +1846,157 @@ const Moderate = () => {
             </p>
           </div>
 
-          <Input
-            type="search"
-            placeholder="Search confession or verdict text…"
-            value={qInput}
-            onChange={(e) => setQInput(e.target.value)}
-          />
+          {/* Filter row. Venue is the SAME page-wide axis as above (one source of truth —
+              it already drives the list's server filter); topic filters client-side. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Checkbox
+              aria-label="Select visible page"
+              checked={
+                visibleRows.length > 0 && visibleRows.every((r) => selected.has(r.id))
+                  ? true
+                  : visibleRows.some((r) => selected.has(r.id))
+                    ? "indeterminate"
+                    : false
+              }
+              onCheckedChange={() => {
+                const allOn = visibleRows.length > 0 && visibleRows.every((r) => selected.has(r.id));
+                setSelected((prev) => {
+                  const next = new Map(prev);
+                  if (allOn) visibleRows.forEach((r) => next.delete(r.id));
+                  else visibleRows.forEach((r) => next.set(r.id, r));
+                  return next;
+                });
+              }}
+            />
+            <Select value={venue} onValueChange={changeVenue}>
+              <SelectTrigger className="h-8 w-40 text-xs">
+                <SelectValue placeholder="All venues" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All venues</SelectItem>
+                {VENUE_OPTIONS.map((v) => (
+                  <SelectItem key={v.slug} value={v.slug}>
+                    {v.name} ({v.slug})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={qTopic} onValueChange={setQTopic}>
+              <SelectTrigger className="h-8 w-40 text-xs">
+                <SelectValue placeholder="All topics" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All topics</SelectItem>
+                {Object.entries(TOPIC_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="untagged">Untagged</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="search"
+              placeholder="Search text…"
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
+              className="h-8 min-w-40 flex-1 text-xs"
+            />
+          </div>
+
+          {/* Bulk bar — appears with the first selection. "Select all M matching" is the
+              deliberate second step that extends selection across ALL pages, with the
+              real count; never silent. */}
+          {selected.size > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2">
+              <span className="text-xs font-medium">{selected.size} selected</span>
+              {tab === "pending" ? (
+                <Button
+                  size="sm"
+                  className="bg-ritual text-background hover:bg-ritual/90"
+                  disabled={bulkBusy}
+                  onClick={() => setConfirmBulk({ status: "approved", label: `Approve ${selected.size}` })}
+                >
+                  Approve {selected.size}
+                </Button>
+              ) : null}
+              {tab !== "rejected" ? (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={bulkBusy}
+                  onClick={() =>
+                    setConfirmBulk({
+                      status: "rejected",
+                      label: `${tab === "approved" ? "Un-approve" : "Reject"} ${selected.size}`,
+                    })
+                  }
+                >
+                  {tab === "approved" ? "Un-approve" : "Reject"} {selected.size}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={bulkBusy}
+                  onClick={() => setConfirmBulk({ status: "pending", label: `Restore ${selected.size}` })}
+                >
+                  Restore {selected.size}
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected(new Map())}>
+                Clear
+              </Button>
+              {matchingTotal !== null && matchingTotal > selected.size ? (
+                <button
+                  type="button"
+                  disabled={matchingLoading}
+                  onClick={selectAllMatching}
+                  className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                >
+                  {matchingLoading ? "Counting…" : `Select all ${matchingTotal} matching this filter`}
+                </button>
+              ) : null}
+              {matchingCapped ? (
+                <span className="text-[11px] text-muted-foreground">(first {MATCHING_CAP} only)</span>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Bulk confirmation — required before any bulk decision fires. */}
+          <AlertDialog open={!!confirmBulk} onOpenChange={(o) => { if (!o) setConfirmBulk(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{confirmBulk?.label} confessions?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {confirmBulk?.status === "approved"
+                    ? "They'll appear on the public wall."
+                    : confirmBulk?.status === "pending"
+                      ? "They'll return to the pending queue."
+                      : "They'll come off the wall and the queue."}{" "}
+                  You can undo for a few seconds after.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className={cn(
+                    confirmBulk?.status === "approved" && "bg-ritual text-background hover:bg-ritual/90",
+                    confirmBulk?.status === "rejected" &&
+                      "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                  )}
+                  onClick={() => {
+                    const targets = [...selected.values()];
+                    const status = confirmBulk?.status;
+                    setConfirmBulk(null);
+                    if (status) decide(targets, status);
+                  }}
+                >
+                  {confirmBulk?.label}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Pager */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -1700,88 +2032,100 @@ const Moderate = () => {
                 Retry
               </Button>
             </div>
-          ) : rows.length === 0 ? (
+          ) : visibleRows.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {qDebounced.trim() ? "No matches." : `Nothing ${tab}.`}
+              {rows.length > 0
+                ? "No matches for this topic on this page."
+                : qDebounced.trim()
+                  ? "No matches."
+                  : `Nothing ${tab}.`}
             </p>
           ) : (
-            <ul className="space-y-4">
-              {rows.map((row) => {
+            <ul className="space-y-2">
+              {visibleRows.map((row, idx) => {
                 const flagged = isFlagged(row);
                 return (
                   <li
                     key={row.id}
+                    onClick={() => setFocusIdx(idx)}
                     className={cn(
-                      "rounded-lg border border-border p-4 space-y-3",
+                      "flex gap-3 rounded-lg border border-border p-3",
                       flagged && "border-l-4 border-l-amber-500",
+                      idx === focusIdx && "border-ritual/60",
                     )}
                   >
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <span>#{row.subject_number}</span>
-                      <SourceBadge source={row.source} />
-                      <TopicBadge topic={row.topic} />
-                      <span>{new Date(row.created_at).toLocaleString()}</span>
-                      {flagged ? (
-                        <span className="rounded bg-amber-500/15 text-amber-500 px-1.5 py-0.5 text-[11px] font-medium">
-                          review
-                        </span>
+                    <Checkbox
+                      className="mt-1"
+                      aria-label={`Select #${row.subject_number}`}
+                      checked={selected.has(row.id)}
+                      onCheckedChange={(c) =>
+                        setSelected((prev) => {
+                          const next = new Map(prev);
+                          if (c === true) next.set(row.id, row);
+                          else next.delete(row.id);
+                          return next;
+                        })
+                      }
+                    />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                        <span>#{row.subject_number}</span>
+                        <SourceBadge source={row.source} />
+                        <TopicBadge topic={row.topic} />
+                        {flagged ? (
+                          <span className="rounded bg-amber-500/15 text-amber-500 px-1.5 py-0.5 text-[11px] font-medium">
+                            review
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm">{row.confession_text}</p>
+                      {row.verdict_text ? (
+                        <p className="whitespace-pre-wrap text-xs text-muted-foreground border-l-2 border-border pl-3">
+                          {row.verdict_text}
+                        </p>
                       ) : null}
                     </div>
-                    <p className="whitespace-pre-wrap text-sm">{row.confession_text}</p>
-                    {row.verdict_text ? (
-                      <p className="whitespace-pre-wrap text-sm text-muted-foreground border-l-2 border-border pl-3">
-                        {row.verdict_text}
-                      </p>
-                    ) : null}
-
-                    <div className="flex gap-2">
+                    <div className="flex shrink-0 flex-col items-stretch gap-1.5">
                       {tab === "pending" ? (
                         <>
                           <Button
                             size="sm"
                             className="bg-ritual text-background hover:bg-ritual/90"
-                            disabled={busyId === row.id}
-                            onClick={() => applyStatus(row, "approved", { title: "Approved", duration: 9000 })}
+                            disabled={bulkBusy}
+                            onClick={() => decide([row], "approved")}
                           >
                             Approve
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
-                            disabled={busyId === row.id}
-                            onClick={() => applyStatus(row, "rejected", { title: "Rejected", duration: 5000 })}
+                            disabled={bulkBusy}
+                            onClick={() => decide([row], "rejected")}
                           >
                             Reject
                           </Button>
                         </>
                       ) : null}
-
                       {tab === "approved" ? (
                         <Button
                           size="sm"
                           variant="destructive"
-                          disabled={busyId === row.id}
-                          onClick={() =>
-                            applyStatus(row, "rejected", { title: "Un-approved — off the wall", duration: 5000 })
-                          }
+                          disabled={bulkBusy}
+                          onClick={() => decide([row], "rejected")}
                         >
                           Un-approve
                         </Button>
                       ) : null}
-
                       {tab === "rejected" ? (
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={busyId === row.id}
-                          onClick={() =>
-                            applyStatus(row, "pending", { title: "Restored to pending", duration: 5000 })
-                          }
+                          disabled={bulkBusy}
+                          onClick={() => decide([row], "pending")}
                         >
-                          Restore to pending
+                          Restore
                         </Button>
                       ) : null}
-
                       <Button
                         size="sm"
                         variant="ghost"
@@ -1794,7 +2138,7 @@ const Moderate = () => {
                         }
                         onClick={() => toggleFeatured(row)}
                         className={cn(
-                          "ml-auto",
+                          "text-[11px]",
                           row.homepage_featured ? "text-ritual" : "text-muted-foreground",
                         )}
                       >
