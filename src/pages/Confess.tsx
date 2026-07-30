@@ -52,6 +52,15 @@ const Confess = () => {
     textareaRef.current?.focus();
   }, []);
 
+  // Auto-grow the textarea to its content so the hairline under the field sits
+  // directly below the last line of text and moves down as the confession wraps.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [confession, interimText]);
+
   // The previous confession's leftovers must be cleared before a new one starts,
   // or /verdict can briefly render the OLD verdict while the new one is in flight.
   // This used to live in Verdict.tsx's handleConfessAgain, which is being removed —
@@ -211,7 +220,7 @@ const Confess = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-center">
+      <div className="flex-1 flex flex-col justify-start pt-16">
         <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
           {prompt.headline}
         </h2>
@@ -225,7 +234,7 @@ const Confess = () => {
         <div className="relative min-h-[120px]">
           <textarea
             ref={textareaRef}
-            maxLength={300}
+            maxLength={140}
             value={confession + (interimText ? (confession ? ' ' : '') + interimText : '')}
             onChange={(e) => {
               if (!isRecording) {
@@ -233,8 +242,8 @@ const Confess = () => {
               }
             }}
             placeholder=""
-            className="w-full bg-transparent text-ritual text-xl font-mono-light tracking-wide resize-none outline-none border-none min-h-[120px]"
-            rows={4}
+            className="w-full bg-transparent text-ritual text-xl font-mono-light tracking-wide resize-none outline-none border-0 border-b border-border/40 pb-2 overflow-hidden"
+            rows={2}
             readOnly={isRecording}
           />
           {!confession && !interimText && (
