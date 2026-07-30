@@ -10,39 +10,39 @@ import { supabase } from "@/integrations/supabase/client";
 export type Register = "social" | "intimate" | "edgy";
 
 const DTC: string[] = [
-  "left before the second round",
-  "think about someone else to finish",
-  "only nice to people who want something",
-  "check my sleep score before i feel tired",
-  "finish quicker when i want them gone",
-  "keep his coffee order, not his name",
+  "still havent left",
+  "said next round then didnt",
+  "keep leaving before it costs me",
+  "told them i was nearly there",
+  "finish faster when i want them out",
+  "saved his number under a fake name",
 ];
 
 const SOCIAL: string[] = [
-  "ordered for the table so i'd get the last piece",
-  "said i was full two plates ago",
-  "picked this place so he'd think i was interesting",
-  "keep topping everyone up so i drink faster",
-  "loudest one here, quietest one in the car home",
-  "already know who i'm gossiping about after",
+  "took the last piece i offered around",
+  "said im full still eating",
+  "picked the place i look best in",
+  "topping everyone up but me",
+  "loud all night quiet the whole way home",
+  "already know who im telling",
 ];
 
 const INTIMATE: string[] = [
-  "ordered the wine i can't pronounce so he'd think i knew",
-  "laugh, then check if he's looking",
-  "opened the good bottle so tonight would count",
-  "said i wasn't hungry so he'd share",
-  "already rehearsing how i'll tell this",
-  "here with him, texting her under the table",
+  "ordered the one i cant pronounce",
+  "laughed before i heard it",
+  "opened the good one on a tuesday",
+  "said im not hungry then took his",
+  "already telling it in my head",
+  "texting someone else under the table",
 ];
 
 const EDGY: string[] = [
-  "came out to not go home with who i came with",
-  "wore this for a photo, not for him",
-  "only interesting three drinks in",
-  "came for a night i can blame on the room",
-  "know this ends badly, ordered another",
-  "here for the me that doesn't text back",
+  "didnt come home with who i came with",
+  "dressed for the photo not the night",
+  "better company three drinks in",
+  "blaming the room already",
+  "know how this ends ordered another",
+  "here for the version that doesnt reply",
 ];
 
 const SETS: Record<Register, string[]> = {
