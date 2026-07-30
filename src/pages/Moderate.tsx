@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useMemo, type FormEvent, type ReactNode } from "react";
 import QRCode from "qrcode";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseModeration as sb } from "@/integrations/supabase/moderation-client";
@@ -127,6 +127,19 @@ const REGISTER_OPTIONS = [
 ] as const;
 const registerLabel = (value: string) =>
   REGISTER_OPTIONS.find((o) => o.value === value)?.label ?? value;
+
+// Slug rule for NEW venues: lowercase letters/digits/hyphens, no leading/trailing
+// hyphen, 3–40 chars — the existing slug shape (seoultiger1988, frenchiecbda). The
+// slug is permanent once a QR is printed, so this is enforced here AND in the
+// admin_add_venue RPC; the client check is UX, the server check is authoritative.
+const SLUG_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+const slugError = (slug: string, taken: boolean): string | null => {
+  if (!slug) return "Slug is required.";
+  if (slug.length < 3 || slug.length > 40 || !SLUG_RE.test(slug))
+    return "Slug must be 3–40 characters: lowercase letters, numbers, hyphens — no spaces, no leading/trailing hyphen.";
+  if (taken) return "That slug already exists — it would collide with a live venue.";
+  return null;
+};
 
 // Canonical scan origin for venue QR codes. Deliberately NOT window.location.origin —
 // a QR generated while the console runs on localhost must still point at production.
@@ -332,6 +345,144 @@ const VenueOverviewRow = ({
   );
 };
 
+// Labelled field for AddVenueForm. Module-level so its identity is stable — defined
+// inside the form it would remount its Input child (and drop focus) on every keystroke.
+const Field = ({ label, children }: { label: string; children: ReactNode }) => (
+  <label className="space-y-1">
+    <span className="block text-[11px] uppercase tracking-wide text-muted-foreground">
+      {label}
+    </span>
+    {children}
+  </label>
+);
+
+// Add-venue form. Module-level for the same reason as VenueOverviewRow (stable
+// identity across parent re-renders). Validation runs BEFORE the write: slug shape +
+// duplicate check against the loaded table (server re-checks both — this is UX, the
+// RPC is the gate). The slug input lowercases as you type so what you see is exactly
+// what the QR will carry.
+const AddVenueForm = ({
+  takenSlugs,
+  onAdd,
+  onClose,
+}: {
+  takenSlugs: Set<string>;
+  onAdd: (v: {
+    source: string;
+    displayName: string;
+    register: string | null;
+    headline: string;
+    guidance: string;
+    active: boolean;
+  }) => Promise<boolean>;
+  onClose: () => void;
+}) => {
+  const [slug, setSlug] = useState("");
+  const [name, setName] = useState("");
+  const [register, setRegister] = useState("default");
+  const [headline, setHeadline] = useState("");
+  const [guidance, setGuidance] = useState("");
+  const [active, setActive] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    const s = slug.trim();
+    const n = name.trim();
+    const err = slugError(s, takenSlugs.has(s)) ?? (n ? null : "Display name is required.");
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    const ok = await onAdd({
+      source: s,
+      displayName: n,
+      register: register === "default" ? null : register,
+      headline,
+      guidance,
+      active,
+    });
+    setSaving(false);
+    if (ok) onClose();
+  };
+
+  return (
+    <div className="my-2 space-y-3 rounded-md border border-border p-3">
+      <p className="text-sm font-semibold">Add venue</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Slug — permanent, becomes the QR URL">
+          <Input
+            value={slug}
+            onChange={(e) => {
+              setSlug(e.target.value.toLowerCase());
+              setError(null);
+            }}
+            placeholder="e.g. highballcbr"
+            className="h-8 text-xs"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </Field>
+        <Field label="Display name">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Highball"
+            className="h-8 text-xs"
+          />
+        </Field>
+        <Field label="Register">
+          <Select value={register} onValueChange={setRegister}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REGISTER_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Status">
+          <span className="flex h-8 items-center gap-2">
+            <Switch checked={active} onCheckedChange={setActive} />
+            <span className="text-xs text-muted-foreground">{active ? "Active" : "Inactive"}</span>
+          </span>
+        </Field>
+        <Field label="Headline (blank → default prompt)">
+          <Input
+            value={headline}
+            onChange={(e) => setHeadline(e.target.value)}
+            placeholder="Confess something."
+            className="h-8 text-xs"
+          />
+        </Field>
+        <Field label="Subline (optional)">
+          <Input
+            value={guidance}
+            onChange={(e) => setGuidance(e.target.value)}
+            placeholder=""
+            className="h-8 text-xs"
+          />
+        </Field>
+      </div>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      <div className="flex gap-2">
+        <Button size="sm" disabled={saving} onClick={submit}>
+          {saving ? "Adding…" : "Add venue"}
+        </Button>
+        <Button size="sm" variant="ghost" disabled={saving} onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const Moderate = () => {
   const { toast } = useToast();
 
@@ -393,6 +544,11 @@ const Moderate = () => {
     completed: Map<string, number> | null;
   } | null>(null);
   const [venueBusy, setVenueBusy] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const takenSlugs = useMemo(
+    () => new Set((venuesRows ?? []).map((r) => r.source)),
+    [venuesRows],
+  );
 
   const tz = useMemo(() => {
     try {
@@ -886,6 +1042,43 @@ const Moderate = () => {
     });
   };
 
+  // Create a venue via admin_add_venue (server re-validates slug shape, duplicates,
+  // register, and the is_admin() gate). Not optimistic — the row only enters the
+  // overview once the server has returned it, so what's shown is what's stored.
+  const addVenue = async (v: {
+    source: string;
+    displayName: string;
+    register: string | null;
+    headline: string;
+    guidance: string;
+    active: boolean;
+  }): Promise<boolean> => {
+    const { data, error } = await rpc("admin_add_venue", {
+      _source: v.source,
+      _display_name: v.displayName,
+      _register: v.register,
+      _headline: v.headline.trim() || null,
+      _guidance: v.guidance.trim() || null,
+      _active: v.active,
+    });
+    if (error) {
+      toast({ title: "Couldn't add venue", description: error.message, variant: "destructive" });
+      return false;
+    }
+    const row = (Array.isArray(data) ? data[0] : data) as VenueAdminRow | undefined;
+    if (!row?.source) {
+      setRefreshTick((t) => t + 1); // unexpected shape — refetch rather than guess
+      return true;
+    }
+    setVenuesRows((prev) =>
+      [...(prev ?? []), row].sort(
+        (a, b) => a.display_name.localeCompare(b.display_name) || a.source.localeCompare(b.source),
+      ),
+    );
+    toast({ title: "Venue added", description: `${row.display_name} (${row.source})` });
+    return true;
+  };
+
   const copyNight = async (row: { night: string; source: string; confessions: number; shares: number }) => {
     const key = `${row.night}|${row.source}`;
     const name = venueDisplayName("", row.source) || row.source;
@@ -1073,6 +1266,21 @@ const Moderate = () => {
               ) : (
                 <p className="py-3 text-sm text-muted-foreground">No venues.</p>
               )}
+              {!venuesLoading && !venuesError ? (
+                addOpen ? (
+                  <AddVenueForm
+                    takenSlugs={takenSlugs}
+                    onAdd={addVenue}
+                    onClose={() => setAddOpen(false)}
+                  />
+                ) : (
+                  <div className="py-2">
+                    <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+                      Add venue
+                    </Button>
+                  </div>
+                )
+              ) : null}
             </div>
           ) : null}
         </section>
