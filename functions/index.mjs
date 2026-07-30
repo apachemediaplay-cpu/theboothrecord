@@ -9,33 +9,16 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { onRequest } from "firebase-functions/v2/https";
 import { renderCardPng } from "./src/card.mjs";
+import { venueFor } from "./src/venues.mjs";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const ORIGIN = "https://theboothrecord.com";
 
-// Source -> venue display name for the "AS CHARGED AT <venue>" line; unknown/direct ->
-// LOCATION WITHHELD (handled in card.mjs).
-// SINGLE SOURCE: src/data/venues.json, copied to functions/venues.json by prep.mjs + the
-// deploy predeploy hook (the deployed function can't read ../src at runtime). No hand-synced
-// map — add venues in src/data/venues.json only. Lazily read + memoized.
-let _venueMap = null;
-async function loadVenues() {
-  if (!_venueMap) {
-    try {
-      const data = JSON.parse(await readFile(join(__dir, "venues.json"), "utf8"));
-      _venueMap = Object.fromEntries(
-        Object.entries(data).map(([slug, v]) => [slug.toLowerCase(), v]),
-      );
-    } catch {
-      _venueMap = {};
-    }
-  }
-  return _venueMap;
-}
-async function venueFor(source) {
-  const m = await loadVenues();
-  return m[(source || "").toLowerCase()]?.displayName || "";
-}
+// Source -> venue display name for the "AS CHARGED AT <venue>" line now lives in
+// ./src/venues.mjs: venues.json first (unchanged — existing venues never touch the DB),
+// then a FAIL-CLOSED public.venues fallback (active rows only, 1.5s timeout) for
+// console-added venues; anything else -> "" -> LOCATION WITHHELD (handled in card.mjs).
+// Add venues in src/data/venues.json OR via the console — no hand-synced map.
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 

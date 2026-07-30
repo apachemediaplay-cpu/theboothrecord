@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Instagram } from "lucide-react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
-import { venueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
+import { resolveVenueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
 import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,14 +36,16 @@ const Verdict = () => {
   const subjectNumber = sessionStorage.getItem("subjectNumber") || "";
   const fullText = "The booth noticed.";
 
-  // Share card "AS CHARGED AT" venue, resolved by venueDisplayName from the PERSISTED ROW
-  // SOURCE only — venues.json is the single source of display names and the ?venue= URL param
-  // is never trusted for display. Unknown/absent slug → "" → the card renders LOCATION WITHHELD.
-  // The venue stamp is decided at POST TO STORY time so the card is rendered once with the
-  // correct value — see handleOnRecordConfirm. suppress === true → "" → LOCATION WITHHELD.
+  // Share card "AS CHARGED AT" venue, resolved from the PERSISTED ROW SOURCE only — the
+  // ?venue= URL param is never trusted for display. venues.json first (unchanged, no DB
+  // call for existing venues), then the active-only venues-table fallback for
+  // console-added venues; unknown slug / inactive row / any error → "" → the card
+  // renders LOCATION WITHHELD. The venue stamp is decided at POST TO STORY time so the
+  // card is rendered once with the correct value — see handleOnRecordConfirm.
+  // suppress === true → "" → LOCATION WITHHELD (no lookup at all).
   const rowSource = sessionStorage.getItem("verdictSource") || "";
-  const computeFiledVenue = (suppress: boolean) =>
-    (suppress ? "" : venueDisplayName("", rowSource)).toUpperCase();
+  const computeFiledVenue = async (suppress: boolean) =>
+    (suppress ? "" : await resolveVenueDisplayName(rowSource)).toUpperCase();
 
   // Feature 2: optional email capture — gated behind ENABLE_EMAIL_CAPTURE, kept for later.
   // (Dormant: confessions are now saved by the Edge Function, which has no email field.)
@@ -356,7 +358,7 @@ const Verdict = () => {
           suppress = !mayStampVenue(row.stamp_venue);
         }
       }
-      const blob = await generateShareCard(computeFiledVenue(suppress));
+      const blob = await generateShareCard(await computeFiledVenue(suppress));
       const file = new File([blob], "guilty-on-record.png", { type: "image/png" });
 
       const canShareFiles =

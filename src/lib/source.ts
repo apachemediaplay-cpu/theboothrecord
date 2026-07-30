@@ -1,4 +1,5 @@
 import venuesData from "@/data/venues.json";
+import { supabase } from "@/integrations/supabase/client";
 
 // Venue attribution + display-name resolution (single source of truth).
 //
@@ -126,6 +127,54 @@ export function venueDisplayName(
   if (s && s !== "direct" && VENUES[s]) return VENUES[s].displayName;
 
   return ""; // → LOCATION WITHHELD (never the raw slug, never the URL param)
+}
+
+// venues isn't in the generated Database types — cast narrowly at the one call site
+// (same situation as registers.ts).
+type VenueNameQuery = {
+  select(cols: string): {
+    eq(
+      col: string,
+      val: string,
+    ): {
+      maybeSingle(): Promise<{
+        data: { display_name: string | null; active: boolean | null } | null;
+        error: unknown;
+      }>;
+    };
+  };
+};
+
+// Async display-name resolution WITH DB FALLBACK — for the gate "Location:" line and
+// the client share screens. Resolution order:
+//   1. venues.json via venueDisplayName (PRIMARY, unchanged). Every venue in the file
+//      resolves here and NEVER triggers a DB call.
+//   2. ONLY for slugs venues.json doesn't know (console-added venues): public.venues
+//      via the same public read path the confess screen uses. The row must exist AND
+//      be active === true — the kill-switch equivalent (toggle the venue inactive in
+//      the console and its name stops printing, same as deleting from venues.json).
+//   3. Everything else FAILS CLOSED to "": unknown slug, inactive row, network/RLS
+//      error, rejected promise, empty display_name. "" → the caller renders
+//      LOCATION WITHHELD / no location line, exactly today's behaviour.
+export async function resolveVenueDisplayName(
+  source: string | null | undefined,
+): Promise<string> {
+  const fromJson = venueDisplayName("", source);
+  if (fromJson) return fromJson;
+  const s = (source || "").trim().toLowerCase();
+  if (!s || s === "direct") return "";
+  try {
+    const from = supabase.from.bind(supabase) as unknown as (table: string) => VenueNameQuery;
+    const { data, error } = await from("venues")
+      .select("display_name,active")
+      .eq("source", s)
+      .maybeSingle();
+    if (error || !data) return "";
+    if (data.active !== true) return "";
+    return (data.display_name || "").trim();
+  } catch {
+    return "";
+  }
 }
 
 // Fail closed: ONLY an explicit true permits stamping a venue name onto a card. undefined,

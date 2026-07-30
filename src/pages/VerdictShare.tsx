@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { fetchSharedVerdict, type SharedVerdict } from "@/lib/metrics";
-import { venueDisplayName, mayStampVenue } from "@/lib/source";
+import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
 
 // Public landing for a shared verdict link (/v/:id). A recipient — not the confessor —
 // lands here. Reads the verdict by its unguessable uuid via get_share_verdict; an unknown
@@ -31,8 +31,24 @@ const VerdictShare = () => {
     source && source !== "direct" ? `/confess?source=${encodeURIComponent(source)}` : "/confess";
   // FAIL CLOSED: only an explicit stamp_venue === true shows the venue. A missing field (older
   // get_share_verdict), a null row, or a failed fetch all fall through to "" → the existing
-  // "Location withheld". Venue name resolves from the source slug via venues.json only.
-  const venue = mayStampVenue(row?.stamp_venue) ? venueDisplayName("", source) : "";
+  // "Location withheld". Name resolution: venues.json synchronously at render (existing
+  // venues — unchanged, no DB call, no flash), with the active-only DB fallback for
+  // console-added venues filling in async. Any fallback failure → "" → withheld.
+  const syncVenue = mayStampVenue(row?.stamp_venue) ? venueDisplayName("", source) : "";
+  const [dbVenue, setDbVenue] = useState("");
+  useEffect(() => {
+    setDbVenue(""); // never carry a stale name across row changes
+    if (!mayStampVenue(row?.stamp_venue)) return; // stamp not permitted — no lookup at all
+    if (venueDisplayName("", source)) return; // venues.json covers it — DB fallback never runs
+    let cancelled = false;
+    resolveVenueDisplayName(source).then((name) => {
+      if (!cancelled) setDbVenue(name);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [row, source]);
+  const venue = syncVenue || dbVenue;
 
   if (status === "loading") {
     return (
