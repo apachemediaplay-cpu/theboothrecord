@@ -571,6 +571,22 @@ const Moderate = () => {
   const [range, setRange] = useState<Range>("30");
   const [venue, setVenue] = useState<string>("all");
 
+  // Top-level console tab. Persisted to sessionStorage so returning within the
+  // session lands on the last-used tab; a fresh session defaults to Moderate.
+  type ConsoleTab = "moderate" | "venues" | "stats";
+  const [consoleTab, setConsoleTab] = useState<ConsoleTab>(() => {
+    const s = sessionStorage.getItem("booth-console-tab");
+    return s === "venues" || s === "stats" ? s : "moderate";
+  });
+  const changeConsoleTab = (t: ConsoleTab) => {
+    setConsoleTab(t);
+    sessionStorage.setItem("booth-console-tab", t);
+  };
+
+  // Pending count for the Moderate tab label. Tracks the persistent filters
+  // (venue, range) — not the queue's sub-tab or search.
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+
   // Confession list (server-side + paginated).
   const [tab, setTab] = useState<Status>("pending");
   const [qInput, setQInput] = useState("");
@@ -726,6 +742,26 @@ const Moderate = () => {
       cancelled = true;
     };
   }, [session, venue, tab, qDebounced, page, rangeArgs, refreshTick]);
+
+  // ── Pending count for the Moderate tab label ──
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    safe(
+      rpc("admin_list_confessions_count", {
+        _status: "pending",
+        _source: venue === "all" ? null : venue,
+        _q: null,
+        ...rangeArgs,
+      }),
+    ).then((res) => {
+      if (cancelled || res.error) return;
+      setPendingCount(num(res.data as number));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, venue, rangeArgs, refreshTick]);
 
   // ── Cross-venue rollup (only when "All venues") ──
   useEffect(() => {
@@ -1128,6 +1164,11 @@ const Moderate = () => {
       return next;
     });
     setAllMatching((prev) => (prev ? prev.filter((r) => !ids.has(r.id)) : prev));
+    // Keep the Moderate tab's pending badge honest without a refetch.
+    if (original === "pending")
+      setPendingCount((c) => (c === null ? c : Math.max(0, c - targets.length)));
+    else if (newStatus === "pending")
+      setPendingCount((c) => (c === null ? c : c + targets.length));
     const results = await setStatusChunked(targets, newStatus);
     setBulkBusy(false);
     const failed = results.filter((r) => r.error);
@@ -1331,9 +1372,11 @@ const Moderate = () => {
   // Keyboard on the focused card: A approve (pending tab), R reject/un-approve,
   // F feature, ↑/↓ (or j/k) move focus. Decisions auto-advance because the acted
   // row leaves the list and the next one inherits its index. Ignored while typing
-  // in a field, while a dialog is open (confirmBulk), or mid-bulk.
+  // in a field, while a dialog is open (confirmBulk), mid-bulk — and on any
+  // console tab other than Moderate (the queue may not even be rendered).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (consoleTab !== "moderate") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const el = e.target as HTMLElement | null;
       if (
@@ -1478,7 +1521,10 @@ const Moderate = () => {
           </Button>
         </header>
 
-        {/* Axes: date range (drives every RPC) + venue (primary). */}
+        {/* Persistent filter bar: date range (applies on every tab) + venue (applies to
+            Moderate + Stats; DISABLED — visibly, not silently ignored — on the Venues
+            tab, where managing all venues makes it inapplicable). State survives tab
+            switches. */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex gap-1">
             {(Object.keys(RANGE_NIGHTS) as Range[]).map((r) => (
@@ -1492,7 +1538,7 @@ const Moderate = () => {
               </Button>
             ))}
           </div>
-          <Select value={venue} onValueChange={changeVenue}>
+          <Select value={venue} onValueChange={changeVenue} disabled={consoleTab === "venues"}>
             <SelectTrigger className="w-full sm:w-64">
               <SelectValue placeholder="All venues" />
             </SelectTrigger>
@@ -1507,7 +1553,33 @@ const Moderate = () => {
           </Select>
         </div>
 
-        {/* ── VENUES OVERVIEW — every venue as a row: register, greeting, status. ── */}
+        {/* Top-level console tabs. Only the active tab's content renders below. */}
+        <div className="flex gap-1 border-b border-border pb-2">
+          <Button
+            size="sm"
+            variant={consoleTab === "moderate" ? "secondary" : "ghost"}
+            onClick={() => changeConsoleTab("moderate")}
+          >
+            Moderate{pendingCount !== null ? ` · ${pendingCount}` : ""}
+          </Button>
+          <Button
+            size="sm"
+            variant={consoleTab === "venues" ? "secondary" : "ghost"}
+            onClick={() => changeConsoleTab("venues")}
+          >
+            Venues{venuesRows ? ` · ${venuesRows.length}` : ""}
+          </Button>
+          <Button
+            size="sm"
+            variant={consoleTab === "stats" ? "secondary" : "ghost"}
+            onClick={() => changeConsoleTab("stats")}
+          >
+            Stats
+          </Button>
+        </div>
+
+        {/* ── VENUES TAB — every venue as a row: register, greeting, status. ── */}
+        {consoleTab === "venues" ? (
         <section className="rounded-lg border border-border">
           <button
             type="button"
@@ -1577,9 +1649,11 @@ const Moderate = () => {
             </div>
           ) : null}
         </section>
+        ) : null}
 
-        {/* ── VENUE REPORT (single venue) — built to be screenshotted for the owner. ── */}
-        {venue !== "all" ? (
+        {/* ── STATS TAB — the venue report (venue selected) or the cross-venue rollup. ── */}
+        {consoleTab === "stats" ? (
+        venue !== "all" ? (
           <section className="rounded-lg border border-border p-4 space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1867,12 +1941,14 @@ const Moderate = () => {
               </div>
             ) : null}
           </section>
-        )}
+        )
+        ) : null}
 
-        {/* ── CONFESSION LIST (server-side, paginated). Scanned for good ones, not cleared.
+        {/* ── MODERATE TAB (server-side, paginated). Scanned for good ones, not cleared.
             Queue interactions: page checkbox → bulk bar → optional "select all M matching"
             (explicit, real count, spans pages). Keyboard: A/R/F on the focused card,
             ↑/↓ move focus, decisions auto-advance. Every decision has a ~4s Undo. ── */}
+        {consoleTab === "moderate" ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex gap-1">
@@ -1893,8 +1969,8 @@ const Moderate = () => {
             </p>
           </div>
 
-          {/* Filter row. Venue is the SAME page-wide axis as above (one source of truth —
-              it already drives the list's server filter); topic filters client-side. */}
+          {/* Filter row. Venue moved to the persistent bar above the tabs; topic is
+              moderation-specific and stays here (client-side filter). */}
           <div className="flex flex-wrap items-center gap-2">
             <Checkbox
               aria-label="Select visible page"
@@ -1915,19 +1991,6 @@ const Moderate = () => {
                 });
               }}
             />
-            <Select value={venue} onValueChange={changeVenue}>
-              <SelectTrigger className="h-8 w-40 text-xs">
-                <SelectValue placeholder="All venues" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All venues</SelectItem>
-                {VENUE_OPTIONS.map((v) => (
-                  <SelectItem key={v.slug} value={v.slug}>
-                    {v.name} ({v.slug})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select value={qTopic} onValueChange={setQTopic}>
               <SelectTrigger className="h-8 w-40 text-xs">
                 <SelectValue placeholder="All topics" />
@@ -2198,6 +2261,7 @@ const Moderate = () => {
             </ul>
           )}
         </div>
+        ) : null}
       </div>
     </main>
   );
