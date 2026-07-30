@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, type FormEvent } from "react";
+import QRCode from "qrcode";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseModeration as sb } from "@/integrations/supabase/moderation-client";
 import type { Database } from "@/integrations/supabase/types";
@@ -127,6 +128,15 @@ const REGISTER_OPTIONS = [
 const registerLabel = (value: string) =>
   REGISTER_OPTIONS.find((o) => o.value === value)?.label ?? value;
 
+// Canonical scan origin for venue QR codes. Deliberately NOT window.location.origin —
+// a QR generated while the console runs on localhost must still point at production.
+const BOOTH_ORIGIN = "https://theboothrecord.com";
+// Physical-card URL shape: ?source= is the attribution slug, ?venue= the display name
+// (printed cards ALWAYS carry ?venue= — isPhysicalScan() keys off it). Both values
+// come straight from the DB row; display_name is read-only here.
+const venueScanUrl = (source: string, displayName: string) =>
+  `${BOOTH_ORIGIN}/?source=${encodeURIComponent(source)}&venue=${encodeURIComponent(displayName)}`;
+
 // Venue selector options (the primary axis). Known venues only; slug shown to disambiguate
 // the several Frenchie slugs. "All venues" is prepended in the JSX.
 const VENUE_OPTIONS = Object.entries(venuesData as Record<string, { displayName: string }>)
@@ -224,6 +234,23 @@ const VenueOverviewRow = ({
   // Fail-safe: a missing/null status is treated as active — dimming is opt-in only.
   const active = row.active !== false;
   const completion = scans !== null && scans > 0 && completed !== null ? completed / scans : null;
+
+  // Venue QR: generated lazily on first open, cached for the row's lifetime. Black
+  // modules on white stay hardcoded by design — a QR is artifact content whose
+  // scannability requires dark-on-light, not themed UI.
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrError, setQrError] = useState(false);
+  const scanUrl = venueScanUrl(row.source, row.display_name);
+  const toggleQr = () => {
+    const opening = !qrOpen;
+    setQrOpen(opening);
+    if (opening && !qrDataUrl) {
+      QRCode.toDataURL(scanUrl, { width: 1024, margin: 2, errorCorrectionLevel: "M" })
+        .then((url) => setQrDataUrl(url))
+        .catch(() => setQrError(true));
+    }
+  };
   return (
     <li className={cn("space-y-2 py-3", !active && "opacity-50")}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -272,7 +299,35 @@ const VenueOverviewRow = ({
         >
           Save
         </Button>
+        <Button size="sm" variant="ghost" onClick={toggleQr}>
+          {qrOpen ? "Hide QR" : "QR"}
+        </Button>
       </div>
+      {qrOpen ? (
+        <div className="flex flex-wrap items-start gap-3 pt-1">
+          {qrError ? (
+            <p className="text-xs text-muted-foreground">Couldn't generate the QR.</p>
+          ) : qrDataUrl ? (
+            <>
+              <img
+                src={qrDataUrl}
+                alt={`Scan QR for ${row.display_name}`}
+                className="h-36 w-36 rounded"
+              />
+              <div className="space-y-2 text-[11px] text-muted-foreground">
+                <p className="max-w-64 break-all">{scanUrl}</p>
+                <Button size="sm" variant="outline" asChild>
+                  <a href={qrDataUrl} download={`booth-qr-${row.source}.png`}>
+                    Download PNG
+                  </a>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">Generating…</p>
+          )}
+        </div>
+      ) : null}
     </li>
   );
 };
