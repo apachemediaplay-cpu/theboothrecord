@@ -141,6 +141,19 @@ const REGISTER_OPTIONS = [
 const registerLabel = (value: string) =>
   REGISTER_OPTIONS.find((o) => o.value === value)?.label ?? value;
 
+// The four editable placeholder sets (public.registers keys). 'dtc' is the default
+// set — what venues.register null resolves to — and is never itself a
+// venues.register value. Content rules mirrored from admin_set_register_lines,
+// plus the six-line rule so rotation pacing never drifts between sets.
+const REGISTER_SET_META = [
+  { key: "dtc", label: "Default (DTC)" },
+  { key: "social", label: "Social" },
+  { key: "intimate", label: "Intimate" },
+  { key: "edgy", label: "Edgy" },
+] as const;
+const REGISTER_SET_LINES = 6;
+const REGISTER_LINE_MAX = 80;
+
 // Slug rule for NEW venues: lowercase letters/digits/hyphens, no leading/trailing
 // hyphen, 3–40 chars — the existing slug shape (seoultiger1988, frenchiecbda). The
 // slug is permanent once a QR is printed, so this is enforced here AND in the
@@ -587,6 +600,64 @@ const AddVenueForm = ({
   );
 };
 
+// One placeholder set (public.registers row): exactly six lines, none blank, each
+// ≤80 chars — the client mirror of admin_set_register_lines' checks. Seeds from
+// the DB row once; the parent keys this component on the row content, so a landed
+// save (or refetch) remounts it clean with dirty reset.
+const RegisterSetEditor = ({
+  label,
+  initial,
+  busy,
+  onSave,
+}: {
+  label: string;
+  initial: string[];
+  busy: boolean;
+  onSave: (lines: string[]) => void;
+}) => {
+  const [lines, setLines] = useState<string[]>(() => {
+    const seeded = initial.slice(0, REGISTER_SET_LINES);
+    while (seeded.length < REGISTER_SET_LINES) seeded.push("");
+    return seeded;
+  });
+  const trimmed = lines.map((l) => l.trim());
+  const valid = trimmed.every((l) => l !== "" && l.length <= REGISTER_LINE_MAX);
+  const dirty = trimmed.some((l, i) => l !== (initial[i] ?? "")) || initial.length !== REGISTER_SET_LINES;
+  return (
+    <div className="space-y-2 py-3">
+      <p className="text-sm font-semibold">{label}</p>
+      {lines.map((line, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <Input
+            value={line}
+            maxLength={REGISTER_LINE_MAX}
+            onChange={(e) =>
+              setLines((cur) => cur.map((l, j) => (j === i ? e.target.value : l)))
+            }
+            className="h-8 w-full text-xs"
+          />
+          <span
+            className={cn(
+              "w-12 shrink-0 text-right text-[11px] tabular-nums",
+              line.trim() === "" ? "text-destructive" : "text-muted-foreground",
+            )}
+          >
+            {line.trim() === "" ? "blank" : `${line.trim().length}/${REGISTER_LINE_MAX}`}
+          </span>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 pt-1">
+        <Button size="sm" disabled={!dirty || !valid || busy} onClick={() => onSave(trimmed)}>
+          {busy ? "Saving…" : "Save"}
+        </Button>
+        {!valid ? (
+          <span className="text-[11px] text-destructive">six non-blank lines required</span>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
 const Moderate = () => {
   const { toast } = useToast();
 
@@ -612,6 +683,14 @@ const Moderate = () => {
     setConsoleTab(t);
     sessionStorage.setItem("booth-console-tab", t);
   };
+
+  // ── Placeholder sets (public.registers): the content behind the register picker.
+  // Public-read table (the same data the confess screen's get_confess_config serves);
+  // writes only via admin_set_register_lines. null map = still loading.
+  const [registerSets, setRegisterSets] = useState<Map<string, string[]> | null>(null);
+  const [registerSetsError, setRegisterSetsError] = useState(false);
+  const [registerSetsOpen, setRegisterSetsOpen] = useState(false);
+  const [registerSetBusy, setRegisterSetBusy] = useState<string | null>(null);
 
   // Pending count for the Moderate tab label. Tracks the persistent filters
   // (venue, range) — not the queue's sub-tab or search.
@@ -917,6 +996,39 @@ const Moderate = () => {
       cancelled = true;
     };
   }, [session, rangeArgs, refreshTick]);
+
+  // Placeholder-sets read — venues tab only, refetched with the same Retry tick as
+  // the venues table. A failed read shows its own inline retry, never blocks venues.
+  useEffect(() => {
+    if (!session || consoleTab !== "venues") return;
+    let cancelled = false;
+    setRegisterSetsError(false);
+    const from = sb.from.bind(sb) as unknown as (table: string) => {
+      select(cols: string): PromiseLike<{
+        data: { register: string; lines: string[] | null }[] | null;
+        error: unknown;
+      }>;
+    };
+    Promise.resolve(from("registers").select("register,lines")).then(
+      (r) => {
+        if (cancelled) return;
+        if (r.error || !r.data) {
+          setRegisterSetsError(true);
+          setRegisterSets(null);
+          return;
+        }
+        setRegisterSets(new Map(r.data.map((row) => [row.register, row.lines ?? []])));
+      },
+      () => {
+        if (cancelled) return;
+        setRegisterSetsError(true);
+        setRegisterSets(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [session, consoleTab, refreshTick]);
 
   // ── Queue: derived rows, selection lifecycle, full-filter fetch ──
   // Topic filter is client-side (the list RPC has no topic param): the visible list is
@@ -1412,6 +1524,35 @@ const Moderate = () => {
     });
   };
 
+  // Save a placeholder set via admin_set_register_lines. NOT optimistic — the set
+  // feeds the live confess screen, so local state updates only after the server
+  // confirms; success/failure both land as a toast.
+  const saveRegisterSet = async (register: string, label: string, lines: string[]) => {
+    setRegisterSetBusy(register);
+    const { error } = await rpc("admin_set_register_lines", {
+      _register: register,
+      _lines: lines,
+    });
+    setRegisterSetBusy(null);
+    if (error) {
+      toast({
+        title: "Couldn't save placeholder set",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    setRegisterSets((prev) => {
+      const next = new Map(prev ?? []);
+      next.set(register, lines);
+      return next;
+    });
+    toast({
+      title: "Placeholder set saved",
+      description: `${label} — live on the next confess-screen load.`,
+    });
+  };
+
   // Delete a venue via admin_delete_venue. NOT optimistic — the destructive action
   // removes the row only after the server confirms. The RPC refuses venues with real
   // (non-test) confessions; that error surfaces in the toast and the row stays.
@@ -1760,6 +1901,7 @@ const Moderate = () => {
 
         {/* ── VENUES TAB — every venue as a row: register, greeting, status. ── */}
         {consoleTab === "venues" ? (
+        <>
         <section className="rounded-lg border border-border">
           <button
             type="button"
@@ -1830,6 +1972,56 @@ const Moderate = () => {
             </div>
           ) : null}
         </section>
+
+        {/* Placeholder sets — the CONTENT behind the register picker above. Same
+            collapsible-section shell as Venues. */}
+        <section className="rounded-lg border border-border">
+          <button
+            type="button"
+            onClick={() => setRegisterSetsOpen((o) => !o)}
+            className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
+          >
+            <span>Placeholder sets</span>
+            <span className="text-xs text-muted-foreground">
+              {registerSetsOpen ? "Hide" : "Show"}
+            </span>
+          </button>
+          {registerSetsOpen ? (
+            <div className="border-t border-border px-4 pb-2">
+              {registerSetsError ? (
+                <div className="space-y-2 py-3">
+                  <p className="text-sm text-muted-foreground">Couldn't load placeholder sets.</p>
+                  <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                    Retry
+                  </Button>
+                </div>
+              ) : !registerSets ? (
+                <p className="py-3 text-sm text-muted-foreground">Loading placeholder sets…</p>
+              ) : (
+                <>
+                  <p className="pt-2 text-xs text-muted-foreground">
+                    The rotating /confess example lines per register. Exactly six lines, max{" "}
+                    {REGISTER_LINE_MAX} chars each. Saves go live on the next confess-screen
+                    load; if this table is ever unreachable the app falls back to its built-in
+                    copies.
+                  </p>
+                  <div className="divide-y divide-border">
+                    {REGISTER_SET_META.map(({ key, label }) => (
+                      <RegisterSetEditor
+                        key={`${key}:${(registerSets.get(key) ?? []).join("\n")}`}
+                        label={label}
+                        initial={registerSets.get(key) ?? []}
+                        busy={registerSetBusy === key}
+                        onSave={(lines) => saveRegisterSet(key, label, lines)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : null}
+        </section>
+        </>
         ) : null}
 
         {/* ── STATS TAB — the venue report (venue selected) or the cross-venue rollup. ── */}

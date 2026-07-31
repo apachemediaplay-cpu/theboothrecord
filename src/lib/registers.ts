@@ -58,6 +58,71 @@ export function getPlaceholderLines(register?: string | null): string[] {
   return SETS[r as Register] ?? DTC;
 }
 
+// The confess screen's one round-trip: get_confess_config resolves source →
+// greeting + register + that register's lines (public.registers). The RPC isn't in
+// the generated Database types (forward-only, same situation as the admin_* RPCs in
+// Moderate.tsx) — cast narrowly at the one call site.
+//
+// FAIL-SAFE CONTRACT (the hardcoded sets above are the floor):
+//   * RPC error / network failure / empty response  → all-null config → DTC.
+//   * lines null, empty, or all-blank               → hardcoded set for the register.
+//   * The confess screen SEEDS from the hardcoded DTC before the call resolves, so
+//     a slow or hung request still shows a rotating placeholder the whole time.
+export type ConfessConfig = {
+  headline: string | null;
+  guidance: string | null;
+  register: string | null;
+  lines: string[] | null;
+};
+
+const NO_CONFESS_CONFIG: ConfessConfig = {
+  headline: null,
+  guidance: null,
+  register: null,
+  lines: null,
+};
+
+type ConfessConfigRow = {
+  headline: string | null;
+  guidance: string | null;
+  register: string | null;
+  lines: string[] | null;
+};
+type RpcCall = (
+  fn: string,
+  args: Record<string, unknown>,
+) => Promise<{ data: unknown; error: unknown }>;
+
+// Resolve source → confess-screen config via get_confess_config. EVERY failure path
+// returns all-nulls (never throws), which resolveConfessLines maps to hardcoded DTC.
+export async function fetchConfessConfig(source?: string | null): Promise<ConfessConfig> {
+  const s = (source || "").trim().toLowerCase();
+  try {
+    const rpc = supabase.rpc.bind(supabase) as unknown as RpcCall;
+    const { data, error } = await rpc("get_confess_config", { _source: s || null });
+    if (error || !Array.isArray(data) || data.length === 0) return NO_CONFESS_CONFIG;
+    const row = data[0] as ConfessConfigRow;
+    const lines = Array.isArray(row.lines)
+      ? row.lines.filter((l): l is string => typeof l === "string" && l.trim() !== "")
+      : [];
+    return {
+      headline: row.headline ?? null,
+      guidance: row.guidance ?? null,
+      register: row.register ?? null,
+      lines: lines.length > 0 ? lines : null,
+    };
+  } catch {
+    return NO_CONFESS_CONFIG;
+  }
+}
+
+// DB lines when present, hardcoded set otherwise — the ONE place the fail-safe
+// ordering is decided. Never returns an empty array: cfg.lines is null on every
+// failure path above, and getPlaceholderLines never returns empty.
+export function resolveConfessLines(cfg: ConfessConfig): string[] {
+  return cfg.lines ?? getPlaceholderLines(cfg.register);
+}
+
 // venues isn't in the generated Database types (forward-only table, same situation as
 // the admin_* RPCs in Moderate.tsx) — cast narrowly at the one call site.
 type VenuesRow = {

@@ -4,7 +4,7 @@ import BoothFooter from "@/components/BoothFooter";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { captureSourceFromUrl, promptFromVenue, DEFAULT_PROMPT } from "@/lib/source";
-import { fetchVenueConfig, getPlaceholderLines } from "@/lib/registers";
+import { fetchConfessConfig, getPlaceholderLines, resolveConfessLines } from "@/lib/registers";
 
 const Confess = () => {
   const navigate = useNavigate();
@@ -36,9 +36,20 @@ const Confess = () => {
 
   useEffect(() => {
     let cancelled = false;
-    fetchVenueConfig(source).then((cfg) => {
+    // One round-trip (get_confess_config): greeting + register + lines. The screen
+    // seeded from hardcoded DTC above, so the placeholder is rotating the whole time
+    // this is in flight — a failed/slow/empty response just means no swap ever fires.
+    fetchConfessConfig(source).then((cfg) => {
       if (cancelled) return;
-      setPlaceholderLines(getPlaceholderLines(cfg.register));
+      // Identity-stable update: if the DB content matches what's already showing
+      // (the usual case — DB seed == hardcoded), keep the old array so the typing
+      // effect doesn't restart the current line for a no-op swap.
+      setPlaceholderLines((prev) => {
+        const next = resolveConfessLines(cfg);
+        return prev.length === next.length && prev.every((l, i) => l === next[i])
+          ? prev
+          : next;
+      });
       setPrompt(promptFromVenue(cfg.headline, cfg.guidance));
     });
     return () => {
