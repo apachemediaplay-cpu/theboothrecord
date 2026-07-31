@@ -79,8 +79,10 @@ const VerdictShare = () => {
 
   return (
     <main className="screen-container animate-fade-in">
-      <div className="flex-1 flex flex-col justify-center items-start text-left pb-40">
-        <p className="text-ritual text-sm font-mono-light tracking-[0.2em] uppercase mb-6">
+      <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
+        {/* System stamp, not a headline — Verdict's treatment but UPPERCASE: this reader
+            is a stranger arriving cold, and caps read as a document stamp. */}
+        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] uppercase mb-6">
           The booth noticed.
         </p>
         {row?.confession_text ? (
@@ -97,20 +99,25 @@ const VerdictShare = () => {
         </p>
       </div>
 
-      <div className="fixed bottom-32 left-0 right-0 flex flex-col items-center gap-3 px-6">
-        <p className="text-ritual text-sm font-mono-light tracking-wide text-center">
+      {/* Hairline rule — same treatment as the Verdict screen — separating the record
+          above (left-aligned) from the actions below (centred). */}
+      <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-3">
+        <p className="text-ritual text-[11px] font-mono-light tracking-wide text-center">
           Your turn.
         </p>
-        <Link to={ctaHref} className="btn-booth text-center">
+        <Link to={ctaHref} className="btn-booth text-[11px] text-center">
           ENTER THE BOOTH →
         </Link>
         <a
           href="https://houseofguilty.com/contraband?source=booth-share"
           target="_blank"
           rel="noopener"
-          className="text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-colors"
+          className="mt-4 text-[9px] font-mono-light tracking-wide"
         >
-          THE FIRST OFFENCE — $55
+          <span className="text-muted-foreground">Reoffend.</span>{" "}
+          <span className="text-[#FF4800] hover:opacity-80 transition-colors">
+            THE FIRST OFFENCE — $55
+          </span>
         </a>
       </div>
 

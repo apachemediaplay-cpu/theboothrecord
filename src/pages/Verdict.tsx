@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Instagram } from "lucide-react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { resolveVenueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
 import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
@@ -394,19 +393,22 @@ const Verdict = () => {
     }
   };
 
-  // SAVE IMAGE pairs with the share button — brighter than the exit links below it.
+  // Action-area type scale is collapsed to one size (~11px mono); only the FIRST
+  // OFFENCE line sits below it at 9px. shareSecondary is the underlined text-link
+  // treatment shared by POST TO STORY and (post-share) SHARE AGAIN.
   const shareSecondary =
-    "text-sm text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
-  // SEE THE GUILTY — the quietest thing on the screen (footer-like): text-xs, heavily
-  // muted, extra space above (mt-10). Bottom of the size ladder below SHARE VERDICT (boxed)
-  // → POST TO STORY / follow group (text-sm) → this. Never competes with the share action.
+    "text-[11px] text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
+  // SEE THE GUILTY pre-share — quiet exit, same 11px scale, muted. Never competes
+  // with the share action (sharing is the perishable one). Post-share it's promoted
+  // to the boxed primary instead.
   const wallLink =
-    "text-xs text-muted-foreground hover:text-foreground transition-colors tracking-wide";
+    "text-[11px] text-muted-foreground hover:text-foreground transition-colors tracking-wide";
 
   return (
     <div className="screen-container animate-fade-in">
       <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
-        <p className="text-ritual text-xl font-mono-light tracking-wide mb-6 min-h-[1.75rem] relative">
+        {/* System stamp, not a headline — smallest text on the screen. */}
+        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] mb-6 min-h-[1em] relative">
           <span className="relative inline-block">
             {typedText}
             {showCursor && <span className="animate-pulse">|</span>}
@@ -453,7 +455,9 @@ const Verdict = () => {
         </div>
       </div>
 
-      <div className="shrink-0 flex flex-col items-center gap-6">
+      {/* Hairline rule — same treatment as the confess input rule — separating the
+          record above (left-aligned) from the actions below (centred). */}
+      <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-6">
         {/* Feature 2 — email capture (currently gated OFF via ENABLE_EMAIL_CAPTURE) */}
         {ENABLE_EMAIL_CAPTURE &&
           (claimState === "claimed" ? (
@@ -493,38 +497,45 @@ const Verdict = () => {
             </div>
           ) : null)}
 
-        {/* Share pair: SHARE VERDICT (shares the /v/{uuid} link, whose preview carries the
-            verdict card) with SAVE IMAGE directly beneath it. The disclosure line above IS
-            the consent. Label change only — SHARE VERDICT still calls handleShareLink. */}
-        <div className="w-full max-w-xs flex flex-col items-center gap-3">
-          <p className="text-ritual text-sm font-mono-light tracking-wide text-center">
-            Your words. Not your name.
-          </p>
-          <button
-            onClick={handleShareLink}
-            disabled={sharingLink}
-            className="btn-booth disabled:opacity-50"
-          >
-            {sharingLink ? "FILING…" : "SHARE VERDICT"}
-          </button>
-          <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
-            {sharing ? "PREPARING…" : "POST TO STORY"}
-          </button>
-        </div>
-
-        {/* Instagram follow — appears ONLY after a share is tapped. The share block above
-            stays visible and working (they may still want to save the image). */}
-        {hasShared && (
-          <div className="mt-3 flex flex-col items-center gap-1">
-            <a
-              href="https://instagram.com/houseofguilty"
-              target="_blank"
-              rel="noopener"
-              className="inline-flex items-center gap-1.5 text-sm font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
+        {!hasShared ? (
+          /* Pre-share: promise line + SHARE VERDICT (boxed, the perishable action) with
+             POST TO STORY beneath. The disclosure line IS the consent. */
+          <div className="w-full max-w-xs flex flex-col items-center gap-3">
+            <p className="text-ritual text-[11px] font-mono-light tracking-wide text-center">
+              Your words. Not your name.
+            </p>
+            <button
+              onClick={handleShareLink}
+              disabled={sharingLink}
+              className="btn-booth text-[11px] disabled:opacity-50"
             >
-              <Instagram size={15} strokeWidth={1.75} aria-hidden="true" />
-              @houseofguilty
-            </a>
+              {sharingLink ? "FILING…" : "SHARE VERDICT"}
+            </button>
+            <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
+              {sharing ? "PREPARING…" : "POST TO STORY"}
+            </button>
+          </div>
+        ) : (
+          /* Post-share: the wall becomes the boxed primary; the two share actions drop
+             to an equal-weight text-link pair (both still fully working for repeat
+             shares); FIRST OFFENCE closes the screen. No Instagram, no promise line. */
+          <div className="w-full max-w-xs flex flex-col items-center gap-5">
+            {verdictResponse !== "Entry withheld" && (
+              <button
+                onClick={() => handleNavigate("/thewall")}
+                className="btn-booth text-[11px]"
+              >
+                SEE THE GUILTY →
+              </button>
+            )}
+            <div className="flex items-center gap-6">
+              <button onClick={handleShareLink} disabled={sharingLink} className={shareSecondary}>
+                {sharingLink ? "FILING…" : "SHARE AGAIN"}
+              </button>
+              <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
+                {sharing ? "PREPARING…" : "POST TO STORY"}
+              </button>
+            </div>
             {/* Sampler CTA — NOT for in-venue scanners (physical ?venue= card): showing a
                 "buy online" link there poaches the host. isPhysicalScan() is false for
                 direct / Instagram / share-through, so those do get it. Unlike the shared
@@ -534,31 +545,28 @@ const Verdict = () => {
                 href="https://houseofguilty.com/contraband?source=booth-verdict"
                 target="_blank"
                 rel="noopener"
-                className="mt-4 text-sm font-mono-light tracking-wide text-[#FF4800] hover:opacity-80 transition-colors"
+                className="text-[9px] font-mono-light tracking-wide"
               >
-                THE FIRST OFFENCE — $55
+                <span className="text-muted-foreground">Reoffend.</span>{" "}
+                <span className="text-[#FF4800] hover:opacity-80 transition-colors">
+                  THE FIRST OFFENCE — $55
+                </span>
               </a>
             )}
           </div>
         )}
 
-        {/* Single exit. CONFESS AGAIN removed: it was the same number of taps as the
-            wall but a worse path — the wall PRIMES a second confession (social proof +
-            "mine's worse than that"), and its own pinned CTA returns them to /confess.
-            Two exits forced a decision; one exit forces none.
-
-            Promoted from exitLink (text-xs, muted — read as a legal footer) to text-sm.
-            One tier up, NOT two: a bold button here would pull the eye downward past
-            SHARE VERDICT, and sharing is the PERISHABLE action — once they leave for
-            the wall, Confess.tsx's mount reset wipes the card and it can never be
-            shared. The wall is always available; the share is not. */}
-        <div className="mt-10 flex flex-col items-center">
-          {verdictResponse !== "Entry withheld" && (
+        {/* Pre-share only: the quiet wall exit. One tier up from a footer, never
+            competing with SHARE VERDICT — sharing is the PERISHABLE action; once they
+            leave for the wall, Confess.tsx's mount reset wipes the card and it can
+            never be shared. Post-share the wall is the boxed primary above instead. */}
+        {!hasShared && verdictResponse !== "Entry withheld" && (
+          <div className="mt-10 flex flex-col items-center">
             <button onClick={() => handleNavigate("/thewall")} className={wallLink}>
               SEE THE GUILTY →
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
