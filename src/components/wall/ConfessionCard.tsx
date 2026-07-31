@@ -6,7 +6,6 @@ export interface ConfessionEntry {
   timestamp: string;
   confession: string;
   verdict: string;
-  verdictHidden: string;
   insertedAt?: number;
 }
 
@@ -59,12 +58,12 @@ const ConfessionCard = ({
 
   return (
     <div
-      className={`group transition-all duration-700 ${
+      className={`transition-all duration-700 ${
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
       }`}
       style={{ opacity: visible ? opacityFactor : 0 }}
     >
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-2">
         <span className="text-muted-foreground/80 text-[9px] tracking-[0.4em] uppercase font-mono-light">
           SUBJECT {entry.confessorId}
         </span>
@@ -74,22 +73,15 @@ const ConfessionCard = ({
         </span>
       </div>
 
-      <p className="text-foreground text-base md:text-lg font-mono-light leading-[1.6] whitespace-pre-line mb-4 max-w-[600px]">
+      {/* Hierarchy matches Verdict / VerdictShare: confession muted and secondary
+          above, the full verdict prominent below — one system across all three. */}
+      <p className="text-muted-foreground text-base md:text-lg font-mono-light leading-relaxed tracking-wide whitespace-pre-line mb-2 max-w-[600px]">
         {entry.confession}
       </p>
 
-      <div className="max-w-[600px]">
-        <p className="text-ritual text-xs font-mono-light tracking-wide mb-1 opacity-80">
-          {entry.verdict}
-        </p>
-        <div className="relative overflow-hidden h-8 transition-all duration-500 group-hover:h-9">
-          <p className="text-muted-foreground/50 text-xs font-mono-light leading-relaxed select-none">
-            {entry.verdictHidden}
-          </p>
-          <div className="absolute inset-0 backdrop-blur-[6px] transition-all duration-500 group-hover:backdrop-blur-[4px]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/70 to-background" />
-        </div>
-      </div>
+      <p className="font-control font-bold text-foreground text-xl md:text-2xl leading-tight whitespace-pre-line max-w-[600px]">
+        {entry.verdict}
+      </p>
     </div>
   );
 };

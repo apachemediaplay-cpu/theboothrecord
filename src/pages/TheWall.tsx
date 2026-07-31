@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Instagram } from "lucide-react";
 import BoothFooter from "@/components/BoothFooter";
@@ -10,7 +10,6 @@ import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 import { supabase } from "@/integrations/supabase/client";
 
 const TheWall = () => {
-  const feedRef = useRef<HTMLDivElement>(null);
   const [confessions, setConfessions] = useState<ConfessionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [confessionCount, setConfessionCount] = useState(0);
@@ -36,18 +35,14 @@ const TheWall = () => {
             hour: "2-digit",
             minute: "2-digit",
           });
-          // Extract first sentence as visible verdict, rest as hidden
-          const sentences = (c.verdict_text || "").split(/(?<=\.)\s+/);
-          const verdict = sentences[0] || "Verdict rendered.";
-          const verdictHidden = sentences.slice(1).join(" ") || "";
-
           return {
             id: c.subject_number,
             confessorId: `#${c.subject_number}`,
             timestamp,
             confession: c.confession_text,
-            verdict,
-            verdictHidden,
+            // Full verdict, shown plainly — same prominent treatment as Verdict /
+            // VerdictShare (the old first-sentence + blurred-tail split is gone).
+            verdict: c.verdict_text || "Verdict rendered.",
           };
         });
         setConfessions(rows);
@@ -60,14 +55,47 @@ const TheWall = () => {
   const atmosphere = useTimeAtmosphere();
 
 
-  // Very slow auto-scroll
+  // Very slow auto-scroll of the PAGE — the feed flows in the document scroller
+  // (the feed div itself never overflows; the old el.scrollTop version was a no-op).
+  // Pauses whenever the reader interacts (wheel / touch / pointer) and resumes 4s
+  // after the last interaction, so a card being read never drifts away mid-sentence.
   useEffect(() => {
-    const el = feedRef.current;
-    if (!el) return;
-    const interval = setInterval(() => {
-      el.scrollTop += 0.4;
-    }, 50);
-    return () => clearInterval(interval);
+    const scroller = document.scrollingElement;
+    if (!scroller) return;
+    let pausedUntil = 0;
+    const pause = () => {
+      pausedUntil = Date.now() + 4000;
+    };
+    window.addEventListener("wheel", pause, { passive: true });
+    window.addEventListener("touchstart", pause, { passive: true });
+    window.addEventListener("pointerdown", pause, { passive: true });
+    // rAF + time delta (8px/s regardless of frame rate — interval timers throttle,
+    // and scrollTop rounds sub-pixel writes away, so a fixed 0.4px-per-tick stalls).
+    // Float accumulator with resync after every pause: we continue from wherever the
+    // reader manually scrolled to instead of fighting them.
+    const SPEED = 8; // px per second
+    let pos: number | null = null;
+    let last = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.1);
+      last = now;
+      if (Date.now() < pausedUntil) {
+        pos = null;
+      } else {
+        if (pos === null) pos = scroller.scrollTop;
+        pos += SPEED * dt;
+        scroller.scrollTop = pos;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("wheel", pause);
+      window.removeEventListener("touchstart", pause);
+      window.removeEventListener("pointerdown", pause);
+    };
   }, []);
 
 
@@ -138,7 +166,7 @@ const TheWall = () => {
 
       {/* Confession feed. Top padding clears the FIXED header (≈202px mobile, taller at md
           where its paddings/type grow) so the first confession isn't hidden underneath. */}
-      <div ref={feedRef} className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-44">
+      <div className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-44">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -161,7 +189,7 @@ const TheWall = () => {
                 isNew={!!entry.insertedAt}
               />
               {i < confessions.length - 1 && (
-                <div className="border-t border-border/15 my-7 md:my-8" />
+                <div className="border-t border-border/15 my-4" />
               )}
             </div>
           ))
