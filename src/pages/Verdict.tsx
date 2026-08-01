@@ -407,8 +407,9 @@ const Verdict = () => {
   return (
     <div className="screen-container animate-fade-in">
       <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
-        {/* System stamp, not a headline — smallest text on the screen. */}
-        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] mb-6 min-h-[1em] relative">
+        {/* System stamp, not a headline — smallest text on the screen. 12px below,
+            matching the share page: stamp + confession read as one block. */}
+        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] mb-3 min-h-[1em] relative">
           <span className="relative inline-block">
             {typedText}
             {showCursor && <span className="animate-pulse">|</span>}
@@ -444,8 +445,11 @@ const Verdict = () => {
           </span>
         </p>
 
+        {/* 32px below the confession — matching the share page, and deliberately
+            the WIDEST break in the block: the gap between what a person typed and
+            what the machine said. */}
         {confession && (
-          <p className="text-muted-foreground text-base md:text-lg font-mono-light leading-relaxed tracking-wide mb-5 max-w-[600px] whitespace-pre-line">
+          <p className="text-muted-foreground text-base md:text-lg font-mono-light leading-relaxed tracking-wide mb-8 max-w-[600px] whitespace-pre-line">
             {confession}
           </p>
         )}

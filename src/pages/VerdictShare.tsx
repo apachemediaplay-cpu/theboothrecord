@@ -7,8 +7,10 @@ import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/
 // The Booth mark — STATIC by design: this page is read, not passed through, and the
 // FIRST OFFENCE link already carries the page's only pulse. No glow, no animation of
 // any kind; the dot stays inside the SVG (no box-shadow), unlike the gate.
-const BoothMark = () => (
-  <svg viewBox="0 0 240 240" className="mb-5 h-10 w-10" aria-hidden="true">
+// marginClass: the found state uses the default mb-8 (32px); the notfound state
+// passes mb-4 so its container's gap-4 stacks to the SAME 32px — one number.
+const BoothMark = ({ marginClass = "mb-8" }: { marginClass?: string }) => (
+  <svg viewBox="0 0 240 240" className={`${marginClass} h-10 w-10`} aria-hidden="true">
     <path
       d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
       fill="none"
@@ -81,7 +83,7 @@ const VerdictShare = () => {
     return (
       <main className="screen-container animate-fade-in">
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
-          <BoothMark />
+          <BoothMark marginClass="mb-4" />
           <p className="text-muted-foreground text-base font-mono-light">This record doesn't exist.</p>
         </div>
         <div className="fixed bottom-32 left-0 right-0 flex justify-center px-6">
@@ -100,7 +102,9 @@ const VerdictShare = () => {
         <BoothMark />
         {/* System stamp, not a headline — Verdict's treatment but UPPERCASE: this reader
             is a stranger arriving cold, and caps read as a document stamp. */}
-        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] uppercase mb-6">
+        {/* Masthead rhythm: 32px above this stamp (the mark is a heading), 12px
+            below it (stamp + confession are one block). */}
+        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] uppercase mb-3">
           The booth noticed.
         </p>
         {row?.confession_text ? (
@@ -108,7 +112,10 @@ const VerdictShare = () => {
             {row.confession_text}
           </p>
         ) : null}
-        <p className="font-control font-bold text-[#F4F0EA] text-2xl md:text-3xl leading-tight mb-8">
+        {/* 24px to the venue line below — metadata attached to the verdict, not a
+            peer of it; keeps confession → verdict (32px) the widest gap in the
+            record. */}
+        <p className="font-control font-bold text-[#F4F0EA] text-2xl md:text-3xl leading-tight mb-6">
           {row?.verdict_text}
         </p>
         <p className="text-muted-foreground/60 text-xs font-mono-light tracking-[0.2em] uppercase">
@@ -120,7 +127,10 @@ const VerdictShare = () => {
       {/* Hairline rule — same treatment as the Verdict screen — separating the record
           above (left-aligned) from the actions below (centred). */}
       <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-3">
-        <Link to={ctaHref} className="btn-booth text-[11px] text-center">
+        <Link
+          to={ctaHref}
+          className="btn-booth text-sm text-center text-[hsl(var(--ritual-green))]"
+        >
           YOUR TURN →
         </Link>
         <a
