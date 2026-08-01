@@ -70,23 +70,6 @@ const Confess = () => {
     el.style.height = `${el.scrollHeight}px`;
   }, [confession, interimText]);
 
-  // The previous confession's leftovers must be cleared before a new one starts,
-  // or /verdict can briefly render the OLD verdict while the new one is in flight.
-  // This used to live in Verdict.tsx's handleConfessAgain, which is being removed —
-  // so it moves here, where EVERY route into the booth passes through (wall CTA,
-  // fresh QR scan, bookmark, /return).
-  //
-  // THREE keys only. DO NOT clear "venueName".
-  // captureSourceFromUrl() writes venueName from ?venue= on a fresh scan and this
-  // effect runs after it — clearing it here would wipe the venue on a genuine QR
-  // scan and print LOCATION WITHHELD instead of AT HIGHBALL.
-  // "source", "is_test", "consent" and "booth_session_id" must also survive.
-  useEffect(() => {
-    sessionStorage.removeItem("confession");
-    sessionStorage.removeItem("subjectNumber");
-    sessionStorage.removeItem("verdictSource");
-  }, []);
-
   // Typing animation for placeholder: type the current line, hold ~2s, then
   // advance to the next line (looping), which re-runs this effect and retypes.
   useEffect(() => {
@@ -199,6 +182,20 @@ const Confess = () => {
 
   const handleSubmit = () => {
     if (confession.trim()) {
+      // The previous verdict's keys are cleared HERE, at the moment this becomes a
+      // NEW confession — never on /confess mount. Mount-clearing destroyed an
+      // unshared verdict two taps into the main flow (verdict → SEE THE GUILTY →
+      // YOUR TURN lands here → wiped, unrecoverable); merely visiting this screen
+      // must never cost the user their card. Clearing at submit still guarantees
+      // /verdict can't flash a stale verdict mid-flight: all five keys go before
+      // the new run starts. DO NOT move this back to a mount effect.
+      // DO NOT clear "source", "venueName", "is_test", "consent" or
+      // "booth_session_id" — see captureSourceFromUrl.
+      sessionStorage.removeItem("confession");
+      sessionStorage.removeItem("subjectNumber");
+      sessionStorage.removeItem("verdictSource");
+      sessionStorage.removeItem("verdictResponse");
+      sessionStorage.removeItem("stampVenue");
       sessionStorage.setItem("confession", confession);
       navigate("/receiving");
     }
