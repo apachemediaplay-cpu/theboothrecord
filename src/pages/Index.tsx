@@ -224,28 +224,52 @@ const Index = () => {
                   0 0 209px hsl(var(--ritual-green) / 0.60);
               }
             }
+            .gate-wordmark {
+              margin-top: 40px;
+              font-size: 24px;
+              letter-spacing: 0.20em;
+              /* letter-spacing adds a trailing space after the last glyph, which
+                 inflates the CSS box and drags the flex centring ~2px left of the
+                 visible glyphs. Cancel exactly one letter-space so the box matches
+                 the glyph extent and the lockup centres optically. */
+              margin-right: -0.20em;
+            }
+            @media (min-width: 768px) {
+              .gate-wordmark {
+                margin-top: 66px;
+                font-size: 39px;
+              }
+            }
             @media (prefers-reduced-motion: reduce) {
               .gate-mark-dot { animation: none; }
             }
           `}</style>
-          <div className="gate-mark relative">
-            <svg viewBox="0 0 240 240" className="h-full w-full">
-              <path
-                d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
-                fill="none"
-                stroke="hsl(var(--ritual-green))"
-                strokeWidth="31"
-              />
-              <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
-            </svg>
-            {/* Outer span carries the centring translate; inner span carries the
-                pulse — the animation's scale() must not fight the positioning. */}
-            <span
-              className="absolute"
-              style={{ left: "50%", top: "67.08%", transform: "translate(-50%, -50%)" }}
-            >
-              <span className="gate-mark-dot block rounded-full" />
-            </span>
+          {/* Mark + wordmark are ONE lockup: the flex column centres the combined
+              block, so the mark sits slightly higher than it would alone — the
+              wordmark's weight is accounted for in the centring. */}
+          <div className="flex flex-col items-center">
+            <div className="gate-mark relative">
+              <svg viewBox="0 0 240 240" className="h-full w-full">
+                <path
+                  d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
+                  fill="none"
+                  stroke="hsl(var(--ritual-green))"
+                  strokeWidth="31"
+                />
+                <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
+              </svg>
+              {/* Outer span carries the centring translate; inner span carries the
+                  pulse — the animation's scale() must not fight the positioning. */}
+              <span
+                className="absolute"
+                style={{ left: "50%", top: "67.08%", transform: "translate(-50%, -50%)" }}
+              >
+                <span className="gate-mark-dot block rounded-full" />
+              </span>
+            </div>
+            <p className="gate-wordmark font-control font-bold uppercase text-foreground">
+              THE BOOTH
+            </p>
           </div>
         </div>
       )}
