@@ -658,6 +658,64 @@ const RegisterSetEditor = ({
   );
 };
 
+// Stage-to-stage conversion for the Wall funnel: next-stage count over previous.
+// Wall visits can exceed shares (people land on the wall without sharing anything),
+// so values over 100% are legitimate and rendered as-is.
+const stagePct = (numerator: number, denominator: number): string =>
+  denominator > 0 ? `${Math.round((numerator / denominator) * 100)}%` : "—";
+
+// One funnel window as a single line: SCANS n → % → CONFESSIONS n → % → SHARES n
+// → % → WALL n. Current window bright, previous muted for comparison.
+const FunnelLine = ({
+  title,
+  scans,
+  confessions,
+  shares,
+  wallViews,
+  bright,
+}: {
+  title: string;
+  scans: number;
+  confessions: number;
+  shares: number;
+  wallViews: number;
+  bright?: boolean;
+}) => {
+  const stages = [
+    { label: "SCANS", n: scans },
+    { label: "CONFESSIONS", n: confessions },
+    { label: "SHARES", n: shares },
+    { label: "WALL", n: wallViews },
+  ];
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <span className="w-14 shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground/70">
+        {title}
+      </span>
+      {stages.map((s, i) => (
+        <span key={s.label} className="flex items-baseline gap-2">
+          {i > 0 ? (
+            <span className="text-[10px] tabular-nums text-muted-foreground/50">
+              → {stagePct(s.n, stages[i - 1].n)}
+            </span>
+          ) : null}
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            {s.label}
+          </span>
+          <span
+            className={cn(
+              "text-sm font-semibold tabular-nums",
+              bright ? "text-foreground" : "text-muted-foreground",
+            )}
+          >
+            {s.n}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const Moderate = () => {
   const { toast } = useToast();
 
@@ -674,15 +732,29 @@ const Moderate = () => {
 
   // Top-level console tab. Persisted to sessionStorage so returning within the
   // session lands on the last-used tab; a fresh session defaults to Moderate.
-  type ConsoleTab = "moderate" | "venues" | "stats";
+  type ConsoleTab = "moderate" | "venues" | "stats" | "wall";
   const [consoleTab, setConsoleTab] = useState<ConsoleTab>(() => {
     const s = sessionStorage.getItem("booth-console-tab");
-    return s === "venues" || s === "stats" ? s : "moderate";
+    return s === "venues" || s === "stats" || s === "wall" ? s : "moderate";
   });
   const changeConsoleTab = (t: ConsoleTab) => {
     setConsoleTab(t);
     sessionStorage.setItem("booth-console-tab", t);
   };
+
+  // ── Wall tab: the scans → confessions → shares → wall funnel, two fixed 7-night
+  // windows from admin_wall_funnel. No range/venue axis — the windows are fixed by
+  // design, so the global filter bar is disabled on this tab (visibly, like Venues).
+  type WallFunnelRow = {
+    period: string;
+    scans: number;
+    confessions: number;
+    shares: number;
+    wall_views: number;
+    wall_engaged: number;
+  };
+  const [wallFunnel, setWallFunnel] = useState<WallFunnelRow[] | null>(null);
+  const [wallFunnelError, setWallFunnelError] = useState(false);
 
   // ── Placeholder sets (public.registers): the content behind the register picker.
   // Public-read table (the same data the confess screen's get_confess_config serves);
@@ -1029,6 +1101,32 @@ const Moderate = () => {
       cancelled = true;
     };
   }, [session, consoleTab, refreshTick]);
+
+  // Wall funnel read — wall tab only, same Retry tick as the other tab loads.
+  useEffect(() => {
+    if (!session || consoleTab !== "wall") return;
+    let cancelled = false;
+    setWallFunnelError(false);
+    Promise.resolve(rpc("admin_wall_funnel", { _tz: tz })).then(
+      (r) => {
+        if (cancelled) return;
+        if (r.error || !Array.isArray(r.data)) {
+          setWallFunnelError(true);
+          setWallFunnel(null);
+          return;
+        }
+        setWallFunnel(r.data as WallFunnelRow[]);
+      },
+      () => {
+        if (cancelled) return;
+        setWallFunnelError(true);
+        setWallFunnel(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [session, consoleTab, tz, refreshTick]);
 
   // ── Queue: derived rows, selection lifecycle, full-filter fetch ──
   // Topic filter is client-side (the list RPC has no topic param): the visible list is
@@ -1854,12 +1952,17 @@ const Moderate = () => {
                 size="sm"
                 variant={r === range ? "secondary" : "ghost"}
                 onClick={() => changeRange(r)}
+                disabled={consoleTab === "wall"}
               >
                 {r === "all" ? "All" : `${r} nights`}
               </Button>
             ))}
           </div>
-          <Select value={venue} onValueChange={changeVenue} disabled={consoleTab === "venues"}>
+          <Select
+            value={venue}
+            onValueChange={changeVenue}
+            disabled={consoleTab === "venues" || consoleTab === "wall"}
+          >
             <SelectTrigger className="w-full sm:w-64">
               <SelectValue placeholder="All venues" />
             </SelectTrigger>
@@ -1896,6 +1999,13 @@ const Moderate = () => {
             onClick={() => changeConsoleTab("stats")}
           >
             Stats
+          </Button>
+          <Button
+            size="sm"
+            variant={consoleTab === "wall" ? "secondary" : "ghost"}
+            onClick={() => changeConsoleTab("wall")}
+          >
+            Wall
           </Button>
         </div>
 
@@ -2022,6 +2132,77 @@ const Moderate = () => {
           ) : null}
         </section>
         </>
+        ) : null}
+
+        {/* ── WALL TAB — the funnel + the two wall numbers. Fixed 7-night windows,
+            current vs previous; nothing else by design (no charts, no pickers). ── */}
+        {consoleTab === "wall" ? (
+        <section className="rounded-lg border border-border p-4 space-y-5">
+          <p className="text-xs text-muted-foreground">
+            Last 7 nights vs the 7 before. Fixed windows, 4am night cutoff, test sessions
+            excluded.
+          </p>
+          {wallFunnelError ? (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Couldn't load the funnel.</p>
+              <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                Retry
+              </Button>
+            </div>
+          ) : !wallFunnel ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            (() => {
+              const cur = wallFunnel.find((r) => r.period === "current");
+              const prev = wallFunnel.find((r) => r.period === "previous");
+              return (
+                <>
+                  <div className="space-y-2">
+                    <FunnelLine
+                      title="Last 7"
+                      scans={num(cur?.scans)}
+                      confessions={num(cur?.confessions)}
+                      shares={num(cur?.shares)}
+                      wallViews={num(cur?.wall_views)}
+                      bright
+                    />
+                    <FunnelLine
+                      title="Prev 7"
+                      scans={num(prev?.scans)}
+                      confessions={num(prev?.confessions)}
+                      shares={num(prev?.shares)}
+                      wallViews={num(prev?.wall_views)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-md border border-border px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Wall visits
+                      </p>
+                      <p className="text-lg font-semibold tabular-nums">
+                        {num(cur?.wall_views)}{" "}
+                        <span className="text-xs font-normal text-muted-foreground">
+                          · prev {num(prev?.wall_views)}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="rounded-md border border-border px-3 py-2">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Stayed 15s+
+                      </p>
+                      <p className="text-lg font-semibold tabular-nums">
+                        {num(cur?.wall_engaged)}{" "}
+                        <span className="text-xs font-normal text-muted-foreground">
+                          · prev {num(prev?.wall_engaged)}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </>
+              );
+            })()
+          )}
+        </section>
         ) : null}
 
         {/* ── STATS TAB — the venue report (venue selected) or the cross-venue rollup. ── */}

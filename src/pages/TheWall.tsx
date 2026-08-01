@@ -8,6 +8,7 @@ import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
 import { useWallSound } from "@/hooks/useWallSound";
 import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 import { supabase } from "@/integrations/supabase/client";
+import { logWallView, trackWallEngagement } from "@/lib/metrics";
 
 const TheWall = () => {
   const [confessions, setConfessions] = useState<ConfessionEntry[]>([]);
@@ -55,6 +56,13 @@ const TheWall = () => {
 
   const { soundEnabled, toggleSound } = useWallSound();
   const atmosphere = useTimeAtmosphere();
+
+  // Wall analytics: one view per session + the 15s-visible engagement mark.
+  // Both fire-and-forget after mount — never blocks or delays rendering.
+  useEffect(() => {
+    logWallView();
+    return trackWallEngagement();
+  }, []);
 
 
   // Very slow auto-scroll of the PAGE — the feed flows in the document scroller

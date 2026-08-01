@@ -74,6 +74,110 @@ export function logScan(source: string | null | undefined): void {
   }
 }
 
+// ── Wall analytics (wall_events) ─────────────────────────────────────────────
+
+// First-seen marker for anonymous returning/new classification. localStorage holds
+// ONLY a first-seen timestamp — no identifier — and the server receives ONLY the
+// derived boolean. "Returning" therefore means: this browser had seen the wall in
+// an earlier session. localStorage unavailable (private mode) → counts as new.
+const SEEN_KEY = "booth_seen";
+
+// Log a wall view — ONCE per session, same optimistic-marker dedup as logScan:
+// the marker is set BEFORE the RPC fires so a fast refresh can't double-insert.
+// Fully fire-and-forget; a failure never blocks or delays the wall rendering.
+export function logWallView(): void {
+  try {
+    if (typeof sessionStorage === "undefined") return;
+    const sessionId = getSessionId();
+    if (sessionStorage.getItem("booth_wall_logged") === sessionId) return;
+    sessionStorage.setItem("booth_wall_logged", sessionId);
+    let isReturning = false;
+    try {
+      isReturning = localStorage.getItem(SEEN_KEY) !== null;
+      if (!isReturning) localStorage.setItem(SEEN_KEY, String(Date.now()));
+    } catch {
+      /* localStorage blocked → counts as new, marker simply never persists */
+    }
+    fireAndForget(
+      rpc("log_wall_view", {
+        _session_id: sessionId,
+        _is_test: isTestSession(),
+        _returning: isReturning,
+        // Who sent them (session slug, 'direct' when absent) …
+        _source: sessionStorage.getItem("source") ?? "direct",
+        // … and how they got HERE: a session that passed the consent gate
+        // (booth_scan_logged) reached the wall by internal navigation; one that
+        // didn't landed on the wall cold (IG wall link, shared URL, bookmark).
+        // Marker-derived, so stripping URL params can't fake an external landing.
+        _arrival:
+          sessionStorage.getItem("booth_scan_logged") === sessionId ? "internal" : "direct",
+      }),
+    );
+  } catch {
+    /* never block the wall on a metric */
+  }
+}
+
+// Mark this session's wall visit engaged after 15s of CUMULATIVE VISIBLE time.
+// The clock only runs while the tab is visible (visibilitychange pauses it), so
+// backgrounding can't overcount; closing before 15s simply never fires — a bounce
+// writes nothing, which is what makes the metric trustworthy. Fires at most once
+// per session (sessionStorage marker). Returns a cleanup fn for the mount effect.
+export function trackWallEngagement(): () => void {
+  try {
+    if (typeof document === "undefined" || typeof sessionStorage === "undefined") {
+      return () => {};
+    }
+    const sessionId = getSessionId();
+    if (sessionStorage.getItem("booth_wall_engaged") === sessionId) return () => {};
+
+    const THRESHOLD_MS = 15_000;
+    let elapsed = 0; // visible ms accumulated across hide/show cycles
+    let visibleSince: number | null =
+      document.visibilityState === "visible" ? Date.now() : null;
+    let timer: number | undefined;
+    let done = false;
+
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+
+    const fire = () => {
+      if (done) return;
+      done = true;
+      sessionStorage.setItem("booth_wall_engaged", sessionId);
+      fireAndForget(rpc("mark_wall_engaged", { _session_id: sessionId }));
+      cleanup();
+    };
+
+    // (Re)arm the countdown for the REMAINING visible time; disarm while hidden.
+    const schedule = () => {
+      window.clearTimeout(timer);
+      if (visibleSince !== null && !done) {
+        timer = window.setTimeout(fire, Math.max(0, THRESHOLD_MS - elapsed));
+      }
+    };
+
+    const onVisibility = () => {
+      if (done) return;
+      if (document.visibilityState === "visible") {
+        visibleSince = Date.now();
+      } else {
+        if (visibleSince !== null) elapsed += Date.now() - visibleSince;
+        visibleSince = null;
+      }
+      schedule();
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    schedule();
+    return cleanup;
+  } catch {
+    return () => {};
+  }
+}
+
 // Resolve THIS confession's uuid share id. Owner-gated server-side (session id + verdict),
 // so it can't be used to map a sequential subject_number to a uuid. Returns the uuid
 // string for the share link, or null if ownership wasn't proven / on error.
