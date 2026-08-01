@@ -548,7 +548,7 @@ const Verdict = () => {
                 className="text-[9px] font-mono-light tracking-wide"
               >
                 <span className="text-muted-foreground">Reoffend.</span>{" "}
-                <span className="text-[#FF4800] hover:opacity-80 transition-colors">
+                <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
                   THE FIRST OFFENCE — $55
                 </span>
               </a>

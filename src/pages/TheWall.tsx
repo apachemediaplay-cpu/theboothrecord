@@ -213,7 +213,10 @@ const TheWall = () => {
         <div className="px-6 py-3">
           {/* One row: the label WAS the button's message, so the button says it.
               Same btn-booth treatment and destination as the old ENTER THE BOOTH. */}
-          <Link to="/confess" className="btn-booth block whitespace-nowrap text-center text-sm">
+          <Link
+            to="/confess"
+            className="btn-booth block whitespace-nowrap text-center text-sm text-[hsl(var(--ritual-green))]"
+          >
             YOUR TURN →
           </Link>
         </div>
