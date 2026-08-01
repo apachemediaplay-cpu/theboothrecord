@@ -28,16 +28,18 @@ const TheWall = () => {
           return;
         }
         const rows: ConfessionEntry[] = data.map((c) => {
+          const createdAtMs = new Date(c.created_at).getTime();
+          // Date-only fallback for the metadata line once relative time ages past
+          // 7 days (the uppercase class in the card renders it as "30 JUL 2026").
           const timestamp = new Date(c.created_at).toLocaleString("en-GB", {
             day: "2-digit",
             month: "short",
             year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
           });
           return {
             id: c.subject_number,
             confessorId: `#${c.subject_number}`,
+            createdAtMs,
             timestamp,
             confession: c.confession_text,
             // Full verdict, shown plainly — same prominent treatment as Verdict /
@@ -147,26 +149,12 @@ const TheWall = () => {
           </div>
         )}
 
-        {/* Instagram follow. Placed here, NOT in the pinned bar: the bar has one job
-            (return them to /confess) and a second link would dilute it. This catches the
-            confessors who chose NOT to share — the Verdict screen's follow link is gated
-            behind hasShared, so that group is otherwise never asked. */}
-        <div className="flex justify-center pb-6 md:pb-8">
-          <a
-            href="https://instagram.com/houseofguilty"
-            target="_blank"
-            rel="noopener"
-            className="inline-flex items-center gap-1.5 text-sm font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
-          >
-            <Instagram size={15} strokeWidth={1.75} aria-hidden="true" />
-            @houseofguilty
-          </a>
-        </div>
       </div>
 
-      {/* Confession feed. Top padding clears the FIXED header (≈202px mobile, taller at md
-          where its paddings/type grow) so the first confession isn't hidden underneath. */}
-      <div className="max-w-[720px] mx-auto px-6 pt-52 md:pt-64 pb-44">
+      {/* Confession feed. Top padding clears the FIXED header (≈158px mobile now the
+          Instagram link lives in the bottom bar; taller at md where its paddings/type
+          grow) so the first confession isn't hidden underneath. */}
+      <div className="max-w-[720px] mx-auto px-6 pt-44 md:pt-52 pb-44">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -181,16 +169,15 @@ const TheWall = () => {
           </div>
         ) : (
           confessions.map((entry, i) => (
-            <div key={entry.id}>
+            // No separators — whitespace alone divides the pairs: tight inside a
+            // card (see ConfessionCard), 22px between cards.
+            <div key={entry.id} className="mb-[22px]">
               <ConfessionCard
                 entry={entry}
                 index={i}
                 total={confessions.length}
                 isNew={!!entry.insertedAt}
               />
-              {i < confessions.length - 1 && (
-                <div className="border-t border-border/15 my-4" />
-              )}
             </div>
           ))
         )}
@@ -209,9 +196,25 @@ const TheWall = () => {
           <p className="text-ritual/70 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 text-center">
             YOUR TURN.
           </p>
-          <Link to="/confess" className="btn-booth text-base block text-center">
-            ENTER THE BOOTH →
-          </Link>
+          {/* Instagram follow moved out of the header — it rides beside the CTA so the
+              header stays title + live status only. */}
+          <div className="flex items-center gap-2">
+            <Link
+              to="/confess"
+              className="btn-booth block flex-1 whitespace-nowrap text-center text-sm"
+            >
+              ENTER THE BOOTH →
+            </Link>
+            <a
+              href="https://instagram.com/houseofguilty"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex shrink-0 items-center gap-1 text-[10px] font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
+            >
+              <Instagram size={13} strokeWidth={1.75} aria-hidden="true" />
+              @houseofguilty
+            </a>
+          </div>
         </div>
       </div>
 

@@ -3,23 +3,25 @@ import { useState, useEffect } from "react";
 export interface ConfessionEntry {
   id: number;
   confessorId: string;
-  timestamp: string;
+  createdAtMs: number;
+  timestamp: string; // date fallback for confessions older than 7 days
   confession: string;
   verdict: string;
   insertedAt?: number;
 }
 
-function getRelativeTime(insertedAt: number | undefined): string | null {
-  if (!insertedAt) return null;
-  const diff = Date.now() - insertedAt;
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 10) return "Just now";
-  if (seconds < 60) return `${seconds} seconds ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  return null;
+// Relative age for the metadata line: "4 MIN AGO" / "1 HR AGO" / "3 DAYS AGO",
+// falling back to the absolute date past 7 days. Uppercase by convention — the
+// metadata spans render with the uppercase class either way.
+function timeLabel(createdAtMs: number, fallback: string): string {
+  const mins = Math.floor((Date.now() - createdAtMs) / 60000);
+  if (mins < 1) return "JUST NOW";
+  if (mins < 60) return `${mins} MIN AGO`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} HR AGO`;
+  const days = Math.floor(hrs / 24);
+  if (days <= 7) return `${days} ${days === 1 ? "DAY" : "DAYS"} AGO`;
+  return fallback;
 }
 
 const ConfessionCard = ({
@@ -34,9 +36,6 @@ const ConfessionCard = ({
   isNew?: boolean;
 }) => {
   const [visible, setVisible] = useState(!isNew);
-  const [relativeTime, setRelativeTime] = useState<string | null>(
-    getRelativeTime(entry.insertedAt)
-  );
 
   useEffect(() => {
     if (isNew) {
@@ -45,16 +44,18 @@ const ConfessionCard = ({
     }
   }, [isNew]);
 
+  // Keep the relative age honest while the reader lingers (auto-scroll makes long
+  // sessions normal). Once past the 7-day date fallback the label never changes,
+  // so the minute tick is skipped entirely.
+  const [, tick] = useState(0);
   useEffect(() => {
-    if (!entry.insertedAt) return;
-    const interval = setInterval(() => {
-      setRelativeTime(getRelativeTime(entry.insertedAt));
-    }, 10000);
+    if (Date.now() - entry.createdAtMs > 7 * 24 * 3600 * 1000) return;
+    const interval = setInterval(() => tick((t) => t + 1), 60000);
     return () => clearInterval(interval);
-  }, [entry.insertedAt]);
+  }, [entry.createdAtMs]);
 
   const opacityFactor = 1 - (index / total) * 0.3;
-  const displayTime = relativeTime || entry.timestamp;
+  const displayTime = timeLabel(entry.createdAtMs, entry.timestamp);
 
   return (
     <div
@@ -63,23 +64,26 @@ const ConfessionCard = ({
       }`}
       style={{ opacity: visible ? opacityFactor : 0 }}
     >
-      <div className="flex items-center gap-3 mb-2">
-        <span className="text-muted-foreground/80 text-[9px] tracking-[0.4em] uppercase font-mono-light">
-          SUBJECT {entry.confessorId}
+      {/* Metadata — deliberately the faintest thing on the card: "#1121 · 4 MIN AGO". */}
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-muted-foreground/30 text-[8px] tracking-[0.4em] uppercase font-mono-light">
+          {entry.confessorId}
         </span>
-        <span className="text-muted-foreground/20 text-[9px]">·</span>
-        <span className="text-muted-foreground/80 text-[9px] tracking-[0.2em] font-mono-light">
+        <span className="text-muted-foreground/15 text-[8px]">·</span>
+        <span className="text-muted-foreground/30 text-[8px] tracking-[0.2em] uppercase font-mono-light">
           {displayTime}
         </span>
       </div>
 
-      {/* Hierarchy matches Verdict / VerdictShare: confession muted and secondary
-          above, the full verdict prominent below — one system across all three. */}
-      <p className="text-muted-foreground text-base md:text-lg font-mono-light leading-relaxed tracking-wide whitespace-pre-line mb-2 max-w-[600px]">
+      {/* Confession + verdict read as ONE UNIT at roughly equal weight — two voices,
+          not headline and subtitle. Mono renders visually smaller than Control, so
+          12.5px mono ≈ 14px Control. Tight 4px inside the pair; the gap BETWEEN
+          pairs lives on the wrapper in TheWall. */}
+      <p className="text-foreground/70 text-[12.5px] font-mono-light leading-relaxed tracking-wide whitespace-pre-line mb-1 max-w-[600px]">
         {entry.confession}
       </p>
 
-      <p className="font-control font-bold text-foreground text-xl md:text-2xl leading-tight whitespace-pre-line max-w-[600px]">
+      <p className="font-control font-bold text-foreground text-[14px] leading-snug whitespace-pre-line max-w-[600px]">
         {entry.verdict}
       </p>
     </div>
