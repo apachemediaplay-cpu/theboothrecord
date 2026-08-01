@@ -112,7 +112,7 @@ const VerdictShare = () => {
           href="https://houseofguilty.com/contraband?source=booth-share"
           target="_blank"
           rel="noopener"
-          className="mt-4 text-[9px] font-mono-light tracking-wide"
+          className="mt-4 text-[11px] font-mono-light tracking-wide"
         >
           <span className="text-muted-foreground">Reoffend.</span>{" "}
           <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
