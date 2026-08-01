@@ -59,7 +59,7 @@ const App = () => {
           <Route path="/thewall" element={<TheWall />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/moderate" element={<Moderate />} />
+          <Route path="/console" element={<Moderate />} />
           <Route path="/v/:id" element={<VerdictShare />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

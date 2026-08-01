@@ -1401,7 +1401,7 @@ const Moderate = () => {
     setSending(true);
     const { error } = await sb.auth.signInWithOtp({
       email: addr,
-      options: { emailRedirectTo: `${window.location.origin}/moderate` },
+      options: { emailRedirectTo: `${window.location.origin}/console` },
     });
     setSending(false);
     if (error) {
