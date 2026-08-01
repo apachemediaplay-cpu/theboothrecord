@@ -136,33 +136,46 @@ const TheWall = () => {
           viewport and the feed below carries matching top padding. Stays on arrival and
           while the feed scrolls. */}
       <div className="fixed top-0 inset-x-0 z-20 bg-background/95 backdrop-blur-sm">
-        {/* Header */}
-        <div className="pt-16 pb-4 md:pt-20 md:pb-6 text-center px-6">
-          <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide mb-2">
+        {/* Masthead: three centred rows in descending size, tight — one block, not
+            three elements. Both bars are pinned, so every px here is feed space. */}
+        <div className="pt-6 pb-3 md:pt-8 md:pb-4 px-6 text-center">
+          <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide">
             THE GUILTY
           </h1>
-        </div>
 
-        {/* Live indicator — populated view ONLY. A manually-gated wall has no real-time
-            status, so this is suppressed on the empty state (it would misrepresent it). */}
-        {confessions.length > 0 && (
-          <div className="flex items-center justify-center gap-2 pb-6 md:pb-8">
-            <span className="text-muted-foreground/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
-              LIVE CONFESSIONS
-            </span>
-            <span
-              className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
-              style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
-            />
+          {/* Live indicator — populated view ONLY. A manually-gated wall has no
+              real-time status, so this is suppressed on the empty state (it would
+              misrepresent it). Words share the dot's ritual green — one indicator. */}
+          {confessions.length > 0 && (
+            <div className="mt-1 flex items-center justify-center gap-2">
+              <span className="text-ritual/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
+                LIVE CONFESSIONS
+              </span>
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
+                style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
+              />
+            </div>
+          )}
+
+          <div className="mt-1.5 flex justify-center">
+            <a
+              href="https://instagram.com/houseofguilty"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1 text-[10px] font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
+            >
+              <Instagram size={12} strokeWidth={1.75} aria-hidden="true" />
+              @houseofguilty
+            </a>
           </div>
-        )}
-
+        </div>
       </div>
 
-      {/* Confession feed. Top padding clears the FIXED header (≈158px mobile now the
-          Instagram link lives in the bottom bar; taller at md where its paddings/type
-          grow) so the first confession isn't hidden underneath. */}
-      <div className="max-w-[720px] mx-auto px-6 pt-44 md:pt-52 pb-44">
+      {/* Confession feed. Top padding clears the FIXED masthead (≈107px mobile, taller
+          at md where its paddings/type grow); bottom padding clears the single-row
+          pinned bar (≈107px) so the last confession isn't hidden underneath. */}
+      <div className="max-w-[720px] mx-auto px-6 pt-32 md:pt-36 pb-36">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -198,31 +211,11 @@ const TheWall = () => {
           param-less URL, so the venue still carries through to the confession. */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background/95 backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="px-6 py-3">
-          {/* YOUR TURN. stays the small green lead-in; ENTER THE BOOTH promoted from muted
-              text to the btn-booth primary (bordered, prominent) so it reads as THE action.
-              Bar position/z/border/blur unchanged — only the button's visual weight. */}
-          <p className="text-ritual/70 text-[10px] tracking-[0.5em] uppercase font-mono-light mb-2 text-center">
-            YOUR TURN.
-          </p>
-          {/* Instagram follow moved out of the header — it rides beside the CTA so the
-              header stays title + live status only. */}
-          <div className="flex items-center gap-2">
-            <Link
-              to="/confess"
-              className="btn-booth block flex-1 whitespace-nowrap text-center text-sm"
-            >
-              ENTER THE BOOTH →
-            </Link>
-            <a
-              href="https://instagram.com/houseofguilty"
-              target="_blank"
-              rel="noopener"
-              className="inline-flex shrink-0 items-center gap-1 text-[10px] font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
-            >
-              <Instagram size={13} strokeWidth={1.75} aria-hidden="true" />
-              @houseofguilty
-            </a>
-          </div>
+          {/* One row: the label WAS the button's message, so the button says it.
+              Same btn-booth treatment and destination as the old ENTER THE BOOTH. */}
+          <Link to="/confess" className="btn-booth block whitespace-nowrap text-center text-sm">
+            YOUR TURN. →
+          </Link>
         </div>
       </div>
 
