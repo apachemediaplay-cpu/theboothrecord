@@ -4,6 +4,22 @@ import BoothFooter from "@/components/BoothFooter";
 import { fetchSharedVerdict, type SharedVerdict } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
 
+// The Booth mark — STATIC by design: this page is read, not passed through, and the
+// FIRST OFFENCE link already carries the page's only pulse. No glow, no animation of
+// any kind; the dot stays inside the SVG (no box-shadow), unlike the gate.
+const BoothMark = () => (
+  <svg viewBox="0 0 240 240" className="mb-5 h-10 w-10" aria-hidden="true">
+    <path
+      d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
+      fill="none"
+      stroke="hsl(var(--ritual-green))"
+      strokeWidth="31"
+    />
+    <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
+    <circle cx="120" cy="161" r="19" fill="hsl(var(--ritual-green))" />
+  </svg>
+);
+
 // Public landing for a shared verdict link (/v/:id). A recipient — not the confessor —
 // lands here. Reads the verdict by its unguessable uuid via get_share_verdict; an unknown
 // or non-uuid id resolves to nothing and shows the not-found state. No names, venue only.
@@ -65,6 +81,7 @@ const VerdictShare = () => {
     return (
       <main className="screen-container animate-fade-in">
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+          <BoothMark />
           <p className="text-muted-foreground text-base font-mono-light">This record doesn't exist.</p>
         </div>
         <div className="fixed bottom-32 left-0 right-0 flex justify-center px-6">
@@ -80,6 +97,7 @@ const VerdictShare = () => {
   return (
     <main className="screen-container animate-fade-in">
       <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
+        <BoothMark />
         {/* System stamp, not a headline — Verdict's treatment but UPPERCASE: this reader
             is a stranger arriving cold, and caps read as a document stamp. */}
         <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] uppercase mb-6">
