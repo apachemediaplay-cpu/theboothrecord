@@ -22,6 +22,40 @@ const Index = () => {
   const fullText1 = "Once you begin, you can't take it back.";
   const fullText2 = "That's the point.";
 
+  // ── Opening sequence: mark (hold 1600ms) → fading (500ms out) → gate at
+  // 2100ms, when the content fades in and the typing starts. prefers-reduced-
+  // motion starts directly at 'gate' (no mark, no pulse, straight to typing).
+  const [phase, setPhase] = useState<"mark" | "fading" | "gate">(() =>
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? "gate"
+      : "mark",
+  );
+
+  useEffect(() => {
+    if (phase === "gate") return; // reduced-motion start — nothing to sequence
+    const fadeT = window.setTimeout(
+      () => setPhase((p) => (p === "mark" ? "fading" : p)),
+      1600,
+    );
+    const gateT = window.setTimeout(() => setPhase("gate"), 2100);
+    // Any tap or key during the hold skips straight to the gate. The late-firing
+    // timers are harmless after a skip: fadeT only downgrades from 'mark', and
+    // gateT re-sets 'gate' which React ignores.
+    const skip = () => setPhase("gate");
+    window.addEventListener("pointerdown", skip);
+    window.addEventListener("keydown", skip);
+    return () => {
+      window.clearTimeout(fadeT);
+      window.clearTimeout(gateT);
+      window.removeEventListener("pointerdown", skip);
+      window.removeEventListener("keydown", skip);
+    };
+    // Mount-once in practice: phase only moves forward, and the guard exits for
+    // every phase but the initial 'mark'.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // (Venue ?source= capture now happens globally in App.tsx on every load.)
 
   // Count this arrival at the gate — once per session, fire-and-forget (see logScan). The
@@ -32,6 +66,9 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    // The typing waits for the opening sequence — it starts the moment the gate
+    // content fades in, and runs exactly as it always has from there.
+    if (phase !== "gate") return;
     let index = 0;
     const typeText1 = setInterval(() => {
       if (index < fullText1.length) {
@@ -69,7 +106,7 @@ const Index = () => {
     }, 50);
 
     return () => clearInterval(typeText1);
-  }, []);
+  }, [phase]);
 
   const triggerGlitch = () => {
     // First slice - more aggressive offset
@@ -123,8 +160,102 @@ const Index = () => {
 
   return (
     <div className="screen-container animate-fade-in">
+      {/* Opening mark — centred on the gate background, holds 1600ms, fades out
+          over 500ms. The dot is a SPAN (not in the SVG) so its glow can use
+          box-shadow, centred at 50% / 67.08% of the mark box — the same geometry
+          as the share-page mark's circle (cy 161 of 240). Pulse mirrors
+          .listen-glow-dot: 2.8s ease-in-out, scale 1→1.15, alphas .90/.55/.30 →
+          1/.88/.60; only the blur radii scale with the dot size. */}
+      {phase !== "gate" && (
+        <div
+          aria-hidden="true"
+          className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-500 ${
+            phase === "fading" ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          <style>{`
+            .gate-mark { width: 176px; height: 176px; }
+            .gate-mark-dot {
+              width: 27px;
+              height: 27px;
+              background: hsl(var(--ritual-green));
+              animation: gateDotPulseM 2.8s ease-in-out infinite;
+            }
+            @keyframes gateDotPulseM {
+              0%, 100% {
+                transform: scale(1);
+                box-shadow:
+                  0 0 12px hsl(var(--ritual-green) / 0.90),
+                  0 0 28px hsl(var(--ritual-green) / 0.55),
+                  0 0 60px hsl(var(--ritual-green) / 0.30);
+              }
+              50% {
+                transform: scale(1.15);
+                box-shadow:
+                  0 0 19px hsl(var(--ritual-green) / 1),
+                  0 0 56px hsl(var(--ritual-green) / 0.88),
+                  0 0 128px hsl(var(--ritual-green) / 0.60);
+              }
+            }
+            @media (min-width: 768px) {
+              .gate-mark { width: 288px; height: 288px; }
+              .gate-mark-dot {
+                width: 44px;
+                height: 44px;
+                animation-name: gateDotPulseD;
+              }
+            }
+            @keyframes gateDotPulseD {
+              0%, 100% {
+                transform: scale(1);
+                box-shadow:
+                  0 0 19px hsl(var(--ritual-green) / 0.90),
+                  0 0 46px hsl(var(--ritual-green) / 0.55),
+                  0 0 98px hsl(var(--ritual-green) / 0.30);
+              }
+              50% {
+                transform: scale(1.15);
+                box-shadow:
+                  0 0 31px hsl(var(--ritual-green) / 1),
+                  0 0 91px hsl(var(--ritual-green) / 0.88),
+                  0 0 209px hsl(var(--ritual-green) / 0.60);
+              }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .gate-mark-dot { animation: none; }
+            }
+          `}</style>
+          <div className="gate-mark relative">
+            <svg viewBox="0 0 240 240" className="h-full w-full">
+              <path
+                d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
+                fill="none"
+                stroke="hsl(var(--ritual-green))"
+                strokeWidth="31"
+              />
+              <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
+            </svg>
+            {/* Outer span carries the centring translate; inner span carries the
+                pulse — the animation's scale() must not fight the positioning. */}
+            <span
+              className="absolute"
+              style={{ left: "50%", top: "67.08%", transform: "translate(-50%, -50%)" }}
+            >
+              <span className="gate-mark-dot block rounded-full" />
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* flex-1 flex-col so the hero's flex-1 centring works exactly as it did
+          when these were direct children of screen-container. */}
+      <div
+        className={`flex-1 flex flex-col transition-opacity duration-500 ${
+          phase === "gate" ? "opacity-100" : "opacity-0"
+        }`}
+      >
       <BoothHeader />
-      
+
       <div className="flex-1 flex flex-col justify-center">
         <h1 className="font-control text-3xl md:text-6xl font-bold leading-tight text-foreground mb-8">
           {text1}
@@ -217,6 +348,7 @@ const Index = () => {
       </div>
 
       <BoothFooter />
+      </div>
     </div>
   );
 };

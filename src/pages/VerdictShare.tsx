@@ -120,11 +120,8 @@ const VerdictShare = () => {
       {/* Hairline rule — same treatment as the Verdict screen — separating the record
           above (left-aligned) from the actions below (centred). */}
       <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-3">
-        <p className="text-ritual text-[11px] font-mono-light tracking-wide text-center">
-          Your turn.
-        </p>
         <Link to={ctaHref} className="btn-booth text-[11px] text-center">
-          ENTER THE BOOTH →
+          YOUR TURN →
         </Link>
         <a
           href="https://houseofguilty.com/contraband?source=booth-share"
