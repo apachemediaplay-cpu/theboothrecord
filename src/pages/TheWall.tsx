@@ -214,7 +214,7 @@ const TheWall = () => {
           {/* One row: the label WAS the button's message, so the button says it.
               Same btn-booth treatment and destination as the old ENTER THE BOOTH. */}
           <Link to="/confess" className="btn-booth block whitespace-nowrap text-center text-sm">
-            YOUR TURN. →
+            YOUR TURN →
           </Link>
         </div>
       </div>
