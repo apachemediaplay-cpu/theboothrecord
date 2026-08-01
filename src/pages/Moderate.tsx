@@ -752,6 +752,12 @@ const Moderate = () => {
     shares: number;
     wall_views: number;
     wall_engaged: number;
+    wall_ig_direct: number;
+    wall_returning: number;
+    wall_direct: number;
+    wall_internal: number;
+    wall_engaged_direct: number;
+    wall_engaged_internal: number;
   };
   const [wallFunnel, setWallFunnel] = useState<WallFunnelRow[] | null>(null);
   const [wallFunnelError, setWallFunnelError] = useState(false);
@@ -2174,29 +2180,56 @@ const Moderate = () => {
                       wallViews={num(prev?.wall_views)}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-md border border-border px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Wall visits
-                      </p>
-                      <p className="text-lg font-semibold tabular-nums">
-                        {num(cur?.wall_views)}{" "}
-                        <span className="text-xs font-normal text-muted-foreground">
-                          · prev {num(prev?.wall_views)}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="rounded-md border border-border px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Stayed 15s+
-                      </p>
-                      <p className="text-lg font-semibold tabular-nums">
-                        {num(cur?.wall_engaged)}{" "}
-                        <span className="text-xs font-normal text-muted-foreground">
-                          · prev {num(prev?.wall_engaged)}
-                        </span>
-                      </p>
-                    </div>
+                  {/* Six blocks. Rates reuse stagePct (zero denominator → "—").
+                      "Landed cold" = the wall was the session's FIRST touch of the
+                      site; "via booth" = the session passed the consent gate first
+                      (SEE THE GUILTY clicks). Pre-attribution rows have no arrival,
+                      so the two arrival buckets can sum below total visits. */}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {[
+                      {
+                        label: "Wall visits",
+                        cur: String(num(cur?.wall_views)),
+                        prev: String(num(prev?.wall_views)),
+                      },
+                      {
+                        label: "Stayed 15s+",
+                        cur: String(num(cur?.wall_engaged)),
+                        prev: String(num(prev?.wall_engaged)),
+                      },
+                      {
+                        label: "From Instagram — landed cold",
+                        cur: String(num(cur?.wall_ig_direct)),
+                        prev: String(num(prev?.wall_ig_direct)),
+                      },
+                      {
+                        label: "Returning — % of visits",
+                        cur: stagePct(num(cur?.wall_returning), num(cur?.wall_views)),
+                        prev: stagePct(num(prev?.wall_returning), num(prev?.wall_views)),
+                      },
+                      {
+                        label: "Stayed 15s+ — landed cold",
+                        cur: stagePct(num(cur?.wall_engaged_direct), num(cur?.wall_direct)),
+                        prev: stagePct(num(prev?.wall_engaged_direct), num(prev?.wall_direct)),
+                      },
+                      {
+                        label: "Stayed 15s+ — via booth",
+                        cur: stagePct(num(cur?.wall_engaged_internal), num(cur?.wall_internal)),
+                        prev: stagePct(num(prev?.wall_engaged_internal), num(prev?.wall_internal)),
+                      },
+                    ].map((b) => (
+                      <div key={b.label} className="rounded-md border border-border px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {b.label}
+                        </p>
+                        <p className="text-lg font-semibold tabular-nums">
+                          {b.cur}{" "}
+                          <span className="text-xs font-normal text-muted-foreground">
+                            · prev {b.prev}
+                          </span>
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </>
               );
