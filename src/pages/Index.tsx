@@ -22,9 +22,10 @@ const Index = () => {
   const fullText1 = "Once you begin, you can't take it back.";
   const fullText2 = "That's the point.";
 
-  // ── Opening sequence: mark (hold 1600ms) → fading (500ms out) → gate at
-  // 2100ms, when the content fades in and the typing starts. prefers-reduced-
-  // motion starts directly at 'gate' (no mark, no pulse, straight to typing).
+  // ── Opening sequence: mark (hold 2200ms — one full breath of the dot's 2.2s
+  // pulse) → fading (500ms out) → gate at 2700ms, when the content fades in and
+  // the typing starts. prefers-reduced-motion starts directly at 'gate' (no
+  // mark, no pulse, straight to typing).
   const [phase, setPhase] = useState<"mark" | "fading" | "gate">(() =>
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
@@ -36,9 +37,9 @@ const Index = () => {
     if (phase === "gate") return; // reduced-motion start — nothing to sequence
     const fadeT = window.setTimeout(
       () => setPhase((p) => (p === "mark" ? "fading" : p)),
-      1600,
+      2200,
     );
-    const gateT = window.setTimeout(() => setPhase("gate"), 2100);
+    const gateT = window.setTimeout(() => setPhase("gate"), 2700);
     // Any tap or key during the hold skips straight to the gate. The late-firing
     // timers are harmless after a skip: fadeT only downgrades from 'mark', and
     // gateT re-sets 'gate' which React ignores.
@@ -160,12 +161,14 @@ const Index = () => {
 
   return (
     <div className="screen-container animate-fade-in">
-      {/* Opening mark — centred on the gate background, holds 1600ms, fades out
+      {/* Opening mark — centred on the gate background, holds 2200ms, fades out
           over 500ms. The dot is a SPAN (not in the SVG) so its glow can use
           box-shadow, centred at 50% / 67.08% of the mark box — the same geometry
-          as the share-page mark's circle (cy 161 of 240). Pulse mirrors
-          .listen-glow-dot: 2.8s ease-in-out, scale 1→1.15, alphas .90/.55/.30 →
-          1/.88/.60; only the blur radii scale with the dot size. */}
+          as the share-page mark's circle (cy 161 of 240). Pulse takes
+          .listen-glow-dot's shape (scale 1→1.15, alphas .90/.55/.30 → 1/.88/.60,
+          ease-in-out; blur radii scale with the dot) but on a 2.2s cycle, NOT
+          the listening line's 2.8s — DELIBERATE: the hold and the breath must be
+          the same length, and the two screens are never seen together. */}
       {phase !== "gate" && (
         <div
           aria-hidden="true"
@@ -179,7 +182,7 @@ const Index = () => {
               width: 27px;
               height: 27px;
               background: hsl(var(--ritual-green));
-              animation: gateDotPulseM 2.8s ease-in-out infinite;
+              animation: gateDotPulseM 2.2s ease-in-out infinite;
             }
             @keyframes gateDotPulseM {
               0%, 100% {
