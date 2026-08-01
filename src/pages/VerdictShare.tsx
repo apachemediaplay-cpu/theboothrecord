@@ -104,7 +104,7 @@ const VerdictShare = () => {
             is a stranger arriving cold, and caps read as a document stamp. */}
         {/* Masthead rhythm: 32px above this stamp (the mark is a heading), 12px
             below it (stamp + confession are one block). */}
-        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] uppercase mb-3">
+        <p className="text-ritual text-[11px] font-mono-light tracking-[0.2em] uppercase mb-3">
           The booth noticed.
         </p>
         {row?.confession_text ? (

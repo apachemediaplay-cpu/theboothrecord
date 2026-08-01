@@ -7,7 +7,6 @@ import { logScan } from "@/lib/metrics";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [consent, setConsent] = useState(false);
   const [text1, setText1] = useState("");
   const [text2, setText2] = useState("");
   const [showCursor1, setShowCursor1] = useState(true);
@@ -19,8 +18,10 @@ const Index = () => {
   const [glitchTop2, setGlitchTop2] = useState(60);
   const glitchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fullText1 = "Once you begin, you can't take it back.";
-  const fullText2 = "That's the point.";
+  // Merged gate + threshold copy (the /confidentiality screen is gone — one
+  // screen does the job once). Same typing speeds and glitch as always.
+  const fullText1 = "Confessions. Anonymous. Unfiltered. Judged.";
+  const fullText2 = "One verdict. No appeal.";
 
   // ── Opening sequence: mark (hold 2200ms — one full breath of the dot's 2.2s
   // pulse) → fading (500ms out) → gate at 2700ms, when the content fades in and
@@ -151,12 +152,12 @@ const Index = () => {
   }, [text2]);
 
   const handleEnter = () => {
-    if (!consent) return; // consent gate — ENTER blocked until ticked
-    // Record consent for the session so /confess (including QR deep-links) can require
-    // it. Session-scoped: a fresh scan (new session) re-gates; repeats within the
-    // session ("go deeper") do not.
+    // Consent IS the tap — the legal line above BEGIN states it, no checkbox.
+    // Session-scoped, exactly as before: a fresh scan (new session) re-gates;
+    // repeats within the session ("go deeper") do not. Straight to /confess —
+    // the threshold screen this used to route through is merged into this one.
     sessionStorage.setItem("consent", "1");
-    navigate("/confidentiality");
+    navigate("/confess");
   };
 
   return (
@@ -329,49 +330,32 @@ const Index = () => {
       </div>
       
       <div className="fixed bottom-24 left-0 right-0 flex flex-col items-center gap-4 px-6">
-        <div className="flex items-start gap-3 max-w-xs">
-          <input
-            type="checkbox"
-            id="consent"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            autoComplete="off"
-            className="mt-[2px] h-4 w-4 shrink-0 accent-[hsl(var(--ritual-green))] cursor-pointer"
-          />
-          <label
-            htmlFor="consent"
-            className="text-muted-foreground text-[11px] leading-snug font-mono-light cursor-pointer select-none"
-          >
-            I'm 18+ and I understand my confession may be published anonymously. I agree to the{" "}
-            <a
-              href="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              Terms
-            </a>{" "}
-            and{" "}
-            <a
-              href="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              Privacy
-            </a>
-            .
-          </label>
-        </div>
-        <button
-          onClick={handleEnter}
-          disabled={!consent}
-          className="btn-booth disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          ENTER
+        {/* Always enabled — the tap IS the consent (see the legal line below). */}
+        <button onClick={handleEnter} className="btn-booth">
+          BEGIN
         </button>
+        <p className="max-w-xs text-center text-[9.5px] leading-snug font-mono-light text-muted-foreground/70">
+          I agree, by tapping BEGIN, that I'm 18+ and my confession may be published
+          anonymously.{" "}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Terms
+          </a>{" "}
+          and{" "}
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Privacy
+          </a>
+          .
+        </p>
       </div>
 
       <BoothFooter />

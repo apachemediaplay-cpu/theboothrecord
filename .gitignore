@@ -38,3 +38,4 @@ functions/.env
 functions/venues.json
 # Generated: copy of dist/index.html (built app shell), made by the deploy predeploy hook
 functions/index.html
+.venv/

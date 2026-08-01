@@ -393,23 +393,26 @@ const Verdict = () => {
     }
   };
 
-  // Action-area type scale is collapsed to one size (~11px mono); only the FIRST
-  // OFFENCE line sits below it at 9px. shareSecondary is the underlined text-link
-  // treatment shared by POST TO STORY and (post-share) SHARE AGAIN.
+  // Action-area type rule: 13px is the FUNCTIONAL tier — anything you can press
+  // (SHARE VERDICT, SEE THE GUILTY, and this underlined pair). 11px is the LABEL
+  // tier — anything you read ("Your words. Not your name.", FIRST OFFENCE).
+  // shareSecondary is the underlined text-link treatment shared by POST TO STORY
+  // and (post-share) SHARE AGAIN.
   const shareSecondary =
-    "text-[11px] text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
-  // SEE THE GUILTY pre-share — quiet exit, same 11px scale, muted. Never competes
-  // with the share action (sharing is the perishable one). Post-share it's promoted
-  // to the boxed primary instead.
+    "text-[13px] text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
+  // SEE THE GUILTY pre-share — quiet exit, one step above the 11px action scale
+  // but still muted and boxless so it never competes with the share action
+  // (sharing is the perishable one). Post-share it's promoted to the boxed
+  // primary instead, at the same 13px.
   const wallLink =
-    "text-[11px] text-muted-foreground hover:text-foreground transition-colors tracking-wide";
+    "text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide";
 
   return (
     <div className="screen-container animate-fade-in">
       <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
         {/* System stamp, not a headline — smallest text on the screen. 12px below,
             matching the share page: stamp + confession read as one block. */}
-        <p className="text-ritual text-[9px] font-mono-light tracking-[0.2em] mb-3 min-h-[1em] relative">
+        <p className="text-ritual text-[11px] font-mono-light tracking-[0.2em] mb-3 min-h-[1em] relative">
           <span className="relative inline-block">
             {typedText}
             {showCursor && <span className="animate-pulse">|</span>}
@@ -508,10 +511,13 @@ const Verdict = () => {
             <p className="text-ritual text-[11px] font-mono-light tracking-wide text-center">
               Your words. Not your name.
             </p>
+            {/* 13px, matching SEE THE GUILTY: the boxed primary should lead on its
+                box, border and position, not by having smaller text than the link
+                beneath it. 11px was small for a primary action. */}
             <button
               onClick={handleShareLink}
               disabled={sharingLink}
-              className="btn-booth text-[11px] disabled:opacity-50"
+              className="btn-booth text-[13px] disabled:opacity-50"
             >
               {sharingLink ? "FILING…" : "SHARE VERDICT"}
             </button>
@@ -527,7 +533,7 @@ const Verdict = () => {
             {verdictResponse !== "Entry withheld" && (
               <button
                 onClick={() => handleNavigate("/thewall")}
-                className="btn-booth text-[11px]"
+                className="btn-booth text-[13px]"
               >
                 SEE THE GUILTY →
               </button>

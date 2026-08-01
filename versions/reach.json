@@ -1,0 +1,19 @@
+{
+  "name": "reach",
+  "note": "Job: sends. Starts on the confess screen. The gate never appears.",
+  "target_max_s": 10,
+  "target_land_s": 5,
+
+  "sections": [
+    { "id": "confess_empty", "ms": 300 },
+    { "id": "confess_type",  "speed": 0.80 },
+
+    { "id": "receiving_1",   "ms": 400 },
+    { "id": "receiving_2",   "ms": 450 },
+    { "id": "receiving_3",   "ms": 350 },
+
+    { "id": "verdict_land",  "ms": 400 },
+    { "id": "verdict_type",  "speed": 1.0 },
+    { "id": "verdict_hold",  "ms": 1800 }
+  ]
+}

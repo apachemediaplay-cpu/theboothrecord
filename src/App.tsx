@@ -3,11 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { captureSourceFromUrl } from "@/lib/source";
 
 import Index from "./pages/Index";
-import Confidentiality from "./pages/Confidentiality";
 import Confess from "./pages/Confess";
 import Receiving from "./pages/Receiving";
 import Verdict from "./pages/Verdict";
@@ -46,7 +45,9 @@ const App = () => {
         <Routes>
           {/* <Route path="/" element={<PasswordGate><Home /></PasswordGate>} /> */}
           <Route path="/" element={<Index />} />
-          <Route path="/confidentiality" element={<Confidentiality />} />
+          {/* The threshold screen is merged into the gate (/) — this redirect keeps
+              old links working without sitting in back-button history. */}
+          <Route path="/confidentiality" element={<Navigate to="/" replace />} />
           <Route path="/confess" element={<Confess />} />
           <Route path="/receiving" element={<Receiving />} />
           <Route path="/verdict" element={<Verdict />} />
