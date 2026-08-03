@@ -185,7 +185,7 @@ const TheWall = () => {
           pinned bar (≈107px) so the last confession isn't hidden underneath.
           680px cap: verdicts ran ~100 chars at 720; comfortable measure is 45–75.
           Below 680px viewport the cap is inert — mobile is unchanged. */}
-      <div className="max-w-[680px] mx-auto px-6 pt-32 md:pt-36 pb-36">
+      <div className="max-w-[680px] mx-auto px-6 pt-32 md:pt-36 pb-[132px]">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -225,9 +225,11 @@ const TheWall = () => {
           rather than colliding with the button's edge. Content shares the records
           column's 680px frame — one axis. */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {/* Tight fade — 16px: content stays legible until it is close to the
+            button; the feather only kills the hard collision at the bar's edge. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-full h-8 bg-gradient-to-t from-background to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-full h-4 bg-gradient-to-t from-background to-transparent"
         />
         <div className="mx-auto max-w-[680px] px-6 py-3">
           {/* One row: the label WAS the button's message, so the button says it.

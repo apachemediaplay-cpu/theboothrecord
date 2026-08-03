@@ -68,11 +68,11 @@ const ConfessionCard = ({
           not headline and subtitle. Mono renders visually smaller than Control, so
           12.5px mono ≈ 14px Control. 6px inside the pair; the ~52px gap BETWEEN
           records lives on the wrapper in TheWall. */}
-      <p className="text-foreground/70 text-[12.5px] font-mono-light leading-relaxed tracking-wide whitespace-pre-line mb-1.5 max-w-[600px]">
+      <p className="text-foreground/70 text-[12.5px] font-mono-light leading-relaxed tracking-wide whitespace-pre-line mb-1.5">
         {entry.confession}
       </p>
 
-      <p className="font-control font-bold text-foreground text-[14px] leading-snug whitespace-pre-line max-w-[600px]">
+      <p className="font-control font-bold text-foreground text-[14px] leading-snug whitespace-pre-line">
         {entry.verdict}
       </p>
 
