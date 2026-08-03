@@ -89,7 +89,10 @@ const VENUES = venuesData as Record<string, Venue>;
 // Confess-page prompt shape. DEFAULT_PROMPT is the universal fail-safe: no source,
 // unknown source, null greeting, or a failed venues lookup all render this.
 export type Prompt = { headline: string; guidance?: string };
-export const DEFAULT_PROMPT: Prompt = { headline: "Confess something." };
+// The brand's standing caption's first sentence — one voice across the greeting,
+// the feed and the wall. Headline carries the tone, guidance carries the ask,
+// exactly like the venue greetings.
+export const DEFAULT_PROMPT: Prompt = { headline: "No one is innocent.", guidance: "Confess." };
 
 // The ONE mapping from a venues-table greeting to a renderable prompt. Missing/blank
 // headline → DEFAULT_PROMPT, and guidance is dropped WITH it — a venue's guidance
