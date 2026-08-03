@@ -69,6 +69,7 @@ REPLY_MS_CHAR = 60
 # Receiving beat holds, from the reference doc. The verdict request is
 # blocked, so these play in full.
 RECEIVING_BEATS_MS = [3400, 4700, 3000]
+RECEIVING_STEP = 40      # sample interval while the beats type themselves
 
 # Typing cadence at capture time. Humanised, then re-timed in assembly.
 TYPE_MEAN_MS, TYPE_SD_MS, TYPE_MIN_MS = 105, 26, 45
@@ -226,13 +227,47 @@ def main():
         page.evaluate("c => sessionStorage.setItem('confession', c)", args.confession)
         page.goto(f"{BASE_URL}/receiving", wait_until="domcontentloaded")
 
-        for i, hold in enumerate(RECEIVING_BEATS_MS, start=1):
-            page.wait_for_timeout(int(hold * 0.55))
-            sections[f"receiving_{i}"] = {
-                "kind": "hold", "frames": rel([cap.shot(f"receiving_{i}")], root),
-                "real_ms": hold,
+        # These lines TYPE themselves. A single screenshot per beat lands
+        # mid-word and then freezes there. Sample continuously across all
+        # three and bucket by elapsed time instead.
+        bounds, run = [], 0.0
+        for hold in RECEIVING_BEATS_MS:
+            run += hold
+            bounds.append(run)
+        total = bounds[-1]
+
+        buckets = [[] for _ in RECEIVING_BEATS_MS]
+        durs    = [[] for _ in RECEIVING_BEATS_MS]
+        seen, t0 = None, time.time()
+        while True:
+            ms = (time.time() - t0) * 1000
+            if ms >= total:
+                break
+            b = next(i for i, edge in enumerate(bounds) if ms < edge)
+            p = cap.shot(f"receiving_{b+1}")
+            raw = p.read_bytes()
+            if raw == seen and durs[b]:
+                p.unlink(); cap.n -= 1
+                durs[b][-1] += RECEIVING_STEP
+            else:
+                buckets[b].append(p); durs[b].append(float(RECEIVING_STEP)); seen = raw
+            page.wait_for_timeout(RECEIVING_STEP)
+
+        for i, (frames, dd) in enumerate(zip(buckets, durs), start=1):
+            if not frames:
+                raise SystemExit(f"captured no frames for receiving beat {i}")
+            # the typed-out sequence, for versions that want to watch it
+            sections[f"receiving_{i}_type"] = {
+                "kind": "type", "frames": rel(frames, root),
+                "durations_ms": dd, "click": False,
             }
-            page.wait_for_timeout(int(hold * 0.45))
+            # the settled line, complete. This is what the reach cut uses —
+            # the words are the point, not watching them arrive.
+            sections[f"receiving_{i}"] = {
+                "kind": "hold", "frames": rel(frames[-1:], root),
+                "real_ms": RECEIVING_BEATS_MS[i-1],
+            }
+
         page.close()
 
         # ── VERDICT ────────────────────────────────────────────

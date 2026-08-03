@@ -27,6 +27,21 @@ REQUIRES
 import argparse, json, shutil, subprocess, sys
 from pathlib import Path
 
+# The neon hum belongs wherever the Booth mark is on screen. In a
+# confession reel that is the tail card only — the confess, receiving
+# and verdict screens don't show it. Values match make_booth_reel.py.
+NEON_HZ    = 50.0
+NEON_GAIN  = 1.00
+NEON_FLOOR = 0.08
+NEON_SHAPE = 1.55
+NEON_CYCLE = 2.8
+NEON_PHASE = 0.22      # a 1.6s tail can't hold a full 2.8s breath, so
+                       # start part-way up and let it swell through
+NEON_IN    = 0.35
+NEON_LP_DARK, NEON_LP_LIT = 320, 900
+NEON_PARTIALS = [(1,1.00),(2,0.78),(3,0.62),(4,0.66),(5,0.40),
+                 (6,0.48),(7,0.16),(8,0.30),(9,0.08),(10,0.14)]
+
 ENCODE = [
     "-c:v", "libx264", "-profile:v", "high", "-crf", "14",
     "-pix_fmt", "yuv420p", "-maxrate", "14M", "-bufsize", "28M",
@@ -177,6 +192,44 @@ def make_audio(out_wav, duration_s, keystrokes_s, replies_s, land_s):
     return True
 
 
+def add_tail_neon(wav_path, duration_s, tail_start_s):
+    """Pulsing neon hum over the tail card, where the mark appears."""
+    import numpy as np, wave as W
+    from scipy import signal
+    SR = 48000
+    with W.open(str(wav_path)) as f:
+        a = np.frombuffer(f.readframes(f.getnframes()),
+                          dtype=np.int16).astype(np.float64) / 32768.0
+    a = a.reshape(-1, 2)
+    n = len(a)
+    t = np.arange(n) / SR
+
+    rel = t - tail_start_s
+    e = (1 - np.cos(2*np.pi*(rel/NEON_CYCLE + NEON_PHASE))) / 2.0
+    env = NEON_FLOOR + (1 - NEON_FLOOR) * (e ** NEON_SHAPE)
+    env *= np.clip(rel / NEON_IN, 0, 1)                  # in with the card
+    env *= np.clip((duration_s - t) / 0.3, 0, 1)         # out at the end
+
+    wob = (1 + 0.0016*np.sin(2*np.pi*0.31*t) + 0.0011*np.sin(2*np.pi*0.17*t))
+    ph = 2*np.pi*np.cumsum(NEON_HZ*wob)/SR
+    tone = np.zeros(n)
+    for k, g in NEON_PARTIALS:
+        tone += g*np.sin(k*ph)
+    lp = lambda x, f: signal.sosfilt(
+        signal.butter(3, f, "lp", fs=SR, output="sos"), x)
+    lit = np.clip(e, 0, 1)
+    tone = lp(tone, NEON_LP_DARK)*(1-lit) + lp(tone, NEON_LP_LIT)*lit
+    hum = tone/np.abs(tone).max() * env * NEON_GAIN
+
+    mix = a + hum[:, None]
+    peak = np.abs(mix).max()
+    if peak > 0.97:
+        mix = np.tanh(mix/peak*1.2) * 0.97/np.tanh(1.2)
+    with W.open(str(wav_path), "w") as f:
+        f.setnchannels(2); f.setsampwidth(2); f.setframerate(SR)
+        f.writeframes((mix.reshape(-1)*32767).astype(np.int16).tobytes())
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("capture", help="e.g. captures/tiles")
@@ -233,6 +286,9 @@ def main():
         [x / 1000.0 for x in ks],
         [x / 1000.0 for x in replies],
         land_ms / 1000.0 if land_ms is not None else None)
+    if have_audio and args.tail and NEON_GAIN > 0:
+        add_tail_neon(wav, total_ms/1000.0, dur_ms/1000.0)
+        print(f"  neon hum     over the tail card from {dur_ms/1000:.2f}s")
 
     cmd = ["ffmpeg", "-v", "error", "-y",
            "-framerate", str(fps), "-i", str(work / "%06d.png")]

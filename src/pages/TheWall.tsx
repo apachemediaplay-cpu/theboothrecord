@@ -135,10 +135,18 @@ const TheWall = () => {
           outer wrapper's overflow-hidden breaks position:sticky, so this is pinned to the
           viewport and the feed below carries matching top padding. Stays on arrival and
           while the feed scrolls. */}
-      <div className="fixed top-0 inset-x-0 z-20 bg-background/95 backdrop-blur-sm">
+      {/* SOLID background — records showing through the /95 version read as a
+          rendering bug, on every screen size. The feather below the lower edge
+          makes content disappear cleanly as it scrolls under. */}
+      <div className="fixed top-0 inset-x-0 z-20 bg-background">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-full h-6 bg-gradient-to-b from-background to-transparent"
+        />
         {/* Masthead: three centred rows in descending size, tight — one block, not
-            three elements. Both bars are pinned, so every px here is feed space. */}
-        <div className="pt-6 pb-3 md:pt-8 md:pb-4 px-6 text-center">
+            three elements. Both bars are pinned, so every px here is feed space.
+            Content capped to the SAME 680px frame as the records column — one axis. */}
+        <div className="mx-auto max-w-[680px] pt-6 pb-3 md:pt-8 md:pb-4 px-6 text-center">
           <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide">
             THE GUILTY
           </h1>
@@ -174,8 +182,10 @@ const TheWall = () => {
 
       {/* Confession feed. Top padding clears the FIXED masthead (≈107px mobile, taller
           at md where its paddings/type grow); bottom padding clears the single-row
-          pinned bar (≈107px) so the last confession isn't hidden underneath. */}
-      <div className="max-w-[720px] mx-auto px-6 pt-32 md:pt-36 pb-36">
+          pinned bar (≈107px) so the last confession isn't hidden underneath.
+          680px cap: verdicts ran ~100 chars at 720; comfortable measure is 45–75.
+          Below 680px viewport the cap is inert — mobile is unchanged. */}
+      <div className="max-w-[680px] mx-auto px-6 pt-32 md:pt-36 pb-36">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -190,9 +200,11 @@ const TheWall = () => {
           </div>
         ) : (
           confessions.map((entry, i) => (
-            // No separators — whitespace alone divides the pairs: tight inside a
-            // card (see ConfessionCard), 22px between cards.
-            <div key={entry.id} className="mb-[22px]">
+            // No separators, no dividers — whitespace alone divides the records
+            // (the hairline rule means "record ends, actions begin" elsewhere in
+            // the app and must not become a list separator here): 6px inside a
+            // pair, 14px to the filing stamp, 52px between records.
+            <div key={entry.id} className="mb-[52px]">
               <ConfessionCard
                 entry={entry}
                 index={i}
@@ -209,8 +221,15 @@ const TheWall = () => {
           and the dim end-of-scroll link. Booth palette, not a browser dialog.
           No ?source= needed: captureSourceFromUrl() falls back to sessionStorage on a
           param-less URL, so the venue still carries through to the confession. */}
-      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background/95 backdrop-blur-sm pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="px-6 py-3">
+      {/* Solid bar + a gradient feather above it: records fade out into background
+          rather than colliding with the button's edge. Content shares the records
+          column's 680px frame — one axis. */}
+      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-full h-8 bg-gradient-to-t from-background to-transparent"
+        />
+        <div className="mx-auto max-w-[680px] px-6 py-3">
           {/* One row: the label WAS the button's message, so the button says it.
               Same btn-booth treatment and destination as the old ENTER THE BOOTH. */}
           <Link

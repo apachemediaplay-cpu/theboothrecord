@@ -65,6 +65,10 @@
     /* Custom tokens for GUILTY */
     --ritual-green: 127 100% 50%;
     --ritual-green-dim: 127 80% 40%;
+    /* State Blue is GUILTY's Wellness State colour. It marks the State's
+       apparatus. Not a general accent — never for anything the Booth or the
+       confessor says. This is the first use of blue anywhere in The Booth. */
+    --state-blue: 197 57% 47%; /* #349BBD — the Wellness State */
     --booth-dark: 20 12% 9%;
     --booth-darker: 20 15% 6%;
     --text-whisper: 40 6% 45%;

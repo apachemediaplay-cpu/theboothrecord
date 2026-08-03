@@ -64,28 +64,30 @@ const ConfessionCard = ({
       }`}
       style={{ opacity: visible ? opacityFactor : 0 }}
     >
-      {/* Metadata — deliberately the faintest thing on the card: "#1121 · 4 MIN AGO". */}
-      <div className="flex items-center gap-3 mb-1">
-        <span className="text-muted-foreground/30 text-[8px] tracking-[0.4em] uppercase font-mono-light">
-          {entry.confessorId}
-        </span>
-        <span className="text-muted-foreground/15 text-[8px]">·</span>
-        <span className="text-muted-foreground/30 text-[8px] tracking-[0.2em] uppercase font-mono-light">
-          {displayTime}
-        </span>
-      </div>
-
       {/* Confession + verdict read as ONE UNIT at roughly equal weight — two voices,
           not headline and subtitle. Mono renders visually smaller than Control, so
-          12.5px mono ≈ 14px Control. Tight 4px inside the pair; the gap BETWEEN
-          pairs lives on the wrapper in TheWall. */}
-      <p className="text-foreground/70 text-[12.5px] font-mono-light leading-relaxed tracking-wide whitespace-pre-line mb-1 max-w-[600px]">
+          12.5px mono ≈ 14px Control. 6px inside the pair; the ~52px gap BETWEEN
+          records lives on the wrapper in TheWall. */}
+      <p className="text-foreground/70 text-[12.5px] font-mono-light leading-relaxed tracking-wide whitespace-pre-line mb-1.5 max-w-[600px]">
         {entry.confession}
       </p>
 
       <p className="font-control font-bold text-foreground text-[14px] leading-snug whitespace-pre-line max-w-[600px]">
         {entry.verdict}
       </p>
+
+      {/* Filing stamp — CLOSES the record, beneath the verdict, in State Blue:
+          the State's apparatus filed this; it is not the Booth's voice and not
+          the confessor's. "#1121 · 4 MIN AGO". */}
+      <div className="mt-3.5 flex items-center gap-3">
+        <span className="text-[hsl(var(--state-blue)/0.65)] text-[8px] tracking-[0.22em] uppercase font-mono-light">
+          {entry.confessorId}
+        </span>
+        <span className="text-[hsl(var(--state-blue)/0.65)] text-[8px]">·</span>
+        <span className="text-[hsl(var(--state-blue)/0.65)] text-[8px] tracking-[0.22em] uppercase font-mono-light">
+          {displayTime}
+        </span>
+      </div>
     </div>
   );
 };
