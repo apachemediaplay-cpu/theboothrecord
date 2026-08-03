@@ -1,47 +1,23 @@
 {
   "seoultiger1988": {
-    "displayName": "Seoul Tiger 1988",
-    "headline": "Confess your most guilty order.",
-    "guidance": "The one you'd never admit to."
-  },
-  "frenchiecbda": {
-    "displayName": "Frenchie",
-    "headline": "Everyone here is guilty.",
-    "guidance": "Yours first."
-  },
-  "frenchiecbdb": {
-    "displayName": "Frenchie",
-    "headline": "We already know.",
-    "guidance": "Say it anyway."
+    "displayName": "Seoul Tiger 1988"
   },
   "frenchiecbd": {
-    "displayName": "Frenchie",
-    "headline": "Everyone here is guilty.",
-    "guidance": "Yours first."
+    "displayName": "Frenchie"
   },
   "highballcbr": {
-    "displayName": "Highball",
-    "headline": "Confess your best worst decision.",
-    "guidance": "Good vibes only."
+    "displayName": "Highball"
   },
   "ovolosy": {
-    "displayName": "Ovolo South Yarra",
-    "headline": "If these walls could talk.",
-    "guidance": "Confess what the room saw."
+    "displayName": "Ovolo South Yarra"
   },
   "tintinokgn": {
-    "displayName": "Tintino",
-    "headline": "The wine already told us.",
-    "guidance": "Confess it yourself."
+    "displayName": "Tintino"
   },
   "gigiprahran": {
-    "displayName": "Gigi",
-    "headline": "Gigi is listening.",
-    "guidance": "Tell her everything."
+    "displayName": "Gigi"
   },
   "standardxfitzroy": {
-    "displayName": "The StandardX, Melbourne",
-    "headline": "Check in. Check out. Confess.",
-    "guidance": "We dare you."
+    "displayName": "The StandardX, Melbourne"
   }
 }

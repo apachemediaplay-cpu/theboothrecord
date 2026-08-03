@@ -78,11 +78,11 @@ export function isTestSession(): boolean {
 // read files inside its own bundle — the copy is made by functions/prep.mjs and the
 // deploy predeploy hook. Add a venue in venues.json ONLY.
 //
-// The /confess GREETING (headline + guidance) no longer reads from venues.json — it
-// lives in public.venues (headline, guidance), fetched by the confess screen via
-// fetchVenueConfig() and mapped through promptFromVenue() below. The json's headline/
-// guidance fields are dormant, kept only until the share-card path is migrated too.
-export type Venue = { displayName: string; headline: string; guidance?: string };
+// THE RULE: venues.json is slug → displayName, NOTHING ELSE. Greeting (headline +
+// guidance), register and placeholder lines all live in public.venues / public.registers,
+// fetched by the confess screen via fetchVenueConfig()/get_confess_config and mapped
+// through promptFromVenue() below. Do not add copy fields back here.
+export type Venue = { displayName: string };
 
 const VENUES = venuesData as Record<string, Venue>;
 
