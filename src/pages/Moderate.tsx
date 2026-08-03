@@ -137,6 +137,8 @@ const REGISTER_OPTIONS = [
   { value: "social", label: "Social" },
   { value: "intimate", label: "Intimate" },
   { value: "edgy", label: "Edgy" },
+  { value: "greed", label: "Greed" },
+  { value: "vanity", label: "Vanity" },
 ] as const;
 const registerLabel = (value: string) =>
   REGISTER_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -150,7 +152,14 @@ const REGISTER_SET_META = [
   { key: "social", label: "Social" },
   { key: "intimate", label: "Intimate" },
   { key: "edgy", label: "Edgy" },
+  { key: "greed", label: "Greed" },
+  { key: "vanity", label: "Vanity" },
 ] as const;
+
+// Register row as fetched from public.registers: the six lines plus the DB-owned
+// description (surfaced under the register label in the dropdowns and the sets
+// list — copy that gets refined, so it must never be hardcoded client-side).
+type RegisterSetInfo = { lines: string[]; description: string | null };
 const REGISTER_SET_LINES = 6;
 const REGISTER_LINE_MAX = 80;
 
@@ -275,6 +284,7 @@ const VenueOverviewRow = ({
   onSaveGreeting,
   onCopyReport,
   onDelete,
+  registerDesc,
 }: {
   row: VenueAdminRow;
   scans: number | null; // null = scan counts unavailable
@@ -287,6 +297,7 @@ const VenueOverviewRow = ({
   onSaveGreeting: (headline: string, guidance: string) => void;
   onCopyReport: () => Promise<void>;
   onDelete: () => void;
+  registerDesc?: (value: string) => string | null;
 }) => {
   // Reentrancy guard for Copy report — the button is NEVER disabled (a venue with
   // no data still copies an honest report); in-flight clicks are just ignored.
@@ -352,7 +363,14 @@ const VenueOverviewRow = ({
               <SelectContent>
                 {REGISTER_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
-                    {o.label}
+                    <div>
+                      {o.label}
+                      {registerDesc?.(o.value) ? (
+                        <span className="block text-[10px] text-muted-foreground">
+                          {registerDesc(o.value)}
+                        </span>
+                      ) : null}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -482,8 +500,10 @@ const AddVenueForm = ({
   takenSlugs,
   onAdd,
   onClose,
+  registerDesc,
 }: {
   takenSlugs: Set<string>;
+  registerDesc?: (value: string) => string | null;
   onAdd: (v: {
     source: string;
     displayName: string;
@@ -558,7 +578,14 @@ const AddVenueForm = ({
             <SelectContent>
               {REGISTER_OPTIONS.map((o) => (
                 <SelectItem key={o.value} value={o.value}>
-                  {o.label}
+                  <div>
+                    {o.label}
+                    {registerDesc?.(o.value) ? (
+                      <span className="block text-[10px] text-muted-foreground">
+                        {registerDesc(o.value)}
+                      </span>
+                    ) : null}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -606,11 +633,13 @@ const AddVenueForm = ({
 // save (or refetch) remounts it clean with dirty reset.
 const RegisterSetEditor = ({
   label,
+  description,
   initial,
   busy,
   onSave,
 }: {
   label: string;
+  description?: string | null;
   initial: string[];
   busy: boolean;
   onSave: (lines: string[]) => void;
@@ -625,7 +654,13 @@ const RegisterSetEditor = ({
   const dirty = trimmed.some((l, i) => l !== (initial[i] ?? "")) || initial.length !== REGISTER_SET_LINES;
   return (
     <div className="space-y-2 py-3">
-      <p className="text-sm font-semibold">{label}</p>
+      <div>
+        <p className="text-sm font-semibold">{label}</p>
+        {/* DB-owned description — a reminder of the intended room, not a heading. */}
+        {description ? (
+          <p className="text-[11px] text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
       {lines.map((line, i) => (
         <div key={i} className="flex items-center gap-2">
           <Input
@@ -765,7 +800,7 @@ const Moderate = () => {
   // ── Placeholder sets (public.registers): the content behind the register picker.
   // Public-read table (the same data the confess screen's get_confess_config serves);
   // writes only via admin_set_register_lines. null map = still loading.
-  const [registerSets, setRegisterSets] = useState<Map<string, string[]> | null>(null);
+  const [registerSets, setRegisterSets] = useState<Map<string, RegisterSetInfo> | null>(null);
   const [registerSetsError, setRegisterSetsError] = useState(false);
   const [registerSetsOpen, setRegisterSetsOpen] = useState(false);
   const [registerSetBusy, setRegisterSetBusy] = useState<string | null>(null);
@@ -1075,19 +1110,20 @@ const Moderate = () => {
     };
   }, [session, rangeArgs, refreshTick]);
 
-  // Placeholder-sets read — venues tab only, refetched with the same Retry tick as
-  // the venues table. A failed read shows its own inline retry, never blocks venues.
+  // Placeholder-sets read — venues + stats tabs (both render register pickers whose
+  // descriptions come from this fetch), refetched with the same Retry tick as the
+  // venues table. A failed read shows its own inline retry, never blocks venues.
   useEffect(() => {
-    if (!session || consoleTab !== "venues") return;
+    if (!session || (consoleTab !== "venues" && consoleTab !== "stats")) return;
     let cancelled = false;
     setRegisterSetsError(false);
     const from = sb.from.bind(sb) as unknown as (table: string) => {
       select(cols: string): PromiseLike<{
-        data: { register: string; lines: string[] | null }[] | null;
+        data: { register: string; lines: string[] | null; description: string | null }[] | null;
         error: unknown;
       }>;
     };
-    Promise.resolve(from("registers").select("register,lines")).then(
+    Promise.resolve(from("registers").select("register,lines,description")).then(
       (r) => {
         if (cancelled) return;
         if (r.error || !r.data) {
@@ -1095,7 +1131,14 @@ const Moderate = () => {
           setRegisterSets(null);
           return;
         }
-        setRegisterSets(new Map(r.data.map((row) => [row.register, row.lines ?? []])));
+        setRegisterSets(
+          new Map(
+            r.data.map((row) => [
+              row.register,
+              { lines: row.lines ?? [], description: row.description ?? null },
+            ]),
+          ),
+        );
       },
       () => {
         if (cancelled) return;
@@ -1107,6 +1150,12 @@ const Moderate = () => {
       cancelled = true;
     };
   }, [session, consoleTab, refreshTick]);
+
+  // DB description for a register-picker option value ("default" is the UI stand-in
+  // for null → DTC). Null while the registers fetch is in flight — pickers just
+  // render label-only until it lands.
+  const registerDesc = (value: string): string | null =>
+    registerSets?.get(value === "default" ? "dtc" : value)?.description ?? null;
 
   // Wall funnel read — wall tab only, same Retry tick as the other tab loads.
   useEffect(() => {
@@ -1648,7 +1697,10 @@ const Moderate = () => {
     }
     setRegisterSets((prev) => {
       const next = new Map(prev ?? []);
-      next.set(register, lines);
+      next.set(register, {
+        lines,
+        description: prev?.get(register)?.description ?? null,
+      });
       return next;
     });
     toast({
@@ -2048,6 +2100,7 @@ const Moderate = () => {
                     {(sortedVenueRows ?? []).map((row) => (
                       <VenueOverviewRow
                         key={row.source}
+                        registerDesc={registerDesc}
                         row={row}
                         scans={venueStats?.scans ? (venueStats.scans.get(row.source) ?? 0) : null}
                         completed={
@@ -2074,6 +2127,7 @@ const Moderate = () => {
                 addOpen ? (
                   <AddVenueForm
                     takenSlugs={takenSlugs}
+                    registerDesc={registerDesc}
                     onAdd={addVenue}
                     onClose={() => setAddOpen(false)}
                   />
@@ -2124,9 +2178,10 @@ const Moderate = () => {
                   <div className="divide-y divide-border">
                     {REGISTER_SET_META.map(({ key, label }) => (
                       <RegisterSetEditor
-                        key={`${key}:${(registerSets.get(key) ?? []).join("\n")}`}
+                        key={`${key}:${(registerSets.get(key)?.lines ?? []).join("\n")}`}
                         label={label}
-                        initial={registerSets.get(key) ?? []}
+                        description={registerSets.get(key)?.description ?? null}
+                        initial={registerSets.get(key)?.lines ?? []}
                         busy={registerSetBusy === key}
                         onSave={(lines) => saveRegisterSet(key, label, lines)}
                       />
@@ -2274,7 +2329,14 @@ const Moderate = () => {
                   <SelectContent>
                     {REGISTER_OPTIONS.map((o) => (
                       <SelectItem key={o.value} value={o.value}>
-                        {o.label}
+                        <div>
+                          {o.label}
+                          {registerDesc(o.value) ? (
+                            <span className="block text-[10px] text-muted-foreground">
+                              {registerDesc(o.value)}
+                            </span>
+                          ) : null}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
