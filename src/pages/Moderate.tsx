@@ -139,6 +139,7 @@ const REGISTER_OPTIONS = [
   { value: "edgy", label: "Edgy" },
   { value: "greed", label: "Greed" },
   { value: "vanity", label: "Vanity" },
+  { value: "appetite", label: "Appetite" },
 ] as const;
 const registerLabel = (value: string) =>
   REGISTER_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -154,6 +155,7 @@ const REGISTER_SET_META = [
   { key: "edgy", label: "Edgy" },
   { key: "greed", label: "Greed" },
   { key: "vanity", label: "Vanity" },
+  { key: "appetite", label: "Appetite" },
 ] as const;
 
 // Register row as fetched from public.registers: the six lines plus the DB-owned

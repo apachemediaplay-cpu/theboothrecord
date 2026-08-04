@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 // DTC is the default AND the fail-safe: no source, unknown source, unknown register,
 // or a failed venues lookup all resolve to DTC. Never an error, never an empty set.
 
-export type Register = "social" | "intimate" | "edgy" | "greed" | "vanity";
+export type Register = "social" | "intimate" | "edgy" | "greed" | "vanity" | "appetite";
 
 const DTC: string[] = [
   "still havent left",
@@ -63,12 +63,22 @@ const VANITY: string[] = [
   "was ready an hour before we left",
 ];
 
+const APPETITE: string[] = [
+  "ordered before anyone else decided",
+  "had a bite of everyone elses",
+  "said next time then came back twice",
+  "looked at the menu like i didnt know",
+  "kept eating after they stopped",
+  "ordered again on the way out",
+];
+
 const SETS: Record<Register, string[]> = {
   social: SOCIAL,
   intimate: INTIMATE,
   edgy: EDGY,
   greed: GREED,
   vanity: VANITY,
+  appetite: APPETITE,
 };
 
 // null / undefined / anything unrecognised → DTC. The one resolution path every
