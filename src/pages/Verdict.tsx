@@ -2,7 +2,13 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { resolveVenueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
-import { logShare, logOffenceTap, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
+import {
+  logShare,
+  logBoothEvent,
+  logOffenceTap,
+  resolveShareId,
+  fetchSharedVerdict,
+} from "@/lib/metrics";
 import { useToast } from "@/hooks/use-toast";
 
 // Feature flag: email capture is temporarily OFF but kept in code so it can be
@@ -298,7 +304,11 @@ const Verdict = () => {
     // Reveal the Instagram follow line on tap (see hasShared note).
     setHasShared(true);
     // Share-INTENT metric (fire-and-forget), keyed on the persisted row source.
+    // logShare keeps share_events as the unbroken historical series; the
+    // booth_events share_link row alongside it records WHICH share this was —
+    // the tappable /v/ link, as opposed to the dead-end card.
     logShare(rowSource);
+    logBoothEvent("share_link", rowSource);
     setSharingLink(true);
     try {
       const id = shareId ?? (await resolveShareId(Number(subjectNumber), verdictResponse));
@@ -335,7 +345,10 @@ const Verdict = () => {
     // Share-INTENT metric, keyed on the persisted row source — same as SHARE VERDICT.
     // SAVE IMAGE is a share: Stories are the venue's UGC channel. Previously unlogged,
     // which made share-rate blind to the exact channel the venue pitch is built on.
+    // logShare keeps the historical series; share_card alongside it records this
+    // was the PNG card (not tappable), splitting reach-with-a-path from reach without.
     logShare(rowSource);
+    logBoothEvent("share_card", rowSource);
     setSharing(true);
     try {
       // Resolve our own uuid (owner-gated) ONCE. It does two jobs: stamp_venue for the

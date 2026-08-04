@@ -47,6 +47,32 @@ export function logShare(source: string | null | undefined): void {
   );
 }
 
+// ── Unified event log (booth_events) ─────────────────────────────────────────
+// One table for new event kinds instead of a table per event. The type union
+// mirrors the RPC's server-side whitelist — extend BOTH when a new event ships.
+// share_link/share_card run ALONGSIDE logShare: share_events stays the unbroken
+// historical share series; this adds the link-vs-card split it can't express.
+export type BoothEventType = "share_link" | "share_card" | "confess_again";
+
+// Fire-and-forget, same contract as every metric here: a failure must never
+// block, delay or surface to the user.
+export function logBoothEvent(
+  eventType: BoothEventType,
+  source: string | null | undefined,
+  meta?: Record<string, unknown>,
+): void {
+  fireAndForget(
+    rpc("log_booth_event", {
+      _event_type: eventType,
+      _source: source ?? "",
+      _session_id: getSessionId(),
+      _is_test: isTestSession(),
+      _physical: isPhysicalScan(),
+      _meta: meta ?? null,
+    }),
+  );
+}
+
 // Log a FIRST OFFENCE ($55) link tap — the app's only commercial signal. logShare's
 // shape (source + session) with log_scan's flags (is_test + physical) so venue
 // traffic separates from the operator's. Fire-and-forget: the anchor's navigation
