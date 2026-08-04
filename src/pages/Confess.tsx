@@ -3,7 +3,7 @@ import { useNavigate, Navigate, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { captureSourceFromUrl, promptFromVenue, DEFAULT_PROMPT } from "@/lib/source";
+import { captureSourceFromUrl, resolvePrompt, DEFAULT_PROMPT } from "@/lib/source";
 import { fetchConfessConfig, getPlaceholderLines, resolveConfessLines } from "@/lib/registers";
 
 const Confess = () => {
@@ -50,7 +50,9 @@ const Confess = () => {
           ? prev
           : next;
       });
-      setPrompt(promptFromVenue(cfg.headline, cfg.guidance));
+      setPrompt(
+        resolvePrompt(cfg.headline, cfg.guidance, cfg.defaultHeadline, cfg.defaultGuidance),
+      );
     });
     return () => {
       cancelled = true;

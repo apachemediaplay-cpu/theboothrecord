@@ -81,7 +81,7 @@ export function isTestSession(): boolean {
 // THE RULE: venues.json is slug → displayName, NOTHING ELSE. Greeting (headline +
 // guidance), register and placeholder lines all live in public.venues / public.registers,
 // fetched by the confess screen via fetchVenueConfig()/get_confess_config and mapped
-// through promptFromVenue() below. Do not add copy fields back here.
+// through resolvePrompt() below. Do not add copy fields back here.
 export type Venue = { displayName: string };
 
 const VENUES = venuesData as Record<string, Venue>;
@@ -90,21 +90,33 @@ const VENUES = venuesData as Record<string, Venue>;
 // unknown source, null greeting, or a failed venues lookup all render this.
 export type Prompt = { headline: string; guidance?: string };
 // The brand's standing caption's first sentence — one voice across the greeting,
-// the feed and the wall. Headline carries the tone, guidance carries the ask,
-// exactly like the venue greetings.
+// the feed and the wall. LAST-RESORT fail-safe only: the live default greeting is
+// editable in the console (site_copy.default_prompt); this constant renders only
+// when the DB is unreachable. NEVER remove it.
 export const DEFAULT_PROMPT: Prompt = { headline: "No one is innocent.", guidance: "Confess." };
 
-// The ONE mapping from a venues-table greeting to a renderable prompt. Missing/blank
-// headline → DEFAULT_PROMPT, and guidance is dropped WITH it — a venue's guidance
-// line must never render under the default headline.
-export function promptFromVenue(
-  headline?: string | null,
-  guidance?: string | null,
+// The ONE mapping to a renderable prompt. Three levels, in order:
+//   venue greeting → site_copy default_prompt → hardcoded DEFAULT_PROMPT.
+// THE RULE at every level: headline and guidance travel TOGETHER. A blank headline
+// falls through to the NEXT level's headline AND guidance — never a headline from
+// one level with guidance from another.
+export function resolvePrompt(
+  venueHeadline?: string | null,
+  venueGuidance?: string | null,
+  defaultHeadline?: string | null,
+  defaultGuidance?: string | null,
 ): Prompt {
-  const h = (headline || "").trim();
-  if (!h) return DEFAULT_PROMPT;
-  const g = (guidance || "").trim();
-  return g ? { headline: h, guidance: g } : { headline: h };
+  const vh = (venueHeadline || "").trim();
+  if (vh) {
+    const vg = (venueGuidance || "").trim();
+    return vg ? { headline: vh, guidance: vg } : { headline: vh };
+  }
+  const dh = (defaultHeadline || "").trim();
+  if (dh) {
+    const dg = (defaultGuidance || "").trim();
+    return dg ? { headline: dh, guidance: dg } : { headline: dh };
+  }
+  return DEFAULT_PROMPT;
 }
 
 // Resolve the display name from the SOURCE SLUG ONLY — venues.json is the single source

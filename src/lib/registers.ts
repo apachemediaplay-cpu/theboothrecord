@@ -103,6 +103,11 @@ export type ConfessConfig = {
   guidance: string | null;
   register: string | null;
   lines: string[] | null;
+  // site_copy default_prompt — the console-editable middle tier of the greeting
+  // chain (venue → default → hardcoded). Null on failure/older RPC → the client
+  // resolver falls through to the hardcoded DEFAULT_PROMPT.
+  defaultHeadline: string | null;
+  defaultGuidance: string | null;
 };
 
 const NO_CONFESS_CONFIG: ConfessConfig = {
@@ -110,6 +115,8 @@ const NO_CONFESS_CONFIG: ConfessConfig = {
   guidance: null,
   register: null,
   lines: null,
+  defaultHeadline: null,
+  defaultGuidance: null,
 };
 
 type ConfessConfigRow = {
@@ -117,6 +124,8 @@ type ConfessConfigRow = {
   guidance: string | null;
   register: string | null;
   lines: string[] | null;
+  default_headline: string | null;
+  default_guidance: string | null;
 };
 type RpcCall = (
   fn: string,
@@ -140,6 +149,8 @@ export async function fetchConfessConfig(source?: string | null): Promise<Confes
       guidance: row.guidance ?? null,
       register: row.register ?? null,
       lines: lines.length > 0 ? lines : null,
+      defaultHeadline: row.default_headline ?? null,
+      defaultGuidance: row.default_guidance ?? null,
     };
   } catch {
     return NO_CONFESS_CONFIG;

@@ -629,6 +629,60 @@ const AddVenueForm = ({
   );
 };
 
+// The default (no-venue) greeting editor — site_copy.default_prompt, the copy all
+// Instagram / shared-card / direct traffic sees on /confess. Same seed-once +
+// remount-on-save pattern as RegisterSetEditor; blank headline can't be saved
+// (the client resolver would just skip the level, so we refuse it here too).
+const DefaultGreetingEditor = ({
+  initialHeadline,
+  initialGuidance,
+  busy,
+  onSave,
+}: {
+  initialHeadline: string;
+  initialGuidance: string;
+  busy: boolean;
+  onSave: (headline: string, guidance: string) => void;
+}) => {
+  const [headline, setHeadline] = useState(initialHeadline);
+  const [guidance, setGuidance] = useState(initialGuidance);
+  const dirty =
+    headline.trim() !== initialHeadline.trim() || guidance.trim() !== initialGuidance.trim();
+  const valid = headline.trim() !== "";
+  return (
+    <div className="space-y-3 py-1">
+      <Field label="Headline">
+        <Input
+          value={headline}
+          maxLength={80}
+          onChange={(e) => setHeadline(e.target.value)}
+          className="h-8 w-full text-xs"
+        />
+      </Field>
+      <Field label="Subline (optional)">
+        <Input
+          value={guidance}
+          maxLength={80}
+          onChange={(e) => setGuidance(e.target.value)}
+          className="h-8 w-full text-xs"
+        />
+      </Field>
+      <div className="flex items-center gap-2 pt-1">
+        <Button
+          size="sm"
+          disabled={!dirty || !valid || busy}
+          onClick={() => onSave(headline.trim(), guidance.trim())}
+        >
+          {busy ? "Saving…" : "Save"}
+        </Button>
+        {!valid ? (
+          <span className="text-[11px] text-destructive">headline required</span>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
 // One placeholder set (public.registers row): exactly six lines, none blank, each
 // ≤80 chars — the client mirror of admin_set_register_lines' checks. Seeds from
 // the DB row once; the parent keys this component on the row content, so a landed
@@ -806,6 +860,13 @@ const Moderate = () => {
   const [registerSetsError, setRegisterSetsError] = useState(false);
   const [registerSetsOpen, setRegisterSetsOpen] = useState(false);
   const [registerSetBusy, setRegisterSetBusy] = useState<string | null>(null);
+
+  // ── Default (no-venue) greeting: site_copy.default_prompt.
+  // undefined = loading, null = load failed, object = editable values.
+  const [siteCopy, setSiteCopy] = useState<
+    { headline: string; guidance: string } | null | undefined
+  >(undefined);
+  const [siteCopyBusy, setSiteCopyBusy] = useState(false);
 
   // Pending count for the Moderate tab label. Tracks the persistent filters
   // (venue, range) — not the queue's sub-tab or search.
@@ -1158,6 +1219,63 @@ const Moderate = () => {
   // render label-only until it lands.
   const registerDesc = (value: string): string | null =>
     registerSets?.get(value === "default" ? "dtc" : value)?.description ?? null;
+
+  // Default-greeting read — venues tab only, same Retry tick. site_copy is
+  // public-read (the confess screen resolves the same row via get_confess_config).
+  useEffect(() => {
+    if (!session || consoleTab !== "venues") return;
+    let cancelled = false;
+    setSiteCopy(undefined);
+    const from = sb.from.bind(sb) as unknown as (table: string) => {
+      select(cols: string): PromiseLike<{
+        data: { key: string; value_headline: string | null; value_guidance: string | null }[] | null;
+        error: unknown;
+      }>;
+    };
+    Promise.resolve(from("site_copy").select("key,value_headline,value_guidance")).then(
+      (r) => {
+        if (cancelled) return;
+        const row = r.data?.find((x) => x.key === "default_prompt");
+        if (r.error || !row) {
+          setSiteCopy(null);
+          return;
+        }
+        setSiteCopy({ headline: row.value_headline ?? "", guidance: row.value_guidance ?? "" });
+      },
+      () => {
+        if (!cancelled) setSiteCopy(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [session, consoleTab, refreshTick]);
+
+  // Save via admin_set_site_copy. NOT optimistic — this copy fronts the live
+  // confess screen for all non-venue traffic; local state updates only after the
+  // server confirms.
+  const saveSiteCopy = async (headline: string, guidance: string) => {
+    setSiteCopyBusy(true);
+    const { error } = await rpc("admin_set_site_copy", {
+      _key: "default_prompt",
+      _headline: headline,
+      _guidance: guidance,
+    });
+    setSiteCopyBusy(false);
+    if (error) {
+      toast({
+        title: "Couldn't save the default greeting",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    setSiteCopy({ headline, guidance });
+    toast({
+      title: "Default greeting saved",
+      description: `${headline} — live on the next confess-screen load.`,
+    });
+  };
 
   // Wall funnel read — wall tab only, same Retry tick as the other tab loads.
   useEffect(() => {
@@ -2072,6 +2190,34 @@ const Moderate = () => {
         {/* ── VENUES TAB — every venue as a row: register, greeting, status. ── */}
         {consoleTab === "venues" ? (
         <>
+        {/* Default greeting — the no-venue /confess copy (site_copy.default_prompt).
+            Editable here so iterating never needs a deploy; the client falls back to
+            its hardcoded constant only if this row is unreachable. */}
+        <section className="rounded-lg border border-border px-4 py-3">
+          <p className="text-sm font-medium">Default greeting (no venue)</p>
+          <p className="mb-2 text-xs text-muted-foreground">
+            What Instagram, shared-card and direct traffic sees on /confess.
+          </p>
+          {siteCopy === undefined ? (
+            <p className="py-2 text-sm text-muted-foreground">Loading…</p>
+          ) : siteCopy === null ? (
+            <div className="space-y-2 py-2">
+              <p className="text-sm text-muted-foreground">Couldn't load the default greeting.</p>
+              <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <DefaultGreetingEditor
+              key={`${siteCopy.headline}\n${siteCopy.guidance}`}
+              initialHeadline={siteCopy.headline}
+              initialGuidance={siteCopy.guidance}
+              busy={siteCopyBusy}
+              onSave={saveSiteCopy}
+            />
+          )}
+        </section>
+
         <section className="rounded-lg border border-border">
           <button
             type="button"
