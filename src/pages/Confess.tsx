@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation, Navigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -300,15 +300,9 @@ const Confess = () => {
         </div>
       </div>
       
-      <div className="fixed bottom-32 left-0 right-0 px-6">
-        <p className="text-muted-foreground/70 text-[10px] font-mono-light text-center mb-3">
-          18+ only. By confessing you agree to the{" "}
-          <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
-          {" "}&amp;{" "}
-          <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy</Link>.
-        </p>
-      </div>
-      
+      {/* No terms line here: the gate takes EXPLICIT consent on every entry path
+          (including QR deep-links, which bounce through it) — that tap is the one
+          doing the legal work. Passive fine print repeated here was redundant. */}
       <BoothFooter />
     </div>
   );

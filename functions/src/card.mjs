@@ -97,6 +97,12 @@ function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri 
       h("div", { key: "hg", style: {
         fontSize: 28, color: "rgba(255,255,255,0.4)",
       } }, "@houseofguilty"),
+      // The card is the only dead end in the flow — an image can't be tapped —
+      // so the address is the only way someone who sees it can act on it.
+      // Same treatment as the handle, one step dimmer (the SUBJECT# alpha).
+      h("div", { key: "url", style: {
+        marginTop: 12, fontSize: 28, color: "rgba(255,255,255,0.28)",
+      } }, "theboothrecord.com"),
     ]),
   ]);
 }

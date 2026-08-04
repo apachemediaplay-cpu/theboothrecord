@@ -135,6 +135,18 @@ const Verdict = () => {
     navigate(path);
   };
 
+  // CONFESS AGAIN — quiet link in BOTH states: a missed verdict never gets
+  // shared, so a post-share-only link would be unreachable by the people most
+  // likely to want a re-roll. Plain navigate: NO sessionStorage clear here (the
+  // clear lives in Confess.tsx's handleSubmit and NOWHERE else — the mount-clear
+  // bug recorded there destroyed unshared verdicts) and NO prefill (that's the
+  // timeout-recovery route, where the machine lost their words; here they're
+  // choosing to write a new one).
+  const handleConfessAgain = () => {
+    logBoothEvent("confess_again", rowSource);
+    navigate("/confess");
+  };
+
   // --- ON RECORD share card generation (1080×1920 PNG) ---
 
   const loadImage = (src: string) =>
@@ -534,22 +546,48 @@ const Verdict = () => {
             >
               {sharingLink ? "FILING…" : "SHARE VERDICT"}
             </button>
-            <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
-              {sharing ? "PREPARING…" : "POST TO STORY"}
-            </button>
+            <div className="flex items-center gap-6">
+              <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
+                {sharing ? "PREPARING…" : "POST TO STORY"}
+              </button>
+              <button onClick={handleConfessAgain} className={shareSecondary}>
+                CONFESS AGAIN
+              </button>
+            </div>
           </div>
         ) : (
-          /* Post-share: the wall becomes the boxed primary; the two share actions drop
-             to an equal-weight text-link pair (both still fully working for repeat
-             shares); FIRST OFFENCE closes the screen. No Instagram, no promise line. */
+          /* Post-share: the BUY becomes the boxed primary — the eye goes to the
+             biggest tappable thing, and post-share the sharing job is done, so the
+             box holds the next job. The share actions drop to an equal-weight
+             text-link row (still fully working for repeat shares); SEE THE GUILTY
+             closes the screen as a quiet link. Pre-share hierarchy is deliberately
+             unchanged: SHARE VERDICT keeps the box there — sharing is the growth
+             loop. No Instagram, no promise line. */
           <div className="w-full max-w-xs flex flex-col items-center gap-5">
-            {verdictResponse !== "Entry withheld" && (
-              <button
-                onClick={() => handleNavigate("/thewall")}
-                className="btn-booth text-[13px]"
-              >
-                SEE THE GUILTY →
-              </button>
+            {/* Sampler CTA — NOT for in-venue scanners (physical ?venue= card): showing a
+                "buy online" link there poaches the host. isPhysicalScan() is false for
+                direct / Instagram / share-through, so those do get it. Unlike the shared
+                card (VerdictShare), this is gated — that viewer is never in-venue.
+                "Reoffend." stays ABOVE the box — keeps the button label clean and
+                keeps the product name. onClick is a fire-and-forget tap metric —
+                never preventDefault, never await: navigation proceeds regardless. */}
+            {!isPhysicalScan() && (
+              <div className="w-full flex flex-col items-center gap-2">
+                <p className="text-[11px] font-mono-light tracking-wide text-muted-foreground">
+                  Reoffend.
+                </p>
+                <a
+                  href="https://houseofguilty.com/contraband?source=booth-verdict"
+                  target="_blank"
+                  rel="noopener"
+                  onClick={() => logOffenceTap(rowSource)}
+                  className="btn-booth block w-full text-center text-[13px]"
+                >
+                  <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
+                    THE FIRST OFFENCE — $55
+                  </span>
+                </a>
+              </div>
             )}
             <div className="flex items-center gap-6">
               <button onClick={handleShareLink} disabled={sharingLink} className={shareSecondary}>
@@ -558,26 +596,14 @@ const Verdict = () => {
               <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
                 {sharing ? "PREPARING…" : "POST TO STORY"}
               </button>
+              <button onClick={handleConfessAgain} className={shareSecondary}>
+                CONFESS AGAIN
+              </button>
             </div>
-            {/* Sampler CTA — NOT for in-venue scanners (physical ?venue= card): showing a
-                "buy online" link there poaches the host. isPhysicalScan() is false for
-                direct / Instagram / share-through, so those do get it. Unlike the shared
-                card (VerdictShare), this is gated — that viewer is never in-venue.
-                onClick is a fire-and-forget tap metric — never preventDefault,
-                never await: the navigation proceeds regardless of the RPC's fate. */}
-            {!isPhysicalScan() && (
-              <a
-                href="https://houseofguilty.com/contraband?source=booth-verdict"
-                target="_blank"
-                rel="noopener"
-                onClick={() => logOffenceTap(rowSource)}
-                className="text-[11px] font-mono-light tracking-wide"
-              >
-                <span className="text-muted-foreground">Reoffend.</span>{" "}
-                <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
-                  THE FIRST OFFENCE — $55
-                </span>
-              </a>
+            {verdictResponse !== "Entry withheld" && (
+              <button onClick={() => handleNavigate("/thewall")} className={wallLink}>
+                SEE THE GUILTY →
+              </button>
             )}
           </div>
         )}

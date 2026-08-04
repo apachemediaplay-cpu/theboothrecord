@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { fetchSharedVerdict, logOffenceTap, type SharedVerdict } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
+import { supabase } from "@/integrations/supabase/client";
 
 // The Booth mark — STATIC by design: this page is read, not passed through, and the
 // FIRST OFFENCE link already carries the page's only pulse. No glow, no animation of
@@ -68,6 +69,39 @@ const VerdictShare = () => {
   }, [row, source]);
   const venue = syncVenue || dbVenue;
 
+  // Wall preview — the three newest approved confessions, regardless of age
+  // ("last filed", not "last hour": the feed's cadence must not decide whether
+  // a stranger gets proof). This is the only screen a complete stranger lands
+  // on cold; three lines of other people's words are the proof it's safe to
+  // type something private into a machine they've never heard of. Same read
+  // path as the wall itself (the anon approved-only table select under RLS —
+  // no wall RPC exists, and the homepage-featured RPC is hand-curated).
+  //
+  // FAIL SILENTLY: fetch error or fewer than three approved confessions render
+  // NOTHING — a partial or empty preview is worse than none.
+  const [wallPreview, setWallPreview] = useState<{ lines: string[] } | null>(null);
+  useEffect(() => {
+    if (status !== "found") return;
+    let cancelled = false;
+    supabase
+      .from("confessions")
+      .select("confession_text")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(3)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        const lines = (data ?? [])
+          .map((r) => r.confession_text)
+          .filter((t): t is string => !!t && t.trim() !== "");
+        if (error || lines.length < 3) return;
+        setWallPreview({ lines: lines.slice(0, 3) });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
   if (status === "loading") {
     return (
       <main className="screen-container animate-fade-in">
@@ -122,6 +156,25 @@ const VerdictShare = () => {
           {venue ? `As charged at ${venue}` : "Location withheld"}
           {row?.subject_number ? ` · Subject #${row.subject_number}` : ""}
         </p>
+
+        {/* Wall preview — dim, one line each, no verdicts. Renders only when all
+            of it is real (see the fetch's fail-silently rule). */}
+        {wallPreview ? (
+          <div className="mt-8 w-full">
+            <p className="mb-2 flex items-center gap-2 text-[11px] font-mono-light tracking-wide text-muted-foreground">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-ritual/80" />
+              last filed
+            </p>
+            {wallPreview.lines.map((line, i) => (
+              <p
+                key={i}
+                className="truncate text-[12.5px] font-mono-light leading-relaxed text-muted-foreground/60"
+              >
+                {line}
+              </p>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {/* Hairline rule — same treatment as the Verdict screen — separating the record
