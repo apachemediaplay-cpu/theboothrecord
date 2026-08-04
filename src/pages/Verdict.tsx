@@ -569,8 +569,10 @@ const Verdict = () => {
                 direct / Instagram / share-through, so those do get it. Unlike the shared
                 card (VerdictShare), this is gated — that viewer is never in-venue.
                 "Reoffend." stays ABOVE the box — keeps the button label clean and
-                keeps the product name. onClick is a fire-and-forget tap metric —
-                never preventDefault, never await: navigation proceeds regardless. */}
+                keeps the product name. The box border is the sign's own orange at
+                25%, static — ties frame to label without a second light source.
+                onClick is a fire-and-forget tap metric — never preventDefault,
+                never await: navigation proceeds regardless. */}
             {!isPhysicalScan() && (
               <div className="w-full flex flex-col items-center gap-2">
                 <p className="text-[11px] font-mono-light tracking-wide text-muted-foreground">
@@ -581,7 +583,7 @@ const Verdict = () => {
                   target="_blank"
                   rel="noopener"
                   onClick={() => logOffenceTap(rowSource)}
-                  className="btn-booth block w-full text-center text-[13px]"
+                  className="btn-booth block w-full border-[#FF4800]/25 text-center text-[13px]"
                 >
                   <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
                     THE FIRST OFFENCE — $55

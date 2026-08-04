@@ -564,3 +564,26 @@
       0 0 26px hsl(17 100% 50% / 0.47);
   }
 }
+
+/* ── ENTER glow (VerdictShare's YOUR TURN label) ──────────────────
+   offenceGlowText's EXACT cycle and alpha curve, in ritual green: on the
+   share page the emphasis is ENTERING, not the shop, so the treatment lives
+   here and the offence link there is flat. */
+.enter-glow-text {
+  animation: enterGlowText 2.8s ease-in-out infinite;
+}
+
+@keyframes enterGlowText {
+  0%, 100% {
+    text-shadow:
+      0 0 2px hsl(var(--ritual-green) / 0.42),
+      0 0 6px hsl(var(--ritual-green) / 0.27),
+      0 0 14px hsl(var(--ritual-green) / 0.17);
+  }
+  50% {
+    text-shadow:
+      0 0 2.8px hsl(var(--ritual-green) / 0.97),
+      0 0 10px hsl(var(--ritual-green) / 0.68),
+      0 0 26px hsl(var(--ritual-green) / 0.47);
+  }
+}

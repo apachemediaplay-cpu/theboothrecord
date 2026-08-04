@@ -165,14 +165,18 @@ const VerdictShare = () => {
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-ritual/80" />
               last filed
             </p>
-            {wallPreview.lines.map((line, i) => (
-              <p
-                key={i}
-                className="truncate text-[12.5px] font-mono-light leading-relaxed text-muted-foreground/60"
-              >
-                {line}
-              </p>
-            ))}
+            {/* ~14px between entries (≈3× the internal leading): each confession
+                sits as a separate filing, not a bulletless list. */}
+            <div className="space-y-3.5">
+              {wallPreview.lines.map((line, i) => (
+                <p
+                  key={i}
+                  className="truncate text-[12.5px] font-mono-light leading-relaxed text-muted-foreground/60"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
@@ -180,11 +184,15 @@ const VerdictShare = () => {
       {/* Hairline rule — same treatment as the Verdict screen — separating the record
           above (left-aligned) from the actions below (centred). */}
       <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-3">
+        {/* The emphasised element on THIS page — deliberate swap: emphasis moved
+            off the buy and onto entering. Same structure as Verdict's FIRST
+            OFFENCE box: glowing label inside a quietly tinted frame (border
+            ritual green at 25%, static — no glow on the box itself). */}
         <Link
           to={ctaHref}
-          className="btn-booth text-sm text-center text-[hsl(var(--ritual-green))]"
+          className="btn-booth border-[hsl(var(--ritual-green)/0.25)] text-sm text-center"
         >
-          YOUR TURN →
+          <span className="enter-glow-text text-[hsl(var(--ritual-green))]">YOUR TURN →</span>
         </Link>
         {/* onClick is a fire-and-forget tap metric — never preventDefault, never
             await: the navigation proceeds regardless of the RPC's fate. */}
@@ -196,7 +204,11 @@ const VerdictShare = () => {
           className="mt-4 text-[11px] font-mono-light tracking-wide"
         >
           <span className="text-muted-foreground">Reoffend.</span>{" "}
-          <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
+          {/* Flat orange, NO glow on this page — the goal here is ENTER THE BOOTH,
+              not the shop; the glow treatment moved onto YOUR TURN above. The
+              shared .offence-glow-text class is untouched (Verdict still uses it);
+              this instance simply doesn't carry it. */}
+          <span className="text-[#FF4800] hover:opacity-80 transition-colors">
             THE FIRST OFFENCE — $55
           </span>
         </a>
