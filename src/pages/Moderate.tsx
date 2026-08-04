@@ -749,19 +749,27 @@ const RegisterSetEditor = ({
   );
 };
 
-// Stage-to-stage conversion for the Wall funnel: next-stage count over previous.
-// Wall visits can exceed shares (people land on the wall without sharing anything),
-// so values over 100% are legitimate and rendered as-is.
+// True-ratio percentage (numerator ⊆ denominator), used by the stat blocks below
+// the funnel (returning/views, engaged-per-arrival-bucket).
+//
+// DELIBERATELY NOT USED IN THE FUNNEL LINE: adjacent funnel stages don't share a
+// denominator — log_scan fires once per session at the gate, but one session can
+// produce several confessions, and confessions can arrive with no scan logged —
+// so stage-to-stage "conversions" printed over 100% (118%/145% observed) and
+// implied a rate that doesn't exist. Do not re-add percentages to the funnel.
 const stagePct = (numerator: number, denominator: number): string =>
   denominator > 0 ? `${Math.round((numerator / denominator) * 100)}%` : "—";
 
-// One funnel window as a single line: SCANS n → % → CONFESSIONS n → % → SHARES n
-// → % → WALL n. Current window bright, previous muted for comparison.
+// One funnel window as a single line: SCANS n → CONFESSIONS n → SHARES n →
+// OFFENCE n → WALL n. Raw counts only, arrows as separators (see stagePct's
+// comment for why there are no percentages). Current window bright, previous
+// muted for comparison.
 const FunnelLine = ({
   title,
   scans,
   confessions,
   shares,
+  offenceTaps,
   wallViews,
   bright,
 }: {
@@ -769,6 +777,7 @@ const FunnelLine = ({
   scans: number;
   confessions: number;
   shares: number;
+  offenceTaps: number;
   wallViews: number;
   bright?: boolean;
 }) => {
@@ -776,6 +785,7 @@ const FunnelLine = ({
     { label: "SCANS", n: scans },
     { label: "CONFESSIONS", n: confessions },
     { label: "SHARES", n: shares },
+    { label: "OFFENCE", n: offenceTaps },
     { label: "WALL", n: wallViews },
   ];
   return (
@@ -786,9 +796,7 @@ const FunnelLine = ({
       {stages.map((s, i) => (
         <span key={s.label} className="flex items-baseline gap-2">
           {i > 0 ? (
-            <span className="text-[10px] tabular-nums text-muted-foreground/50">
-              → {stagePct(s.n, stages[i - 1].n)}
-            </span>
+            <span className="text-[10px] text-muted-foreground/50">→</span>
           ) : null}
           <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
             {s.label}
@@ -841,6 +849,7 @@ const Moderate = () => {
     scans: number;
     confessions: number;
     shares: number;
+    offence_taps: number;
     wall_views: number;
     wall_engaged: number;
     wall_ig_direct: number;
@@ -2372,6 +2381,7 @@ const Moderate = () => {
                       scans={num(cur?.scans)}
                       confessions={num(cur?.confessions)}
                       shares={num(cur?.shares)}
+                      offenceTaps={num(cur?.offence_taps)}
                       wallViews={num(cur?.wall_views)}
                       bright
                     />
@@ -2380,6 +2390,7 @@ const Moderate = () => {
                       scans={num(prev?.scans)}
                       confessions={num(prev?.confessions)}
                       shares={num(prev?.shares)}
+                      offenceTaps={num(prev?.offence_taps)}
                       wallViews={num(prev?.wall_views)}
                     />
                   </div>

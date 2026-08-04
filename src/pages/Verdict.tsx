@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { resolveVenueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
-import { logShare, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
+import { logShare, logOffenceTap, resolveShareId, fetchSharedVerdict } from "@/lib/metrics";
 import { useToast } from "@/hooks/use-toast";
 
 // Feature flag: email capture is temporarily OFF but kept in code so it can be
@@ -549,12 +549,15 @@ const Verdict = () => {
             {/* Sampler CTA — NOT for in-venue scanners (physical ?venue= card): showing a
                 "buy online" link there poaches the host. isPhysicalScan() is false for
                 direct / Instagram / share-through, so those do get it. Unlike the shared
-                card (VerdictShare), this is gated — that viewer is never in-venue. */}
+                card (VerdictShare), this is gated — that viewer is never in-venue.
+                onClick is a fire-and-forget tap metric — never preventDefault,
+                never await: the navigation proceeds regardless of the RPC's fate. */}
             {!isPhysicalScan() && (
               <a
                 href="https://houseofguilty.com/contraband?source=booth-verdict"
                 target="_blank"
                 rel="noopener"
+                onClick={() => logOffenceTap(rowSource)}
                 className="text-[11px] font-mono-light tracking-wide"
               >
                 <span className="text-muted-foreground">Reoffend.</span>{" "}

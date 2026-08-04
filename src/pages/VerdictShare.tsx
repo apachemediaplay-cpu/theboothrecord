@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
-import { fetchSharedVerdict, type SharedVerdict } from "@/lib/metrics";
+import { fetchSharedVerdict, logOffenceTap, type SharedVerdict } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
 
 // The Booth mark — STATIC by design: this page is read, not passed through, and the
@@ -133,10 +133,13 @@ const VerdictShare = () => {
         >
           YOUR TURN →
         </Link>
+        {/* onClick is a fire-and-forget tap metric — never preventDefault, never
+            await: the navigation proceeds regardless of the RPC's fate. */}
         <a
           href="https://houseofguilty.com/contraband?source=booth-share"
           target="_blank"
           rel="noopener"
+          onClick={() => logOffenceTap(source)}
           className="mt-4 text-[11px] font-mono-light tracking-wide"
         >
           <span className="text-muted-foreground">Reoffend.</span>{" "}

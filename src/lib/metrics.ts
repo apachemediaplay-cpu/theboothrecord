@@ -47,6 +47,21 @@ export function logShare(source: string | null | undefined): void {
   );
 }
 
+// Log a FIRST OFFENCE ($55) link tap — the app's only commercial signal. logShare's
+// shape (source + session) with log_scan's flags (is_test + physical) so venue
+// traffic separates from the operator's. Fire-and-forget: the anchor's navigation
+// is already in flight and must never be delayed or blocked.
+export function logOffenceTap(source: string | null | undefined): void {
+  fireAndForget(
+    rpc("log_offence_tap", {
+      _source: source ?? "",
+      _session_id: getSessionId(),
+      _is_test: isTestSession(),
+      _physical: isPhysicalScan(),
+    }),
+  );
+}
+
 // Log a Booth arrival ("scan") — ONCE per session. Called when someone lands on the
 // consent gate. Guarded by a sessionStorage marker keyed on the session id: a refresh or
 // back-navigation within the same tab session finds the marker and skips, so one scan is
