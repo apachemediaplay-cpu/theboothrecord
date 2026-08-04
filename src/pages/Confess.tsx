@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, Navigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Navigate, Link } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +8,7 @@ import { fetchConfessConfig, getPlaceholderLines, resolveConfessLines } from "@/
 
 const Confess = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   // Resolve the venue from stored session state, NOT the live URL: capture once on
   // arrival (?source= present), then fall back to the stored value on repeat
@@ -20,7 +21,15 @@ const Confess = () => {
   // and swaps in the venue greeting when the lookup lands — identical lifecycle to
   // the placeholder set, and every failure path stays on the default.
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [confession, setConfession] = useState("");
+  // Pre-filled ONLY when /receiving's timeout screen sends them back (router
+  // state, never a bare visit): they typed something honest, the machine lost
+  // it, and retyping is where people leave. A normal visit still starts empty —
+  // the surviving sessionStorage keys must never leak into the field.
+  const [confession, setConfession] = useState(() =>
+    (location.state as { prefill?: boolean } | null)?.prefill
+      ? sessionStorage.getItem("confession") ?? ""
+      : "",
+  );
   const [interimText, setInterimText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [placeholderText, setPlaceholderText] = useState("");

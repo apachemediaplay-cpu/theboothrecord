@@ -52,7 +52,12 @@ export function logShare(source: string | null | undefined): void {
 // mirrors the RPC's server-side whitelist — extend BOTH when a new event ships.
 // share_link/share_card run ALONGSIDE logShare: share_events stays the unbroken
 // historical share series; this adds the link-vs-card split it can't express.
-export type BoothEventType = "share_link" | "share_card" | "confess_again";
+export type BoothEventType =
+  | "share_link"
+  | "share_card"
+  | "confess_again"
+  | "verdict_timeout"
+  | "verdict_recovery";
 
 // Fire-and-forget, same contract as every metric here: a failure must never
 // block, delay or surface to the user.
@@ -216,6 +221,38 @@ export function trackWallEngagement(): () => void {
     return cleanup;
   } catch {
     return () => {};
+  }
+}
+
+// Recover a verdict whose RESPONSE was lost in transit (the row is written before
+// the AI runs, so a client timeout ≠ nothing happened). Owner-gated server-side:
+// exact confession text (≥12 chars — shorter is refused) + source match + 5-min
+// window + session claim, and EXACTLY one matching row or nothing is returned
+// (see recover_verdict). Returns a discriminated status so the caller can log
+// recovered/not_found/error distinctly. Never throws.
+export type RecoveredVerdict = {
+  subject_number: number;
+  verdict_text: string;
+  source: string;
+  stamp_venue: boolean | null;
+};
+export async function recoverVerdict(
+  confession: string,
+  source: string | null | undefined,
+): Promise<
+  { status: "found"; row: RecoveredVerdict } | { status: "not_found" } | { status: "error" }
+> {
+  try {
+    const { data, error } = await rpc("recover_verdict", {
+      _confession: confession,
+      _source: source ?? "",
+      _session_id: getSessionId(),
+    });
+    if (error) return { status: "error" };
+    if (!Array.isArray(data) || data.length === 0) return { status: "not_found" };
+    return { status: "found", row: data[0] as RecoveredVerdict };
+  } catch {
+    return { status: "error" };
   }
 }
 
