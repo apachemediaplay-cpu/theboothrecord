@@ -233,13 +233,13 @@ const TheWall = () => {
         />
         <div className="mx-auto max-w-[680px] px-6 py-3">
           {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 2px border at
-              40% in the same colour, no background fill, no caption — YOUR TURN
-              says what it does. The transparent box sits over the bar's SOLID
+              40% in the same colour, 10% fill in the same colour, no caption —
+              YOUR TURN says what it does. The box sits over the bar's SOLID
               background (not the scrolling records — they fade at the feather and
               pass beneath the bar), so nothing shows through the frame. */}
           <Link
             to="/confess"
-            className="btn-booth block whitespace-nowrap border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-center text-sm hover:bg-transparent"
+            className="btn-booth block whitespace-nowrap border-2 border-[hsl(var(--ritual-green)/0.4)] bg-[hsl(var(--ritual-green)/0.1)] text-center text-sm hover:bg-[hsl(var(--ritual-green)/0.1)]"
           >
             <span className="enter-glow-text text-[hsl(var(--ritual-green))]">YOUR TURN →</span>
           </Link>

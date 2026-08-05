@@ -90,7 +90,7 @@ const VerdictShare = () => {
         <div className="fixed bottom-32 left-0 right-0 flex justify-center px-6">
           <Link
             to="/confess"
-            className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-sm text-center hover:bg-transparent"
+            className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-[hsl(var(--ritual-green)/0.1)] text-sm text-center hover:bg-[hsl(var(--ritual-green)/0.1)]"
           >
             <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
               ENTER THE BOOTH →
@@ -135,13 +135,13 @@ const VerdictShare = () => {
           above (left-aligned) from the actions below (centred). */}
       <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-3">
         {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 2px border at
-            40% in the same colour, no background fill. The emphasis on THIS page
-            is entering, not the shop — no FIRST OFFENCE here at all (it lives on
+            40% in the same colour, 10% fill in the same colour. The emphasis on
+            THIS page is entering, not the shop — no FIRST OFFENCE here at all (it lives on
             Verdict's post-share state; a cold stranger gets pushed into the
             Booth, not to a $55 buy link). */}
         <Link
           to={ctaHref}
-          className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-sm text-center hover:bg-transparent"
+          className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-[hsl(var(--ritual-green)/0.1)] text-sm text-center hover:bg-[hsl(var(--ritual-green)/0.1)]"
         >
           <span className="enter-glow-text text-[hsl(var(--ritual-green))]">YOUR TURN →</span>
         </Link>

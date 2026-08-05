@@ -540,11 +540,11 @@ const Verdict = () => {
               Your words. Not your name.
             </p>
             {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 2px border
-                at 40% in the same colour, no background fill. */}
+                at 40% in the same colour, 10% fill in the same colour. */}
             <button
               onClick={handleShareLink}
               disabled={sharingLink}
-              className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-[13px] hover:bg-transparent disabled:opacity-50"
+              className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-[hsl(var(--ritual-green)/0.1)] text-[13px] hover:bg-[hsl(var(--ritual-green)/0.1)] disabled:opacity-50"
             >
               <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
                 {sharingLink ? "FILING…" : "SHARE VERDICT"}
@@ -587,7 +587,7 @@ const Verdict = () => {
                   target="_blank"
                   rel="noopener"
                   onClick={() => logOffenceTap(rowSource)}
-                  className="btn-booth block w-full border-2 border-[#FF4800]/40 bg-transparent text-center text-[13px] hover:bg-transparent"
+                  className="btn-booth block w-full border-2 border-[#FF4800]/40 bg-[#FF4800]/10 text-center text-[13px] hover:bg-[#FF4800]/10"
                 >
                   <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
                     THE FIRST OFFENCE — $55
