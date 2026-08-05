@@ -232,13 +232,16 @@ const TheWall = () => {
           className="pointer-events-none absolute inset-x-0 bottom-full h-4 bg-gradient-to-t from-background to-transparent"
         />
         <div className="mx-auto max-w-[680px] px-6 py-3">
-          {/* One row: the label WAS the button's message, so the button says it.
-              Same btn-booth treatment and destination as the old ENTER THE BOOTH. */}
+          {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 2px border at
+              40% in the same colour, no background fill, no caption — YOUR TURN
+              says what it does. The transparent box sits over the bar's SOLID
+              background (not the scrolling records — they fade at the feather and
+              pass beneath the bar), so nothing shows through the frame. */}
           <Link
             to="/confess"
-            className="btn-booth block whitespace-nowrap text-center text-sm text-[hsl(var(--ritual-green))]"
+            className="btn-booth block whitespace-nowrap border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-center text-sm hover:bg-transparent"
           >
-            YOUR TURN →
+            <span className="enter-glow-text text-[hsl(var(--ritual-green))]">YOUR TURN →</span>
           </Link>
         </div>
       </div>

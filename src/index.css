@@ -574,9 +574,9 @@
    don't, because they say what they do.
    Current primaries: SHARE VERDICT (ritual green, Verdict pre-share),
    THE FIRST OFFENCE (#FF4800, Verdict post-share), YOUR TURN (ritual green,
-   VerdictShare found) and ENTER THE BOOTH (ritual green, VerdictShare
-   notfound). The glow classes are enter-glow-text (green) and
-   offence-glow-text (orange) below. */
+   VerdictShare found), ENTER THE BOOTH (ritual green, VerdictShare notfound)
+   and YOUR TURN (ritual green, the wall's pinned bar). The glow classes are
+   enter-glow-text (green) and offence-glow-text (orange) below. */
 
 /* ── ENTER glow (green primary labels) ────────────────────────────
    offenceGlowText's EXACT cycle and alpha curve, in ritual green: on the
