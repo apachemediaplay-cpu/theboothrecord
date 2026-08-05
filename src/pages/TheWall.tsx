@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Instagram } from "lucide-react";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
+import GuiltyLogo from "@/components/GuiltyLogo";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
 
 import { useWallSound } from "@/hooks/useWallSound";
@@ -131,7 +132,7 @@ const TheWall = () => {
         }}
       />
 
-      {/* Pinned header: title + live status + Instagram follow. FIXED (not sticky): the
+      {/* Pinned header: wordmark + title + Instagram follow. FIXED (not sticky): the
           outer wrapper's overflow-hidden breaks position:sticky, so this is pinned to the
           viewport and the feed below carries matching top padding. Stays on arrival and
           while the feed scrolls. */}
@@ -143,30 +144,37 @@ const TheWall = () => {
           aria-hidden="true"
           className="pointer-events-none absolute inset-x-0 top-full h-6 bg-gradient-to-b from-background to-transparent"
         />
-        {/* Masthead: three centred rows in descending size, tight — one block, not
-            three elements. Both bars are pinned, so every px here is feed space.
-            Content capped to the SAME 680px frame as the records column — one axis. */}
-        <div className="mx-auto max-w-[680px] pt-6 pb-3 md:pt-8 md:pb-4 px-6 text-center">
-          <h1 className="font-control text-2xl md:text-3xl font-bold text-foreground tracking-wide">
-            THE GUILTY
-          </h1>
-
-          {/* Live indicator — populated view ONLY. A manually-gated wall has no
-              real-time status, so this is suppressed on the empty state (it would
-              misrepresent it). Words share the dot's ritual green — one indicator. */}
-          {confessions.length > 0 && (
-            <div className="mt-1 flex items-center justify-center gap-2">
-              <span className="text-ritual/80 text-[9px] tracking-[0.5em] uppercase font-mono-light">
-                LIVE CONFESSIONS
-              </span>
+        {/* Masthead: publisher above title — GUILTY (the wordmark, small and
+            white, footer scale) publishes PUBLIC RECORD (the page). "PUBLIC
+            RECORD" not "THE GUILTY": the old name collided with the wordmark
+            above it (same word, two jobs), and no definite article — it's a
+            designation, not a title, matching LOCATION WITHHELD / AS CHARGED.
+            Spacing: mark + title grouped tight, then the space OPENS below the
+            title so the masthead reads as one block over the feed. Title
+            outranks the verdicts below it — on a page of verdicts the masthead
+            must be the biggest type. Both bars are pinned, so every px here is
+            feed space. Content capped to the SAME 680px frame as the records
+            column — one axis. */}
+        <div className="mx-auto max-w-[680px] pt-6 pb-6 md:pt-8 md:pb-7 px-6 text-center">
+          <div className="mb-2 flex justify-center">
+            <GuiltyLogo />
+          </div>
+          <h1 className="font-control text-4xl md:text-5xl font-bold text-foreground tracking-wide">
+            PUBLIC RECORD
+            {/* The pulsing dot — all that survives of the LIVE CONFESSIONS line
+                (the words described what's visible three lines down; the dot is
+                the signal that it's happening NOW). Status indicator, not type,
+                so it sits inside the title line. Populated view ONLY — a
+                manually-gated wall has no real-time status on empty. */}
+            {confessions.length > 0 && (
               <span
-                className="inline-block w-1.5 h-1.5 rounded-full bg-ritual/80"
+                className="ml-3 inline-block w-1.5 h-1.5 rounded-full bg-ritual/80 align-middle"
                 style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
               />
-            </div>
-          )}
+            )}
+          </h1>
 
-          <div className="mt-1.5 flex justify-center">
+          <div className="mt-2 flex justify-center">
             <a
               href="https://instagram.com/houseofguilty"
               target="_blank"
@@ -180,12 +188,13 @@ const TheWall = () => {
         </div>
       </div>
 
-      {/* Confession feed. Top padding clears the FIXED masthead (≈107px mobile, taller
-          at md where its paddings/type grow); bottom padding clears the single-row
-          pinned bar (≈107px) so the last confession isn't hidden underneath.
+      {/* Confession feed. Top padding clears the FIXED masthead (≈143px mobile
+          since the wordmark + bigger title landed, taller at md where its
+          paddings/type grow); bottom padding clears the single-row pinned bar
+          (≈107px) so the last confession isn't hidden underneath.
           680px cap: verdicts ran ~100 chars at 720; comfortable measure is 45–75.
           Below 680px viewport the cap is inert — mobile is unchanged. */}
-      <div className="max-w-[680px] mx-auto px-6 pt-32 md:pt-36 pb-[132px]">
+      <div className="max-w-[680px] mx-auto px-6 pt-40 md:pt-48 pb-[132px]">
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">

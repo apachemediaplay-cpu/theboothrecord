@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
-import BoothFooter from "@/components/BoothFooter";
 import { captureSourceFromUrl } from "@/lib/source";
 import { logScan } from "@/lib/metrics";
 
@@ -358,7 +357,6 @@ const Index = () => {
         </p>
       </div>
 
-      <BoothFooter />
       </div>
     </div>
   );

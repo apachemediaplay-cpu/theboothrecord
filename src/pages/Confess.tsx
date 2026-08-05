@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
-import BoothFooter from "@/components/BoothFooter";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { captureSourceFromUrl, resolvePrompt, DEFAULT_PROMPT } from "@/lib/source";
@@ -195,7 +194,7 @@ const Confess = () => {
     if (confession.trim()) {
       // The previous verdict's keys are cleared HERE, at the moment this becomes a
       // NEW confession — never on /confess mount. Mount-clearing destroyed an
-      // unshared verdict two taps into the main flow (verdict → SEE THE GUILTY →
+      // unshared verdict two taps into the main flow (verdict → SEE THE RECORD →
       // YOUR TURN lands here → wiped, unrecoverable); merely visiting this screen
       // must never cost the user their card. Clearing at submit still guarantees
       // /verdict can't flash a stale verdict mid-flight: all five keys go before
@@ -302,8 +301,9 @@ const Confess = () => {
       
       {/* No terms line here: the gate takes EXPLICIT consent on every entry path
           (including QR deep-links, which bounce through it) — that tap is the one
-          doing the legal work. Passive fine print repeated here was redundant. */}
-      <BoothFooter />
+          doing the legal work. Passive fine print repeated here was redundant.
+          No wordmark footer either — this is the working screen, the one place
+          the interface should disappear (the mark lives on Receiving instead). */}
     </div>
   );
 };

@@ -267,7 +267,12 @@ const Receiving = () => {
         )}
       </div>
 
-      <BoothFooter />
+      {/* GUILTY wordmark — Receiving is the one screen EVERY confessor passes
+          through (roughly one in four reaches the wall: 44 wall visits against
+          189 confessions), so this is the only placement that guarantees nobody
+          completes the flow without seeing the word once. NOT on the timeout
+          state — "GUILTY" under "Nothing on record. Try again." reads badly. */}
+      {!timedOut && <BoothFooter />}
     </div>
   );
 };

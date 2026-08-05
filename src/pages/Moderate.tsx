@@ -2397,7 +2397,7 @@ const Moderate = () => {
                   {/* Six blocks. Rates reuse stagePct (zero denominator → "—").
                       "Landed cold" = the wall was the session's FIRST touch of the
                       site; "via booth" = the session passed the consent gate first
-                      (SEE THE GUILTY clicks). Pre-attribution rows have no arrival,
+                      (SEE THE RECORD clicks — the event type is still see_guilty). Pre-attribution rows have no arrival,
                       so the two arrival buckets can sum below total visits. */}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {[

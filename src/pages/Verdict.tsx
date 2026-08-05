@@ -419,13 +419,13 @@ const Verdict = () => {
   };
 
   // Action-area type rule: 13px is the FUNCTIONAL tier — anything you can press
-  // (SHARE VERDICT, SEE THE GUILTY, and this underlined pair). 11px is the LABEL
+  // (SHARE VERDICT, SEE THE RECORD, and this underlined pair). 11px is the LABEL
   // tier — anything you read ("Your words. Not your name.", FIRST OFFENCE).
   // shareSecondary is the underlined text-link treatment shared by POST TO STORY
   // and (post-share) SHARE AGAIN.
   const shareSecondary =
     "text-[13px] text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
-  // SEE THE GUILTY pre-share — quiet exit, one step above the 11px action scale
+  // SEE THE RECORD pre-share — quiet exit, one step above the 11px action scale
   // but still muted and boxless so it never competes with the share action
   // (sharing is the perishable one). Post-share it's promoted to the boxed
   // primary instead, at the same 13px.
@@ -564,7 +564,7 @@ const Verdict = () => {
           /* Post-share: the BUY becomes the boxed primary — the eye goes to the
              biggest tappable thing, and post-share the sharing job is done, so the
              box holds the next job. The share actions drop to an equal-weight
-             text-link row (still fully working for repeat shares); SEE THE GUILTY
+             text-link row (still fully working for repeat shares); SEE THE RECORD
              closes the screen as a quiet link. Pre-share hierarchy is deliberately
              unchanged: SHARE VERDICT keeps the box there — sharing is the growth
              loop. No Instagram, no promise line. */
@@ -610,7 +610,7 @@ const Verdict = () => {
             </div>
             {verdictResponse !== "Entry withheld" && (
               <button onClick={() => handleNavigate("/thewall")} className={wallLink}>
-                SEE THE GUILTY →
+                SEE THE RECORD →
               </button>
             )}
           </div>
@@ -623,7 +623,7 @@ const Verdict = () => {
         {!hasShared && verdictResponse !== "Entry withheld" && (
           <div className="mt-10 flex flex-col items-center">
             <button onClick={() => handleNavigate("/thewall")} className={wallLink}>
-              SEE THE GUILTY →
+              SEE THE RECORD →
             </button>
           </div>
         )}

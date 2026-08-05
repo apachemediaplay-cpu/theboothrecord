@@ -149,13 +149,16 @@ const VerdictShare = () => {
         </Link>
         {/* Quiet exit below the box — NO arrow (the arrow belongs to YOUR TURN
             alone). Same wallLink treatment as Verdict's quiet exit. onClick is a
-            fire-and-forget metric; Link handles the navigation. */}
+            fire-and-forget metric; Link handles the navigation. The LABEL is
+            SEE THE RECORD (the wall is PUBLIC RECORD now) but the logged event
+            type stays see_guilty — it's in the log_booth_event RPC whitelist,
+            and renaming it would need a migration for no benefit. */}
         <Link
           to="/thewall"
           onClick={() => logBoothEvent("see_guilty", source, { from: "share" })}
           className="text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide"
         >
-          SEE THE GUILTY
+          SEE THE RECORD
         </Link>
       </div>
     </main>
