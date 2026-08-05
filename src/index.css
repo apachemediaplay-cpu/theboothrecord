@@ -540,6 +540,44 @@
   }
 }
 
+/* ── PUBLIC RECORD masthead dot (TheWall) ─────────────────────────
+   Deep-breath pulse: nearly extinguishes at trough (opacity .5, faint
+   halo), blooms hard at peak — a breath, not a steady light. Its OWN
+   class: .listen-glow-dot above is the confess screen's and keeps its
+   shallow curve. Same 2.8s as every breathing element in the app (the
+   listening dot, the button glows) — one rate; a faster pulse reads
+   as an alert, slow reads as alive. NO scale change: at masthead
+   size, movement next to the title pulls the eye off the words. */
+.record-pulse-dot {
+  animation: recordPulseDot 2.8s ease-in-out infinite;
+}
+
+@keyframes recordPulseDot {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow:
+      0 0 2px hsl(var(--ritual-green) / 0.5),
+      0 0 5px hsl(var(--ritual-green) / 0.2),
+      0 0 10px hsl(var(--ritual-green) / 0.08);
+  }
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 8px hsl(var(--ritual-green) / 1),
+      0 0 22px hsl(var(--ritual-green) / 0.95),
+      0 0 48px hsl(var(--ritual-green) / 0.70);
+  }
+}
+
+/* Reduced motion: the dot holds steady at full opacity, no halo — a
+   static status light. (The only pulse class with this gate so far;
+   the others predate it.) */
+@media (prefers-reduced-motion: reduce) {
+  .record-pulse-dot {
+    animation: none;
+  }
+}
+
 /* ── FIRST OFFENCE link (Verdict / VerdictShare) ──────────────────
    The listening line's neon-tube treatment in the offence orange
    (#FF4800 = hsl(17 100% 50%)): the text core stays solid and never

@@ -167,10 +167,10 @@ const TheWall = () => {
                 so it sits inside the title line. Populated view ONLY — a
                 manually-gated wall has no real-time status on empty. */}
             {confessions.length > 0 && (
-              <span
-                className="ml-3 inline-block w-1.5 h-1.5 rounded-full bg-ritual/80 align-middle"
-                style={{ animation: `livePulse ${atmosphere.pulseDuration} ease-in-out infinite` }}
-              />
+              /* -top-1: align-middle seats the 9px dot on the x-height midline,
+                 3.7px below the CAPS' optical centre (caps-only title) — the 4px
+                 raise centres it on the measured cap centre. */
+              <span className="record-pulse-dot relative -top-1 ml-3 inline-block w-[9px] h-[9px] rounded-full bg-ritual align-middle" />
             )}
           </h1>
 
@@ -259,10 +259,6 @@ const TheWall = () => {
       <BoothFooter />
 
       <style>{`
-        @keyframes livePulse {
-          0%, 100% { opacity: 0.3; box-shadow: 0 0 3px hsl(var(--ritual-green) / 0.2); }
-          50% { opacity: 1; box-shadow: 0 0 8px hsl(var(--ritual-green) / 0.5); }
-        }
         @keyframes scanline {
           0% { top: 0; }
           100% { top: 100vh; }
