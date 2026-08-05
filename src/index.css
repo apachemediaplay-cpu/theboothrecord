@@ -568,10 +568,8 @@
 /* ── THE PRIMARY-ACTION RULE (recorded here so it isn't re-litigated) ──
    On any screen with a primary action, that action is a GLOWING LABEL inside
    a 1px GREY HAIRLINE border — border-muted-foreground/40, the SAME expression
-   and weight as the divider rule and the confess input underline — over a
-   NEUTRAL fill: white at 6% (bg-white/[0.06]). Border and fill are identical
-   on every box regardless of the label's colour. The glow is the ONLY colour
-   inside the box.
+   and weight as the divider rule and the confess input underline — with a
+   TRANSPARENT interior. No fill. The glow is the ONLY colour in the box.
    Why the border is grey, not the label's colour: the app has one line
    language — the divider, the input underline, and the primary box border are
    the same rule at the same weight; a coloured 2px border made buttons a
@@ -580,13 +578,18 @@
    box as live; the border does not need to repeat it. It also stops the buy
    shouting — an orange label in a grey frame is a control, where an orange
    label in an orange frame read as an advertisement.
-   (A fill tinted to the box's colour was tried and failed: the glowing label
-   already puts colour inside the box as a soft radial, and a tinted fill adds
-   a second colour source in the same space with a hard rectangular edge — the
-   two fight. Neutral gives the box a surface and leaves the glow alone.)
-   One box per screen. Below it, text links. The fill pins :hover too (same
-   6%), so btn-booth's grey hover:bg-muted stays overridden — do not revert
-   hover to transparent or muted.
+   Why no fill: nothing else in the app has one. Every surface sits flat on one
+   continuous dark plane — the confession, the verdict, the wall records, the
+   gate. A fill makes the button an object placed on the page rather than part
+   of it, and one exception in an otherwise flat system isn't worth the small
+   gain in pressability. The hairline and the glow are enough.
+   (A fill tinted to the box's colour was also tried and failed on its own
+   terms: the glowing label already puts colour inside the box as a soft
+   radial, and a tinted fill adds a second colour source in the same space
+   with a hard rectangular edge — the two fight. Still true; don't repeat it.)
+   One box per screen. Below it, text links. Every box sets
+   hover:bg-transparent — btn-booth's grey hover:bg-muted wins back without an
+   explicit override, so do not remove it.
    The grey mono caption above is required ONLY where the action needs framing:
    SHARE VERDICT and THE FIRST OFFENCE need one; YOUR TURN and ENTER THE BOOTH
    don't, because they say what they do.
