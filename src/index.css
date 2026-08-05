@@ -567,10 +567,16 @@
 
 /* ── THE PRIMARY-ACTION RULE (recorded here so it isn't re-litigated) ──
    On any screen with a primary action, that action is a GLOWING LABEL inside
-   a 2px border at 40% opacity, with a FILL in the same colour at 10% — label,
-   border and fill are ALL the same colour. One box per screen. Below it, text
-   links. The fill pins :hover too (same 10%), so btn-booth's grey hover:bg-muted
-   stays overridden — do not revert hover to transparent or muted.
+   a 2px border at 40% opacity — border and label the SAME colour — over a
+   NEUTRAL fill: white at 6% (bg-white/[0.06]), identical on every box
+   regardless of the box's colour. The glow is the ONLY colour inside the box.
+   (A fill tinted to the box's colour was tried and failed: the glowing label
+   already puts colour inside the box as a soft radial, and a tinted fill adds
+   a second colour source in the same space with a hard rectangular edge — the
+   two fight. Neutral gives the box a surface and leaves the glow alone.)
+   One box per screen. Below it, text links. The fill pins :hover too (same
+   6%), so btn-booth's grey hover:bg-muted stays overridden — do not revert
+   hover to transparent or muted.
    The grey mono caption above is required ONLY where the action needs framing:
    SHARE VERDICT and THE FIRST OFFENCE need one; YOUR TURN and ENTER THE BOOTH
    don't, because they say what they do.
