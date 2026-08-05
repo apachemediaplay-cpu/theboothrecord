@@ -330,8 +330,16 @@ const Index = () => {
       
       <div className="fixed bottom-24 left-0 right-0 flex flex-col items-center gap-4 px-6">
         {/* Always enabled — the tap IS the consent (see the legal line below). */}
-        <button onClick={handleEnter} className="btn-booth">
-          BEGIN
+        {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
+            hairline (muted-foreground/40, the divider's own rule), transparent.
+            The label stays WHITE — BEGIN does not go green; begin-glow-text is
+            the green glows' exact curve in white, which reads softer, and that
+            quieter read is the point: the machine isn't listening yet. */}
+        <button
+          onClick={handleEnter}
+          className="btn-booth border border-muted-foreground/40 bg-transparent hover:bg-transparent"
+        >
+          <span className="begin-glow-text">BEGIN</span>
         </button>
         <p className="max-w-xs text-center text-[9.5px] leading-snug font-mono-light text-muted-foreground/70">
           I agree, by tapping BEGIN, that I'm 18+ and my confession may be published

@@ -631,11 +631,13 @@
    The grey mono caption above is required ONLY where the action needs framing:
    SHARE VERDICT and THE FIRST OFFENCE need one; YOUR TURN and ENTER THE BOOTH
    don't, because they say what they do.
-   Current primaries: SHARE VERDICT (ritual green, Verdict pre-share),
-   THE FIRST OFFENCE (#FF4800, Verdict post-share), YOUR TURN (ritual green,
-   VerdictShare found), ENTER THE BOOTH (ritual green, VerdictShare notfound)
-   and YOUR TURN (ritual green, the wall's pinned bar). The glow classes are
-   enter-glow-text (green) and offence-glow-text (orange) below. */
+   Current primaries: BEGIN (white, the gate — the ONLY white-label instance),
+   SHARE VERDICT (ritual green, Verdict pre-share), THE FIRST OFFENCE
+   (#FF4800, Verdict post-share), YOUR TURN (ritual green, VerdictShare
+   found), ENTER THE BOOTH (ritual green, VerdictShare notfound) and
+   YOUR TURN (ritual green, the wall's pinned bar). The glow classes are
+   enter-glow-text (green), offence-glow-text (orange) and begin-glow-text
+   (white) below. */
 
 /* ── ENTER glow (green primary labels) ────────────────────────────
    offenceGlowText's EXACT cycle and alpha curve, in ritual green: on the
@@ -657,5 +659,41 @@
       0 0 2.8px hsl(var(--ritual-green) / 0.97),
       0 0 10px hsl(var(--ritual-green) / 0.68),
       0 0 26px hsl(var(--ritual-green) / 0.47);
+  }
+}
+
+/* ── BEGIN glow (the gate's white primary label) ──────────────────
+   enterGlowText's EXACT radii, alphas and 2.8s cycle with WHITE swapped
+   in — deliberately the SAME VALUES as the green glows rather than tuned
+   to match their perceived brightness: white gets less separation from
+   its halo than a coloured label does, so BEGIN reads softer than the
+   other primaries. That's accepted — the gate is the one screen where
+   the machine isn't listening yet, and a quieter button before entry is
+   the intended hierarchy. */
+.begin-glow-text {
+  animation: beginGlowText 2.8s ease-in-out infinite;
+}
+
+@keyframes beginGlowText {
+  0%, 100% {
+    text-shadow:
+      0 0 2px rgba(255, 255, 255, 0.42),
+      0 0 6px rgba(255, 255, 255, 0.27),
+      0 0 14px rgba(255, 255, 255, 0.17);
+  }
+  50% {
+    text-shadow:
+      0 0 2.8px rgba(255, 255, 255, 0.97),
+      0 0 10px rgba(255, 255, 255, 0.68),
+      0 0 26px rgba(255, 255, 255, 0.47);
+  }
+}
+
+/* Reduced motion: static label, no halo. (Only this glow and
+   .record-pulse-dot carry the gate so far — the older glow classes
+   predate it and still don't.) */
+@media (prefers-reduced-motion: reduce) {
+  .begin-glow-text {
+    animation: none;
   }
 }
