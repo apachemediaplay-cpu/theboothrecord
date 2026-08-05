@@ -567,9 +567,19 @@
 
 /* ── THE PRIMARY-ACTION RULE (recorded here so it isn't re-litigated) ──
    On any screen with a primary action, that action is a GLOWING LABEL inside
-   a 2px border at 40% opacity — border and label the SAME colour — over a
-   NEUTRAL fill: white at 6% (bg-white/[0.06]), identical on every box
-   regardless of the box's colour. The glow is the ONLY colour inside the box.
+   a 1px GREY HAIRLINE border — border-muted-foreground/40, the SAME expression
+   and weight as the divider rule and the confess input underline — over a
+   NEUTRAL fill: white at 6% (bg-white/[0.06]). Border and fill are identical
+   on every box regardless of the label's colour. The glow is the ONLY colour
+   inside the box.
+   Why the border is grey, not the label's colour: the app has one line
+   language — the divider, the input underline, and the primary box border are
+   the same rule at the same weight; a coloured 2px border made buttons a
+   separate species of object. Colour does one job: the glowing label. Nothing
+   else in the app glows except the listening dot, so the glow alone marks the
+   box as live; the border does not need to repeat it. It also stops the buy
+   shouting — an orange label in a grey frame is a control, where an orange
+   label in an orange frame read as an advertisement.
    (A fill tinted to the box's colour was tried and failed: the glowing label
    already puts colour inside the box as a soft radial, and a tinted fill adds
    a second colour source in the same space with a hard rectangular edge — the

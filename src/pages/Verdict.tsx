@@ -539,13 +539,13 @@ const Verdict = () => {
             <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
               Your words. Not your name.
             </p>
-            {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 2px border
-                at 40% in the same colour, neutral white 6% fill — the glow is
-                the only colour inside the box. */}
+            {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
+                hairline (muted-foreground/40, the divider's own rule), neutral
+                white 6% fill — the glow is the only colour inside the box. */}
             <button
               onClick={handleShareLink}
               disabled={sharingLink}
-              className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-white/[0.06] text-[13px] hover:bg-white/[0.06] disabled:opacity-50"
+              className="btn-booth border border-muted-foreground/40 bg-white/[0.06] text-[13px] hover:bg-white/[0.06] disabled:opacity-50"
             >
               <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
                 {sharingLink ? "FILING…" : "SHARE VERDICT"}
@@ -588,7 +588,7 @@ const Verdict = () => {
                   target="_blank"
                   rel="noopener"
                   onClick={() => logOffenceTap(rowSource)}
-                  className="btn-booth block w-full border-2 border-[#FF4800]/40 bg-white/[0.06] text-center text-[13px] hover:bg-white/[0.06]"
+                  className="btn-booth block w-full border border-muted-foreground/40 bg-white/[0.06] text-center text-[13px] hover:bg-white/[0.06]"
                 >
                   <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
                     THE FIRST OFFENCE — $55
