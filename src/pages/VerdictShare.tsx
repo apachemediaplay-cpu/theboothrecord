@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import BoothFooter from "@/components/BoothFooter";
-import { fetchSharedVerdict, logOffenceTap, type SharedVerdict } from "@/lib/metrics";
+import { fetchSharedVerdict, logBoothEvent, type SharedVerdict } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
-import { supabase } from "@/integrations/supabase/client";
 
-// The Booth mark — STATIC by design: this page is read, not passed through, and the
-// FIRST OFFENCE link already carries the page's only pulse. No glow, no animation of
-// any kind; the dot stays inside the SVG (no box-shadow), unlike the gate.
+// The Booth mark — STATIC by design: this page is read, not passed through, and
+// YOUR TURN's label already carries the page's only pulse. No glow, no animation
+// of any kind; the dot stays inside the SVG (no box-shadow), unlike the gate.
 // marginClass: the found state uses the default mb-8 (32px); the notfound state
 // passes mb-4 so its container's gap-4 stacks to the SAME 32px — one number.
 const BoothMark = ({ marginClass = "mb-8" }: { marginClass?: string }) => (
@@ -69,46 +67,12 @@ const VerdictShare = () => {
   }, [row, source]);
   const venue = syncVenue || dbVenue;
 
-  // Wall preview — the three newest approved confessions, regardless of age
-  // ("last filed", not "last hour": the feed's cadence must not decide whether
-  // a stranger gets proof). This is the only screen a complete stranger lands
-  // on cold; three lines of other people's words are the proof it's safe to
-  // type something private into a machine they've never heard of. Same read
-  // path as the wall itself (the anon approved-only table select under RLS —
-  // no wall RPC exists, and the homepage-featured RPC is hand-curated).
-  //
-  // FAIL SILENTLY: fetch error or fewer than three approved confessions render
-  // NOTHING — a partial or empty preview is worse than none.
-  const [wallPreview, setWallPreview] = useState<{ lines: string[] } | null>(null);
-  useEffect(() => {
-    if (status !== "found") return;
-    let cancelled = false;
-    supabase
-      .from("confessions")
-      .select("confession_text")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(3)
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        const lines = (data ?? [])
-          .map((r) => r.confession_text)
-          .filter((t): t is string => !!t && t.trim() !== "");
-        if (error || lines.length < 3) return;
-        setWallPreview({ lines: lines.slice(0, 3) });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [status]);
-
   if (status === "loading") {
     return (
       <main className="screen-container animate-fade-in">
         <div className="flex-1 flex items-center justify-center">
           <p className="text-ritual text-lg font-mono-light tracking-wide">Pulling the record…</p>
         </div>
-        <BoothFooter />
       </main>
     );
   }
@@ -120,12 +84,19 @@ const VerdictShare = () => {
           <BoothMark marginClass="mb-4" />
           <p className="text-muted-foreground text-base font-mono-light">This record doesn't exist.</p>
         </div>
+        {/* THE PRIMARY-ACTION RULE (see index.css) applies here too — same primary
+            action, same slot; a dead share link must not surface a button style
+            that exists nowhere else in the app. */}
         <div className="fixed bottom-32 left-0 right-0 flex justify-center px-6">
-          <Link to="/confess" className="btn-booth text-center">
-            ENTER THE BOOTH →
+          <Link
+            to="/confess"
+            className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-sm text-center hover:bg-transparent"
+          >
+            <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
+              ENTER THE BOOTH →
+            </span>
           </Link>
         </div>
-        <BoothFooter />
       </main>
     );
   }
@@ -152,69 +123,39 @@ const VerdictShare = () => {
         <p className="font-control font-bold text-[#F4F0EA] text-2xl md:text-3xl leading-tight mb-6">
           {row?.verdict_text}
         </p>
-        <p className="text-muted-foreground/60 text-xs font-mono-light tracking-[0.2em] uppercase">
+        {/* Filing line in State Blue — the app's metadata colour, matching the
+            wall's stamps. (The share CARD keeps its own palette — see card.mjs.) */}
+        <p className="text-[hsl(var(--state-blue)/0.75)] text-xs font-mono-light tracking-[0.2em] uppercase">
           {venue ? `As charged at ${venue}` : "Location withheld"}
           {row?.subject_number ? ` · Subject #${row.subject_number}` : ""}
         </p>
-
-        {/* Wall preview — dim, one line each, no verdicts. Renders only when all
-            of it is real (see the fetch's fail-silently rule). */}
-        {wallPreview ? (
-          <div className="mt-8 w-full">
-            <p className="mb-2 flex items-center gap-2 text-[11px] font-mono-light tracking-wide text-muted-foreground">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-ritual/80" />
-              last filed
-            </p>
-            {/* ~14px between entries (≈3× the internal leading): each confession
-                sits as a separate filing, not a bulletless list. */}
-            <div className="space-y-3.5">
-              {wallPreview.lines.map((line, i) => (
-                <p
-                  key={i}
-                  className="truncate text-[12.5px] font-mono-light leading-relaxed text-muted-foreground/60"
-                >
-                  {line}
-                </p>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
 
       {/* Hairline rule — same treatment as the Verdict screen — separating the record
           above (left-aligned) from the actions below (centred). */}
       <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-3">
-        {/* The emphasised element on THIS page — deliberate swap: emphasis moved
-            off the buy and onto entering. Same structure as Verdict's FIRST
-            OFFENCE box: glowing label inside a quietly tinted frame (border
-            ritual green at 25%, static — no glow on the box itself). */}
+        {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 2px border at
+            40% in the same colour, no background fill. The emphasis on THIS page
+            is entering, not the shop — no FIRST OFFENCE here at all (it lives on
+            Verdict's post-share state; a cold stranger gets pushed into the
+            Booth, not to a $55 buy link). */}
         <Link
           to={ctaHref}
-          className="btn-booth border-[hsl(var(--ritual-green)/0.25)] text-sm text-center"
+          className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-sm text-center hover:bg-transparent"
         >
           <span className="enter-glow-text text-[hsl(var(--ritual-green))]">YOUR TURN →</span>
         </Link>
-        {/* onClick is a fire-and-forget tap metric — never preventDefault, never
-            await: the navigation proceeds regardless of the RPC's fate. */}
-        <a
-          href="https://houseofguilty.com/contraband?source=booth-share"
-          target="_blank"
-          rel="noopener"
-          onClick={() => logOffenceTap(source)}
-          className="mt-4 text-[11px] font-mono-light tracking-wide"
+        {/* Quiet exit below the box — NO arrow (the arrow belongs to YOUR TURN
+            alone). Same wallLink treatment as Verdict's quiet exit. onClick is a
+            fire-and-forget metric; Link handles the navigation. */}
+        <Link
+          to="/thewall"
+          onClick={() => logBoothEvent("see_guilty", source, { from: "share" })}
+          className="text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide"
         >
-          <span className="text-muted-foreground">Reoffend.</span>{" "}
-          {/* Flat orange, NO glow on this page — the goal here is ENTER THE BOOTH,
-              not the shop; the glow treatment moved onto YOUR TURN above. The
-              shared .offence-glow-text class is untouched (Verdict still uses it);
-              this instance simply doesn't carry it. */}
-          <span className="text-[#FF4800] hover:opacity-80 transition-colors">
-            THE FIRST OFFENCE — $55
-          </span>
-        </a>
+          SEE THE GUILTY
+        </Link>
       </div>
-
-      <BoothFooter />
     </main>
   );
 };

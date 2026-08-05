@@ -94,6 +94,9 @@ function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri 
       subjectNumber ? h("div", { key: "sn", style: {
         fontSize: 24, letterSpacing: 4, color: "rgba(255,255,255,0.28)", marginBottom: 34,
       } }, `SUBJECT #${subjectNumber}`) : null,
+      // NOTE: State Blue (hsl 197 57% 47%) is the APP's metadata colour — the
+      // wall stamps and the share page's filing line use it. The CARD deliberately
+      // keeps its own white-alpha palette; do not "fix" it for consistency.
       h("div", { key: "hg", style: {
         fontSize: 28, color: "rgba(255,255,255,0.4)",
       } }, "@houseofguilty"),

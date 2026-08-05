@@ -57,7 +57,8 @@ export type BoothEventType =
   | "share_card"
   | "confess_again"
   | "verdict_timeout"
-  | "verdict_recovery";
+  | "verdict_recovery"
+  | "see_guilty";
 
 // Fire-and-forget, same contract as every metric here: a failure must never
 // block, delay or surface to the user.

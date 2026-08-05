@@ -533,18 +533,22 @@ const Verdict = () => {
           /* Pre-share: promise line + SHARE VERDICT (boxed, the perishable action) with
              POST TO STORY beneath. The disclosure line IS the consent. */
           <div className="w-full max-w-xs flex flex-col items-center gap-3">
-            <p className="text-ritual text-[11px] font-mono-light tracking-wide text-center">
+            {/* Grey caption, NOT green: green marks live and machine things (the
+                listening dot, the stamp, the placeholder, primary actions) — a
+                caption is neither. Same slot and job as "Reoffend." post-share. */}
+            <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
               Your words. Not your name.
             </p>
-            {/* 13px, matching SEE THE GUILTY: the boxed primary should lead on its
-                box, border and position, not by having smaller text than the link
-                beneath it. 11px was small for a primary action. */}
+            {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 2px border
+                at 40% in the same colour, no background fill. */}
             <button
               onClick={handleShareLink}
               disabled={sharingLink}
-              className="btn-booth text-[13px] disabled:opacity-50"
+              className="btn-booth border-2 border-[hsl(var(--ritual-green)/0.4)] bg-transparent text-[13px] hover:bg-transparent disabled:opacity-50"
             >
-              {sharingLink ? "FILING…" : "SHARE VERDICT"}
+              <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
+                {sharingLink ? "FILING…" : "SHARE VERDICT"}
+              </span>
             </button>
             <div className="flex items-center gap-6">
               <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
@@ -583,7 +587,7 @@ const Verdict = () => {
                   target="_blank"
                   rel="noopener"
                   onClick={() => logOffenceTap(rowSource)}
-                  className="btn-booth block w-full border-[#FF4800]/25 text-center text-[13px]"
+                  className="btn-booth block w-full border-2 border-[#FF4800]/40 bg-transparent text-center text-[13px] hover:bg-transparent"
                 >
                   <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
                     THE FIRST OFFENCE — $55
@@ -591,10 +595,11 @@ const Verdict = () => {
                 </a>
               </div>
             )}
+            {/* Identical link row to pre-share (SHARE AGAIN dropped: post-share
+                the screen's job is what-next, not do-it-again — three links
+                crowded the two people actually want). Only the caption and the
+                box differ between states. */}
             <div className="flex items-center gap-6">
-              <button onClick={handleShareLink} disabled={sharingLink} className={shareSecondary}>
-                {sharingLink ? "FILING…" : "SHARE AGAIN"}
-              </button>
               <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
                 {sharing ? "PREPARING…" : "POST TO STORY"}
               </button>
