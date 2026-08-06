@@ -907,6 +907,10 @@ const Moderate = () => {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [focusIdx, setFocusIdx] = useState(0);
   const [confirmBulk, setConfirmBulk] = useState<{ status: Status; label: string } | null>(null);
+  // Hard delete: the row pending permanent deletion (confirm dialog open) + the
+  // in-flight lock. SINGLE row only — there is deliberately no bulk delete.
+  const [confirmDelete, setConfirmDelete] = useState<Confession | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   // Cross-venue rollup (venue === "all"). Stats-tab disclosure toggles: full topic
   // list, zero-confession sources, and the nightly table (all default collapsed).
@@ -1683,6 +1687,35 @@ const Moderate = () => {
         </ToastAction>
       ),
     });
+  };
+
+  // ── HARD delete: permanent row removal via admin_delete_confession. ──
+  // Shares NO path with decide(): no optimistic removal (the row leaves the
+  // list only after Postgres confirms), no Undo toast (there is nothing to
+  // restore from), no chunking (one row at a time by design). The confirm
+  // dialog above the call is the only gate — after it, the row is gone.
+  const hardDelete = async (row: Confession) => {
+    if (deleteBusy) return;
+    setDeleteBusy(true);
+    const { error } = await safe(rpc("admin_delete_confession", { _id: row.id }));
+    setDeleteBusy(false);
+    setConfirmDelete(null);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setRows((prev) => prev.filter((r) => r.id !== row.id));
+    setTotalCount((c) => Math.max(0, c - 1));
+    setSelected((prev) => {
+      if (!prev.has(row.id)) return prev;
+      const next = new Map(prev);
+      next.delete(row.id);
+      return next;
+    });
+    setAllMatching((prev) => (prev ? prev.filter((r) => r.id !== row.id) : prev));
+    if (row.status === "pending")
+      setPendingCount((c) => (c === null ? c : Math.max(0, c - 1)));
+    toast({ title: `Deleted #${row.subject_number} permanently` });
   };
 
   // Select every row matching the current filter, across ALL pages — the deliberate
@@ -2939,6 +2972,60 @@ const Moderate = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* Hard-delete confirmation. The three consequences live HERE — at
+              the moment of the click — rather than beside the button: beside
+              the button they'd be furniture, read once and never again; in
+              the dialog they interrupt every single delete. The OG-cache line
+              matters most: if the reason for deleting is legal, deletion does
+              not remove what's already out there. */}
+          <AlertDialog
+            open={!!confirmDelete}
+            onOpenChange={(o) => {
+              if (!o) setConfirmDelete(null);
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Delete #{confirmDelete?.subject_number} permanently?
+                </AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>
+                      The row is deleted from the database permanently. It cannot
+                      be restored — there is no undo.
+                    </p>
+                    <ul className="list-disc space-y-1 pl-4">
+                      <li>
+                        Any shared /v/ link for this confession will show "This
+                        record doesn't exist."
+                      </li>
+                      <li>The public record's count and the console funnel both drop.</li>
+                      <li>
+                        Instagram and Messages keep the link-preview card cached
+                        for days — the confession stays visible in previews even
+                        after deletion. Deleting does not remove what's already
+                        out there.
+                      </li>
+                    </ul>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={deleteBusy}
+                  onClick={() => {
+                    if (confirmDelete) hardDelete(confirmDelete);
+                  }}
+                >
+                  Delete permanently
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* Pager */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
@@ -3086,6 +3173,23 @@ const Moderate = () => {
                         {row.homepage_featured ? "★ Featured" : "☆ Feature"}
                       </Button>
                       <ReelAction row={row} />
+                      {/* HARD delete — deliberately the quietest control in the
+                          stack: plain 11px text under the buttons, no chrome.
+                          It must never sit at the weight of Approve/Reject —
+                          this is the one action here that cannot be undone.
+                          Renders in ALL THREE tabs (this stack is shared).
+                          The confirm dialog below carries the consequences. */}
+                      <button
+                        type="button"
+                        disabled={deleteBusy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDelete(row);
+                        }}
+                        className="text-[11px] text-muted-foreground/70 hover:text-destructive transition-colors underline underline-offset-2 disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </li>
                 );
