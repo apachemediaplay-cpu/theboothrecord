@@ -2877,6 +2877,14 @@ const Moderate = () => {
             />
           </div>
 
+          {/* Keyboard hints — the shortcuts have existed since the queue was
+              built but were undocumented in the UI. Full wiring: ↑/↓ are J/K
+              aliases, and R also un-approves on the Approved tab; the hint
+              stays to the four everyday ones. */}
+          <p className="font-mono-light text-[10px] tracking-wide text-muted-foreground/60">
+            A approve · R reject · J K move · F feature
+          </p>
+
           {/* Bulk bar — appears with the first selection. "Select all M matching" is the
               deliberate second step that extends selection across ALL pages, with the
               real count; never silent. */}
@@ -3095,9 +3103,18 @@ const Moderate = () => {
                         })
                       }
                     />
+                    {/* Content column + action ROW beneath it — the old right-hand
+                        action column held every row open to the stack's height
+                        (~210px) no matter how short the confession; the row is
+                        now content-height. Hierarchy: the VERDICT is the row's
+                        largest text (it's what the decision is about); the
+                        confession is mono + muted context above it; metadata is
+                        one dim line, subject number in State Blue. */}
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-                        <span>#{row.subject_number}</span>
+                        <span className="text-[hsl(var(--state-blue)/0.75)]">
+                          #{row.subject_number}
+                        </span>
                         <SourceBadge source={row.source} />
                         <TopicBadge topic={row.topic} />
                         {flagged ? (
@@ -3106,90 +3123,109 @@ const Moderate = () => {
                           </span>
                         ) : null}
                       </div>
-                      <p className="whitespace-pre-wrap text-sm">{row.confession_text}</p>
+                      <p className="whitespace-pre-wrap font-mono-light text-xs text-muted-foreground">
+                        {row.confession_text}
+                      </p>
                       {row.verdict_text ? (
-                        <p className="whitespace-pre-wrap text-xs text-muted-foreground border-l-2 border-border pl-3">
+                        <p className="whitespace-pre-wrap text-[15px] text-foreground">
                           {row.verdict_text}
                         </p>
                       ) : null}
-                    </div>
-                    <div className="flex shrink-0 flex-col items-stretch gap-1.5">
-                      {tab === "pending" ? (
-                        <>
+                      {/* Action row. Decisions LEFT (Approve outlined in ritual
+                          green; Reject a plain grey outline — red exists nowhere
+                          else in the app, and position teaches which is which).
+                          The spacer pushes ☆ / Reel / Delete RIGHT: Reel isn't
+                          moderation — it works on any tab and doesn't need
+                          approval — so it must not sit beside the decisions. */}
+                      <div className="flex items-center gap-2 pt-1.5">
+                        {tab === "pending" ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-ritual/40 text-ritual hover:bg-ritual/10 hover:text-ritual"
+                              disabled={bulkBusy}
+                              onClick={() => decide([row], "approved")}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={bulkBusy}
+                              onClick={() => decide([row], "rejected")}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        ) : null}
+                        {tab === "approved" ? (
                           <Button
                             size="sm"
-                            className="bg-ritual text-background hover:bg-ritual/90"
-                            disabled={bulkBusy}
-                            onClick={() => decide([row], "approved")}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
+                            variant="outline"
                             disabled={bulkBusy}
                             onClick={() => decide([row], "rejected")}
                           >
-                            Reject
+                            Un-approve
                           </Button>
-                        </>
-                      ) : null}
-                      {tab === "approved" ? (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={bulkBusy}
-                          onClick={() => decide([row], "rejected")}
-                        >
-                          Un-approve
-                        </Button>
-                      ) : null}
-                      {tab === "rejected" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={bulkBusy}
-                          onClick={() => decide([row], "pending")}
-                        >
-                          Restore
-                        </Button>
-                      ) : null}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busyId === row.id}
-                        aria-pressed={!!row.homepage_featured}
-                        title={
-                          row.homepage_featured
-                            ? "Featured on homepage — click to remove"
-                            : "Feature on homepage"
-                        }
-                        onClick={() => toggleFeatured(row)}
-                        className={cn(
-                          "text-[11px]",
-                          row.homepage_featured ? "text-ritual" : "text-muted-foreground",
-                        )}
-                      >
-                        {row.homepage_featured ? "★ Featured" : "☆ Feature"}
-                      </Button>
-                      <ReelAction row={row} />
-                      {/* HARD delete — deliberately the quietest control in the
-                          stack: plain 11px text under the buttons, no chrome.
-                          It must never sit at the weight of Approve/Reject —
-                          this is the one action here that cannot be undone.
-                          Renders in ALL THREE tabs (this stack is shared).
-                          The confirm dialog below carries the consequences. */}
-                      <button
-                        type="button"
-                        disabled={deleteBusy}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConfirmDelete(row);
-                        }}
-                        className="text-[11px] text-muted-foreground/70 hover:text-destructive transition-colors underline underline-offset-2 disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
+                        ) : null}
+                        {tab === "rejected" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={bulkBusy}
+                            onClick={() => decide([row], "pending")}
+                          >
+                            Restore
+                          </Button>
+                        ) : null}
+                        <div className="ml-auto flex items-center gap-2">
+                          {/* Feature: icon only — a reversible toggle, and ☆
+                              reads as favourite universally. aria-pressed +
+                              title kept so it stays identifiable. */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busyId === row.id}
+                            aria-pressed={!!row.homepage_featured}
+                            title={
+                              row.homepage_featured
+                                ? "Featured on homepage — click to remove"
+                                : "Feature on homepage"
+                            }
+                            onClick={() => toggleFeatured(row)}
+                            className={cn(
+                              "w-9 px-0",
+                              row.homepage_featured ? "text-ritual" : "text-muted-foreground",
+                            )}
+                          >
+                            {row.homepage_featured ? "★" : "☆"}
+                          </Button>
+                          {/* Reel KEEPS its label + Queued state: it starts a
+                              render on the Mac via booth_watch.py, and the
+                              Queued text is the only confirmation the clipboard
+                              write worked. Never a bare icon. */}
+                          <ReelAction row={row} />
+                          {/* HARD delete — quietest control in the row: plain
+                              11px underlined text, no chrome, and it keeps its
+                              LABEL (✕ reads as "close", the wrong meaning).
+                              Mis-hitting the decisions is reversible; this is
+                              not, so it should take a fraction longer to find.
+                              Renders in ALL THREE tabs (this row is shared).
+                              The confirm dialog below carries the consequences. */}
+                          <button
+                            type="button"
+                            disabled={deleteBusy}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDelete(row);
+                            }}
+                            className="text-[11px] text-muted-foreground/70 hover:text-destructive transition-colors underline underline-offset-2 disabled:opacity-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </li>
                 );
