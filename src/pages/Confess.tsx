@@ -1,12 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { captureSourceFromUrl, resolvePrompt, DEFAULT_PROMPT } from "@/lib/source";
 import { fetchConfessConfig, getPlaceholderLines, resolveConfessLines } from "@/lib/registers";
+import { roundActive, roundIndex, getRound, submitRoundConfession } from "@/lib/round";
 
 const Confess = () => {
   const navigate = useNavigate();
+  // Hold the screen awake on this flow screen (released on unmount / absent
+  // API / refusal are all silent) — see useWakeLock.
+  useWakeLock();
   const location = useLocation();
   const { toast } = useToast();
   // Resolve the venue from stored session state, NOT the live URL: capture once on
@@ -15,6 +20,14 @@ const Confess = () => {
   // prompt and the source persisted to the row correct across repeats — the same
   // stored source Receiving.tsx writes to every insert.
   const [source] = useState(() => captureSourceFromUrl());
+  // Round mode, read ONCE at mount (each person's visit is a fresh mount via
+  // I'M NEXT): null in the solo flow. Everything round-specific below gates on
+  // this — a solo visitor's screen is byte-identical to before the round
+  // existed. The store, not this component, owns the index: browser-back to
+  // this screen re-derives the CURRENT slot, never a stale one.
+  const [roundInfo] = useState(() =>
+    roundActive() ? { index: roundIndex(), size: getRound()!.size } : null,
+  );
   // Greeting now comes from public.venues (headline/guidance), resolved by the same
   // async venues lookup as the register below. Starts on the DEFAULT_PROMPT fail-safe
   // and swaps in the venue greeting when the lookup lands — identical lifecycle to
@@ -207,6 +220,16 @@ const Confess = () => {
       sessionStorage.removeItem("verdictResponse");
       sessionStorage.removeItem("stampVenue");
       sessionStorage.setItem("confession", confession);
+      if (roundInfo) {
+        // ROUND: the clear above is IDENTICAL to solo (do not touch it) — only
+        // the destination changes. Generation fires in the BACKGROUND inside
+        // the round module and survives this navigation; the phone goes
+        // straight to Pass-the-phone (or Deliberating after the last person).
+        // No /receiving, no wait — the whole reason the format works.
+        submitRoundConfession(confession);
+        navigate(roundInfo.index + 1 >= roundInfo.size ? "/round/deliberating" : "/round/pass");
+        return;
+      }
       navigate("/receiving");
     }
   };
@@ -226,13 +249,21 @@ const Confess = () => {
           gate (same top margin + left edge), so the gate's "Location: X" hands off to this
           on /confess. Confess-only: deliberately not on gate, receiving, verdict or the wall. */}
       <div className="fixed top-0 left-0 right-0 pt-6 pb-4">
-        <div className="max-w-md mx-auto px-6">
+        {/* Round counter shares the listening line's row, right-aligned — the
+            filing line's State Blue treatment. Solo renders no counter and the
+            row is visually unchanged (justify-between with one child). */}
+        <div className="max-w-md mx-auto px-6 flex items-center justify-between">
           <p className="flex items-center gap-2 text-[13px] font-mono-light tracking-wide text-ritual">
             <span className="listen-glow-dot inline-block w-[7px] h-[7px] rounded-full bg-[hsl(var(--ritual-green))]" />
             <span className="listen-glow-text">
               the booth is listening
             </span>
           </p>
+          {roundInfo && (
+            <p className="text-[hsl(var(--state-blue)/0.75)] text-[11px] font-mono-light tracking-[0.2em] uppercase">
+              {roundInfo.index + 1} of {roundInfo.size}
+            </p>
+          )}
         </div>
       </div>
 

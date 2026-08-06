@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
 import { resolveVenueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
@@ -19,6 +20,9 @@ const ENABLE_EMAIL_CAPTURE = false;
 
 const Verdict = () => {
   const navigate = useNavigate();
+  // Hold the screen awake on this flow screen (released on unmount / absent
+  // API / refusal are all silent) — see useWakeLock.
+  useWakeLock();
   const { toast } = useToast();
   const [sharingLink, setSharingLink] = useState(false);
   // stamp_venue for THIS confession, seeded from what the Edge Function returned (stored by

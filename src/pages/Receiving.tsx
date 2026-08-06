@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import BoothFooter from "@/components/BoothFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { tagConfession, logBoothEvent, recoverVerdict } from "@/lib/metrics";
@@ -41,6 +42,9 @@ const VERDICT_TIMED_OUT = Symbol("verdict-timeout");
 
 const Receiving = () => {
   const navigate = useNavigate();
+  // Hold the screen awake on this flow screen (released on unmount / absent
+  // API / refusal are all silent) — see useWakeLock.
+  useWakeLock();
   const [errored, setErrored] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [typed, setTyped] = useState("");

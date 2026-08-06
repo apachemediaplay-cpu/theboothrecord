@@ -1,11 +1,16 @@
 import { useNavigate } from "react-router-dom";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
+import LegalLinks from "@/components/LegalLinks";
 import { captureSourceFromUrl } from "@/lib/source";
 import { logScan } from "@/lib/metrics";
 
 const Index = () => {
   const navigate = useNavigate();
+  // Hold the screen awake on this flow screen (released on unmount / absent
+  // API / refusal are all silent) — see useWakeLock.
+  useWakeLock();
   const [text1, setText1] = useState("");
   const [text2, setText2] = useState("");
   const [showCursor1, setShowCursor1] = useState(true);
@@ -346,27 +351,20 @@ const Index = () => {
         >
           <span className="begin-glow-text">BEGIN</span>
         </button>
+        {/* PASS IT ROUND — the group format's entry. Quiet mono link below
+            BEGIN (SEE THE RECORD's register, underlined for affordance next to
+            legal text). Deliberately does NOT set consent — BEGIN's line
+            covers one person; the round's own screen takes consent for the
+            table via its number tap. */}
+        <button
+          onClick={() => navigate("/round")}
+          className="text-[13px] font-mono-light tracking-wide text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+        >
+          PASS IT ROUND
+        </button>
         <p className="max-w-xs text-center text-[9.5px] leading-snug font-mono-light text-muted-foreground/70">
           I agree, by tapping BEGIN, that I'm 18+ and my confession may be published
-          anonymously.{" "}
-          <a
-            href="/terms"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-foreground"
-          >
-            Terms
-          </a>{" "}
-          and{" "}
-          <a
-            href="/privacy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-foreground"
-          >
-            Privacy
-          </a>
-          .
+          anonymously. <LegalLinks />.
         </p>
       </div>
 
