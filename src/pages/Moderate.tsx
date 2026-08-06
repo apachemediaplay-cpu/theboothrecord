@@ -953,9 +953,25 @@ const Moderate = () => {
   const [addOpen, setAddOpen] = useState(false);
   // Single expand: at most one venue row open; opening another closes the last.
   const [expandedVenue, setExpandedVenue] = useState<string | null>(null);
+  // Sources with ≥1 real scan in the last 30 nights (fixed window — see the
+  // quiet-venues effect below). null = unknown (fetch failed / not yet loaded)
+  // → the quiet-venues line renders nothing.
+  const [scanned30, setScanned30] = useState<Set<string> | null>(null);
+  // Venues-tab filter armed by tapping the quiet-venues line above the tabs.
+  const [quietOnly, setQuietOnly] = useState(false);
   const takenSlugs = useMemo(
     () => new Set((venuesRows ?? []).map((r) => r.source)),
     [venuesRows],
+  );
+  // Active venues (null active counts as active, same fail-safe as the rows)
+  // with no real scan in the fixed 30-night window. null until BOTH the venues
+  // list and the scan counts have loaded — no guessing from partial data.
+  const quietVenues = useMemo(
+    () =>
+      venuesRows && scanned30
+        ? venuesRows.filter((r) => r.active !== false && !scanned30.has(r.source))
+        : null,
+    [venuesRows, scanned30],
   );
   // Active venues first, inactive (dimmed) at the bottom; alphabetical within each
   // group. Missing/null active counts as active (same fail-safe as the row).
@@ -1186,6 +1202,37 @@ const Moderate = () => {
       cancelled = true;
     };
   }, [session, rangeArgs, refreshTick]);
+
+  // ── Quiet venues: ACTIVE venues with no non-test scan in the last 30 nights ──
+  // The one thing the console can't show by looking: a QR card that's come off a
+  // table. FIXED 30-night window, independent of the range selector — the line's
+  // meaning must not change when the filter does. Sources present in the scan
+  // counts have ≥1 real scan; active venues absent from it are quiet. A failed
+  // fetch resolves to null → the line renders NOTHING (it only exists when there
+  // is a KNOWN problem — never an "all good", never an unknown-state banner).
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    safe(rpc("admin_scan_counts", { _tz: tz, _from: nightBucketFrom(30), _to: null })).then(
+      (res) => {
+        if (cancelled) return;
+        if (res.error) {
+          setScanned30(null);
+          return;
+        }
+        setScanned30(
+          new Set(
+            (((res.data as ScanCount[]) ?? []).filter((r) => num(r.scans) > 0)).map(
+              (r) => r.source,
+            ),
+          ),
+        );
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [session, tz, refreshTick]);
 
   // Placeholder-sets read — venues + stats tabs (both render register pickers whose
   // descriptions come from this fetch), refetched with the same Retry tick as the
@@ -2174,6 +2221,25 @@ const Moderate = () => {
           </Button>
         </header>
 
+        {/* Quiet venues — the ONLY thing in the console that says a QR card is
+            no longer on a table; everything else is visible by looking. Renders
+            NOTHING unless there's a problem (no "all good", no empty state, and
+            nothing while either fetch is unresolved). A note, not a banner —
+            plain mono, tap filters the Venues tab to the quiet ones. */}
+        {quietVenues && quietVenues.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => {
+              setQuietOnly(true);
+              changeConsoleTab("venues");
+            }}
+            className="block text-left font-mono-light text-[11px] tracking-wide text-muted-foreground/70 transition-colors hover:text-foreground"
+          >
+            {quietVenues.length} venue{quietVenues.length === 1 ? "" : "s"} · no scan in 30
+            days
+          </button>
+        ) : null}
+
         {/* Persistent filter bar: date range (applies on every tab) + venue (applies to
             Moderate + Stats; DISABLED — visibly, not silently ignored — on the Venues
             tab, where managing all venues makes it inapplicable). State survives tab
@@ -2300,8 +2366,31 @@ const Moderate = () => {
                     Scans &amp; completion: {RANGE_LABELS[range].toLowerCase()}. Blank headline →
                     default prompt.
                   </p>
+                  {/* Armed by the quiet-venues line above the tabs. The filter
+                      only applies while quietVenues is resolvable — if either
+                      fetch degrades, the full list shows rather than hiding
+                      venues on unknown data. */}
+                  {quietOnly && quietVenues ? (
+                    <p className="pt-1 font-mono-light text-[11px] tracking-wide text-muted-foreground/70">
+                      Showing venues with no scan in 30 days ·{" "}
+                      <button
+                        type="button"
+                        onClick={() => setQuietOnly(false)}
+                        className="underline underline-offset-2 hover:text-foreground transition-colors"
+                      >
+                        Show all
+                      </button>
+                    </p>
+                  ) : null}
                   <ul className="divide-y divide-border">
-                    {(sortedVenueRows ?? []).map((row) => (
+                    {(sortedVenueRows ?? [])
+                      .filter(
+                        (row) =>
+                          !quietOnly ||
+                          !quietVenues ||
+                          quietVenues.some((q) => q.source === row.source),
+                      )
+                      .map((row) => (
                       <VenueOverviewRow
                         key={row.source}
                         registerDesc={registerDesc}
