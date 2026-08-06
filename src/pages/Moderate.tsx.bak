@@ -5,7 +5,6 @@ import type { Session } from "@supabase/supabase-js";
 import { supabaseModeration as sb } from "@/integrations/supabase/moderation-client";
 import type { Database } from "@/integrations/supabase/types";
 import venuesData from "@/data/venues.json";
-import { ReelAction, ReelBulkAction } from "@/components/booth_reels";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -2884,7 +2883,6 @@ const Moderate = () => {
                   Restore {selected.size}
                 </Button>
               )}
-              <ReelBulkAction rows={Array.from(selected.values())} />
               <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected(new Map())}>
                 Clear
               </Button>
@@ -3069,7 +3067,7 @@ const Moderate = () => {
                       ) : null}
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         disabled={busyId === row.id}
                         aria-pressed={!!row.homepage_featured}
                         title={
@@ -3085,7 +3083,6 @@ const Moderate = () => {
                       >
                         {row.homepage_featured ? "★ Featured" : "☆ Feature"}
                       </Button>
-                      <ReelAction row={row} />
                     </div>
                   </li>
                 );

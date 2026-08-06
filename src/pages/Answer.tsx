@@ -150,7 +150,7 @@ const Answer = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-36 left-0 right-0 flex justify-center px-6">
+      <div className="fixed bottom-36 left-0 right-0 mx-auto max-w-md flex justify-center px-6">
         <button 
           onClick={handleEnter}
           className="btn-booth"

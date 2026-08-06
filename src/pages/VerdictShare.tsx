@@ -87,7 +87,10 @@ const VerdictShare = () => {
         {/* THE PRIMARY-ACTION RULE (see index.css) applies here too — same primary
             action, same slot; a dead share link must not surface a button style
             that exists nowhere else in the app. */}
-        <div className="fixed bottom-32 left-0 right-0 flex justify-center px-6">
+        {/* max-w-md mx-auto: the FIXED block escapes screen-container's column
+            (fixed spans the viewport) — same cap as the gate's BEGIN block and
+            every action screen, so the button matches the found state's. */}
+        <div className="fixed bottom-32 left-0 right-0 mx-auto max-w-md flex justify-center px-6">
           <Link
             to="/confess"
             className="btn-booth border border-muted-foreground/40 bg-transparent text-sm text-center hover:bg-transparent"

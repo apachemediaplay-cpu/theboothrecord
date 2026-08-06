@@ -3069,7 +3069,7 @@ const Moderate = () => {
                       ) : null}
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         disabled={busyId === row.id}
                         aria-pressed={!!row.homepage_featured}
                         title={

@@ -31,7 +31,7 @@ from pathlib import Path
 # confession reel that is the tail card only — the confess, receiving
 # and verdict screens don't show it. Values match make_booth_reel.py.
 NEON_HZ    = 50.0
-NEON_GAIN  = 1.00
+NEON_GAIN  = 0.42
 NEON_FLOOR = 0.08
 NEON_SHAPE = 1.55
 NEON_CYCLE = 2.8

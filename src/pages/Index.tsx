@@ -328,7 +328,12 @@ const Index = () => {
         </p>
       </div>
       
-      <div className="fixed bottom-24 left-0 right-0 flex flex-col items-center gap-4 px-6">
+      {/* max-w-md mx-auto: the FIXED block escapes screen-container's column
+          (fixed spans the viewport), so it re-applies the same cap the headline
+          above already sits in — one column, button and text aligned. Same
+          value as every action screen (screen-container); the wall's 680px is
+          the reading feed's, not an action column. */}
+      <div className="fixed bottom-24 left-0 right-0 mx-auto max-w-md flex flex-col items-center gap-4 px-6">
         {/* Always enabled — the tap IS the consent (see the legal line below). */}
         {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
             hairline (muted-foreground/40, the divider's own rule), transparent.
