@@ -1933,6 +1933,10 @@ const Moderate = () => {
   // Build the venue's plain-text report and copy it. Starts mid-flow (pasted into a
   // personal email — no title line). N counts pending + approved only: material we
   // refused to publish is not "guests confessed". No taps, no rates, no percentages.
+  // The share line ("M of those were shared") is the number a venue cares about
+  // most — used it vs. sent it to their friends. It is OMITTED when zero (a venue
+  // reading "0" is worse than not seeing the line) and OMITTED when the count
+  // query fails (a report missing one line beats no report).
   const copyVenueReport = async (source: string, displayName: string) => {
     const rows = await fetchVenueReportRows(source);
     if (!rows) {
@@ -1943,6 +1947,14 @@ const Moderate = () => {
       });
       return;
     }
+    // Shares by venue over the SAME window as the confession fetch (rangeArgs):
+    // the deployed windowed admin_share_counts(_tz,_from,_to) overload, already
+    // test-filtered by source — the exact call the Stats rollup makes.
+    const sharedCount = await safe(rpc("admin_share_counts", rangeArgs)).then((res) => {
+      if (res.error) return 0;
+      const mine = ((res.data as ShareCount[]) ?? []).find((s) => s.source === source);
+      return Number(mine?.shares ?? 0) || 0;
+    });
     const n = rows.filter((r) => r.status === "pending" || r.status === "approved").length;
     const approved = rows.filter((r) => r.status === "approved").slice(0, 3); // order kept: created_at desc
     const HEADINGS = ["One", "Two", "Three"];
@@ -1956,7 +1968,8 @@ const Moderate = () => {
     const text = [
       "The Booth is a QR card on your tables. Guests confess something, get a verdict back, and can share it with your name on it.",
       reportDateLine(rows),
-      `${n} guests confessed`,
+      `${n} guests confessed` +
+        (sharedCount > 0 ? `\n${sharedCount} of those were shared` : ""),
       block,
     ].join("\n\n");
     try {
