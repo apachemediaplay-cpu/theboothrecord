@@ -28,8 +28,14 @@ const confessionOf = (r: ReelRow) =>
   (r.text ?? r.confession ?? r.confession_text ?? "").trim();
 
 /** Copies the payload. Rows without a verdict are skipped — there is
- *  nothing to put on screen, and a reel with no verdict is not a reel. */
-export async function buildReels(rows: ReelRow[]): Promise<number> {
+ *  nothing to put on screen, and a reel with no verdict is not a reel.
+ *
+ *  Return value distinguishes the three outcomes so the buttons can't
+ *  lie: n = queued, 0 = no usable rows (nothing to build), null = the
+ *  CLIPBOARD WRITE FAILED. The write used to be un-caught: a throw was
+ *  swallowed by the caller's `if (await buildReels(...))` and the button
+ *  still showed "Queued" over an empty clipboard. */
+export async function buildReels(rows: ReelRow[]): Promise<number | null> {
   const usable = rows.filter(
     (r) => r.verdict_text && r.verdict_text.trim() && confessionOf(r)
   );
@@ -39,21 +45,36 @@ export async function buildReels(rows: ReelRow[]): Promise<number> {
     verdict: (r.verdict_text as string).trim(),
     ...(r.subject_number ? { subject: r.subject_number } : {}),
   }));
-  await navigator.clipboard.writeText(REEL_MARKER + JSON.stringify(payload));
+  try {
+    await navigator.clipboard.writeText(REEL_MARKER + JSON.stringify(payload));
+  } catch (e) {
+    // Surface the real browser error (permissions, insecure context, focus)
+    // so the next failure is diagnosable instead of costing twenty minutes.
+    console.error("Reel clipboard write failed:", e);
+    return null;
+  }
   return usable.length;
 }
 
 // ── per row, beside ☆ Feature ────────────────────────────────
 
+// Transient button states. "Queued" only ever shows on a CONFIRMED write;
+// the two zero-ish outcomes get their own copy — a failed clipboard write
+// ("Copy failed") is a different problem from rows with nothing usable in
+// them ("Nothing to build"), and both must be visible, not silent.
+type ReelStatus = "idle" | "queued" | "failed" | "empty";
+
+const statusOf = (result: number | null): ReelStatus =>
+  result === null ? "failed" : result === 0 ? "empty" : "queued";
+
 export function ReelAction({ row }: { row: ReelRow }) {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<ReelStatus>("idle");
   if (!row.verdict_text) return null;
 
   const go = async () => {
-    if (await buildReels([row])) {
-      setSent(true);
-      setTimeout(() => setSent(false), 2500);
-    }
+    const next = statusOf(await buildReels([row]));
+    setStatus(next);
+    setTimeout(() => setStatus("idle"), 2500);
   };
 
   return (
@@ -61,10 +82,23 @@ export function ReelAction({ row }: { row: ReelRow }) {
       size="sm"
       variant="outline"
       onClick={go}
-      disabled={sent}
-      className={"text-[11px] " + (sent ? "text-ritual" : "text-muted-foreground")}
+      disabled={status !== "idle"}
+      className={
+        "text-[11px] " +
+        (status === "queued"
+          ? "text-ritual"
+          : status === "idle"
+            ? "text-muted-foreground"
+            : "text-destructive")
+      }
     >
-      {sent ? "Queued" : "▸ Reel"}
+      {status === "queued"
+        ? "Queued"
+        : status === "failed"
+          ? "Copy failed"
+          : status === "empty"
+            ? "Nothing to build"
+            : "▸ Reel"}
     </Button>
   );
 }
@@ -72,15 +106,14 @@ export function ReelAction({ row }: { row: ReelRow }) {
 // ── bulk, beside Approve all / Reject all ────────────────────
 
 export function ReelBulkAction({ rows }: { rows: ReelRow[] }) {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<ReelStatus>("idle");
   const n = rows.filter((r) => r.verdict_text && r.verdict_text.trim()).length;
   if (!n) return null;
 
   const go = async () => {
-    if (await buildReels(rows)) {
-      setSent(true);
-      setTimeout(() => setSent(false), 4000);
-    }
+    const next = statusOf(await buildReels(rows));
+    setStatus(next);
+    setTimeout(() => setStatus("idle"), 4000);
   };
 
   return (
@@ -88,10 +121,20 @@ export function ReelBulkAction({ rows }: { rows: ReelRow[] }) {
       size="sm"
       variant="outline"
       onClick={go}
-      disabled={sent}
-      className="border-ritual text-ritual hover:bg-ritual/10"
+      disabled={status !== "idle"}
+      className={
+        status === "failed" || status === "empty"
+          ? "border-destructive text-destructive hover:bg-transparent"
+          : "border-ritual text-ritual hover:bg-ritual/10"
+      }
     >
-      {sent ? "Queued — watch the terminal" : `Build ${n} ${n === 1 ? "reel" : "reels"}`}
+      {status === "queued"
+        ? "Queued — watch the terminal"
+        : status === "failed"
+          ? "Copy failed"
+          : status === "empty"
+            ? "Nothing to build"
+            : `Build ${n} ${n === 1 ? "reel" : "reels"}`}
     </Button>
   );
 }
