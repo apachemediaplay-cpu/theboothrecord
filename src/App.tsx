@@ -58,6 +58,10 @@ const App = () => {
           <Route path="/answer" element={<Answer />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/thewall" element={<TheWall />} />
+          {/* Venue view of the record: same component, param-gated. Unknown
+              slugs and venues with <3 approved rows redirect back to /thewall
+              inside TheWall — this route never 404s. */}
+          <Route path="/record/:venue" element={<TheWall />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/console" element={<Moderate />} />

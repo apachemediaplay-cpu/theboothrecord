@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { Instagram } from "lucide-react";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
@@ -9,20 +9,43 @@ import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
 import { useWallSound } from "@/hooks/useWallSound";
 import { useTimeAtmosphere } from "@/hooks/useTimeAtmosphere";
 import { supabase } from "@/integrations/supabase/client";
+import { venueDisplayName } from "@/lib/source";
 import { logWallView, trackWallEngagement } from "@/lib/metrics";
 
+// One component, two routes: /thewall (no param — behaviour unchanged) and
+// /record/:venue (the same page filtered to one venue, a live URL you can send
+// a venue owner). A wrapper page would fork ~270 lines of masthead/scanline/
+// auto-scroll/pinned-bar that must stay identical forever; the param gate is
+// the single point of divergence instead.
 const TheWall = () => {
+  const { venue: venueParam } = useParams<{ venue?: string }>();
+  const venueSlug = (venueParam ?? "").trim().toLowerCase();
+  const venueView = venueSlug !== "";
+  // Display name from venues.json ONLY — the settled rule: the URL param is
+  // untrusted and NEVER rendered; venues.json is the single source of truth
+  // (same source the share card uses). Unknown slug → "" → redirect below.
+  // (Console-added venues that aren't in venues.json therefore redirect too.)
+  const venueTitle = venueView ? venueDisplayName("", venueSlug) : "";
+
   const [confessions, setConfessions] = useState<ConfessionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [confessionCount, setConfessionCount] = useState(0);
+  // True only after a SUCCESSFUL fetch — the venue view's <3 redirect must fire
+  // on real data, never on a failed query (a failure keeps the wall's existing
+  // error handling: empty state, no redirect).
+  const [loadedOk, setLoadedOk] = useState(false);
 
   // Feature 3: load only APPROVED confessions from Supabase.
   // RLS also enforces this server-side; the explicit filter keeps the query aligned.
+  // Venue view adds .eq("source", slug) — anon CAN read source under the
+  // "reads approved only" policy (row-level qual, no column mask; verified via
+  // anon REST) — /thewall keeps the exact query it always had.
   useEffect(() => {
-    supabase
+    const base = supabase
       .from("confessions")
       .select("subject_number, created_at, confession_text, verdict_text")
-      .eq("status", "approved")
+      .eq("status", "approved");
+    (venueSlug ? base.eq("source", venueSlug) : base)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (error || !data) {
@@ -51,9 +74,10 @@ const TheWall = () => {
         });
         setConfessions(rows);
         setConfessionCount(rows.length);
+        setLoadedOk(true);
         setLoading(false);
       });
-  }, []);
+  }, [venueSlug]);
 
   const { soundEnabled, toggleSound } = useWallSound();
   const atmosphere = useTimeAtmosphere();
@@ -110,6 +134,15 @@ const TheWall = () => {
   }, []);
 
 
+  // ── Venue-view fail states (the whole risk of a link you SEND someone) ──
+  // Unknown slug → /thewall: never render a page titled with a raw slug.
+  // Fewer than 3 approved → /thewall: a near-empty venue page reads as "nobody
+  // used it" — worse than no venue page. THREE is the floor. Only fires on a
+  // SUCCESSFUL load (loadedOk); a failed query keeps the wall's existing error
+  // handling unchanged.
+  if (venueView && !venueTitle) return <Navigate to="/thewall" replace />;
+  if (venueView && loadedOk && confessionCount < 3) return <Navigate to="/thewall" replace />;
+
   return (
     <div className="min-h-[100dvh] bg-background relative overflow-hidden">
       {/* Ambient scan line */}
@@ -159,8 +192,25 @@ const TheWall = () => {
           <div className="mb-2 flex justify-center">
             <GuiltyLogo />
           </div>
-          <h1 className="font-control text-4xl md:text-5xl font-bold text-foreground tracking-wide">
-            PUBLIC RECORD
+          {/* Venue view: the venue's display name replaces PUBLIC RECORD, on a
+              SIZE STEP by name length (never two lines — a wrapped title grows
+              the fixed masthead and breaks the feed-padding clearance).
+              ≤14 chars rides at PUBLIC RECORD's own size; longer names step
+              down so the longest real names still fit 375px on one line. */}
+          <h1
+            className={
+              "font-control font-bold text-foreground tracking-wide " +
+              (!venueView || venueTitle.length <= 14
+                ? "text-4xl md:text-5xl"
+                : venueTitle.length <= 20
+                  ? "text-3xl md:text-4xl"
+                  : venueTitle.length <= 26
+                    ? "text-2xl md:text-3xl"
+                    : "text-xl md:text-2xl") +
+              (venueView ? " uppercase" : "")
+            }
+          >
+            {venueView ? venueTitle : "PUBLIC RECORD"}
             {/* The pulsing dot — all that survives of the LIVE CONFESSIONS line
                 (the words described what's visible three lines down; the dot is
                 the signal that it's happening NOW). Status indicator, not type,
@@ -173,6 +223,18 @@ const TheWall = () => {
               <span className="record-pulse-dot relative -top-1 ml-3 inline-block w-[9px] h-[9px] rounded-full bg-ritual align-middle" />
             )}
           </h1>
+
+          {/* Venue view only: the count + the way back to the full record.
+              Rendered post-load only (the <3 redirect guarantees the count
+              shown is ≥3 — never a flash of "0 ON RECORD"). */}
+          {venueView && !loading && (
+            <p className="mt-2 font-mono-light text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              {confessionCount} on record ·{" "}
+              <Link to="/thewall" className="transition-colors hover:text-foreground">
+                Public record →
+              </Link>
+            </p>
+          )}
 
           <div className="mt-2 flex justify-center">
             <a
@@ -190,11 +252,17 @@ const TheWall = () => {
 
       {/* Confession feed. Top padding clears the FIXED masthead (≈143px mobile
           since the wordmark + bigger title landed, taller at md where its
-          paddings/type grow); bottom padding clears the single-row pinned bar
+          paddings/type grow; the venue view's ON RECORD line adds ~25px, so it
+          gets one step more); bottom padding clears the single-row pinned bar
           (≈107px) so the last confession isn't hidden underneath.
           680px cap: verdicts ran ~100 chars at 720; comfortable measure is 45–75.
           Below 680px viewport the cap is inert — mobile is unchanged. */}
-      <div className="max-w-[680px] mx-auto px-6 pt-40 md:pt-48 pb-[132px]">
+      <div
+        className={
+          "max-w-[680px] mx-auto px-6 pb-[132px] " +
+          (venueView ? "pt-48 md:pt-56" : "pt-40 md:pt-48")
+        }
+      >
         {loading ? (
           <div className="text-center py-20">
             <span className="text-muted-foreground/80 text-[10px] tracking-[0.4em] uppercase font-mono-light animate-pulse">
@@ -228,8 +296,12 @@ const TheWall = () => {
       {/* Pinned CTA. Fixed to the screen, not the page — always visible while scrolling,
           never covers a confession, never demands dismissal. Replaces both the timed modal
           and the dim end-of-scroll link. Booth palette, not a browser dialog.
-          No ?source= needed: captureSourceFromUrl() falls back to sessionStorage on a
-          param-less URL, so the venue still carries through to the confession. */}
+          /thewall: no ?source= needed — captureSourceFromUrl() falls back to
+          sessionStorage on a param-less URL, so the venue still carries through.
+          Venue view: ?source={slug} explicitly, so a confession made from the
+          venue's page attributes to that venue (same param shape as QR scans
+          and VerdictShare's CTA; Confess captures it before its consent
+          redirect, so the attribution survives a bounce through the gate). */}
       {/* Solid bar + a gradient feather above it: records fade out into background
           rather than colliding with the button's edge. Content shares the records
           column's 680px frame — one axis. */}
@@ -248,7 +320,7 @@ const TheWall = () => {
               background (not the scrolling records — they fade at the feather and
               pass beneath the bar), so nothing shows through the frame. */}
           <Link
-            to="/confess"
+            to={venueView ? `/confess?source=${encodeURIComponent(venueSlug)}` : "/confess"}
             className="btn-booth block whitespace-nowrap border border-muted-foreground/40 bg-transparent text-center text-sm hover:bg-transparent"
           >
             <span className="enter-glow-text text-[hsl(var(--ritual-green))]">YOUR TURN →</span>
