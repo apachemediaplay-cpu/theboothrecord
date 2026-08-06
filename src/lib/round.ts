@@ -43,6 +43,13 @@ export type RoundSlot = {
 export type RoundState = {
   size: number; // 2–5
   slots: RoundSlot[]; // one per SUBMITTED confession, in order
+  // True once the STRIP has been reached — the round's real end. A round is
+  // UNFINISHED (and every screen honours it) from the first number tap until
+  // the strip, GO AGAIN, or the tab closing. Filing the last confession does
+  // NOT end it: the bug this field fixes was roundActive() treating full
+  // slots as "no round", so browser-back from Deliberating dropped /confess
+  // into solo mode mid-reveal. Missing on old mirrors → falsy → unfinished.
+  revealed?: boolean;
 };
 
 // Same ceiling as the solo /receiving screen — see its VERDICT_TIMEOUT_MS.
@@ -71,9 +78,30 @@ export function subscribeRound(cb: () => void): () => void {
 }
 
 export function startRound(size: number): void {
-  round = { size: Math.min(5, Math.max(2, size)), slots: [] };
+  round = { size: Math.min(5, Math.max(2, size)), slots: [], revealed: false };
   persist();
   notify();
+}
+
+// The strip marks the round revealed on mount — reaching it IS the round
+// ending. After this, /confess is solo again and /round shows a fresh picker
+// (which is how GO AGAIN works without clearing anything: the store survives
+// for the strip's own back/forward, but no flow screen claims it any more).
+export function markRevealed(): void {
+  if (!round || round.revealed) return;
+  round.revealed = true;
+  persist();
+  notify();
+}
+
+// "Running and unfinished" — THE predicate every flow screen honours (the
+// rule: a round in progress survives any navigation; back, forward, reload).
+// True from the first number tap until the strip. Distinct from
+// roundActive(), which is only the COLLECTING phase (drives the confess
+// counter and submit branch); conflating the two was the back-button bug.
+export function roundInFlight(): boolean {
+  const r = getRound();
+  return !!r && !r.revealed;
 }
 
 export function clearRound(): void {

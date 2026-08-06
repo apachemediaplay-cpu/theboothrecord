@@ -243,6 +243,18 @@ const Confess = () => {
     return <Navigate to="/" replace />;
   }
 
+  // A FULL but UNREVEALED round claims this screen too: browser-back from
+  // Deliberating/Reveal lands here after the last confession filed, and
+  // roundInfo is null then (roundActive() is collecting-only). Rendering solo
+  // here mid-reveal was the back-button bug — forward into the round's
+  // pipeline instead. After the strip (revealed) this is solo again.
+  {
+    const r = getRound();
+    if (!roundInfo && r && !r.revealed && r.slots.length >= r.size) {
+      return <Navigate to="/round/deliberating" replace />;
+    }
+  }
+
   return (
     <div className="screen-container animate-fade-in">
       {/* Listening status line — occupies the SAME fixed top slot BoothHeader uses on the
