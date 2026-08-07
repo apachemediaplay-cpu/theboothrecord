@@ -118,20 +118,23 @@ const Receiving = () => {
 
     const confession = sessionStorage.getItem("confession") || "";
     const source = sessionStorage.getItem("source") || "direct";
+    // Per-venue prompt routing: set by Confess from get_confess_config when
+    // the venue has an explicit prompt_mode; absent otherwise.
+    const promptMode = sessionStorage.getItem("promptMode");
 
     try {
       // Race the invoke against the hard ceiling (see VERDICT_TIMEOUT_MS — this is
       // a ceiling from request start, not silence detection). On timeout the
       // underlying request is abandoned; a late response goes nowhere.
       const { data, error } = (await Promise.race([
-        // No `mode` field — DELIBERATE, not an omission. 'default' is the
-        // mode at every layer when none is sent (the edge function's resolver
-        // hard-defaults missing/unrecognised modes to 'default';
-        // create_confession defaults p_mode the same way), so this path sends
-        // nothing and can never drift from the norm. Non-default callers
-        // (see round.ts) pass a mode explicitly.
+        // `mode` is sent ONLY when the venue carries an explicit prompt_mode
+        // (stored by Confess from get_confess_config). Everything else —
+        // non-venue traffic, venues without a choice, every failure path —
+        // sends NO mode field, which the edge resolver hard-defaults to
+        // 'default' (create_confession defaults p_mode the same way), so the
+        // norm can never drift. The round (see round.ts) passes its own mode.
         supabase.functions.invoke("generate-verdict", {
-          body: { confession, source },
+          body: { confession, source, ...(promptMode ? { mode: promptMode } : {}) },
         }),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(VERDICT_TIMED_OUT), VERDICT_TIMEOUT_MS),

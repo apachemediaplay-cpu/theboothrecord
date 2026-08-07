@@ -30,8 +30,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
-import { venueDisplayName } from "@/lib/source";
-import { fetchVenueRegister } from "@/lib/registers";
+import { venueDisplayName, DEFAULT_PROMPT } from "@/lib/source";
+import { fetchVenueRegister, getPlaceholderLines } from "@/lib/registers";
 import { cn } from "@/lib/utils";
 
 // `topic`/`is_test` are forward-only columns not in the generated types; the frontend
@@ -95,6 +95,9 @@ type VenueAdminRow = {
   headline: string | null;
   guidance: string | null;
   active: boolean | null;
+  // Per-venue prompt routing (venues.prompt_mode). NULL means "use the
+  // default mode" — distinguishable from an explicit 'default' by design.
+  prompt_mode?: string | null;
 };
 
 const PAGE_SIZE = 50;
@@ -280,6 +283,74 @@ const TopicBadge = ({ topic }: { topic: string | null }) => (
 // the Save button (dirty-gated); register/active write immediately. Saved values live
 // in the parent's venuesRows — a failed write reverts props while the drafts survive,
 // so the operator can retry without retyping.
+// Live mock of the confess screen: listening line, headline, subline, cycling
+// placeholder, input rule. REBUILT rather than reusing Confess.tsx — the real
+// screen bakes its typing loop into the page alongside textarea state, speech
+// recognition, source capture, a consent redirect and the wake lock; mounting
+// it here would drag all of that into the console. What IS shared: the same
+// classes for the load-bearing treatments (font-control headline, mono
+// sublines, listen-glow listening line, muted-foreground/40 input rule) and
+// the SAME typing rhythm as the real placeholder (50ms/char, 2s hold, loop) —
+// the register's whole point is the rotation, and one static line wouldn't
+// show it. Proportions are scaled, not pixel-exact: it answers "does this
+// read right", not "is this the phone".
+const ConfessPreview = ({
+  headline,
+  guidance,
+  lines,
+}: {
+  headline: string;
+  guidance: string | null;
+  lines: string[];
+}) => {
+  const [idx, setIdx] = useState(0);
+  const [typed, setTyped] = useState("");
+  // Restart from the first line whenever the SET changes (register switch).
+  useEffect(() => {
+    setIdx(0);
+  }, [lines]);
+  useEffect(() => {
+    const line = lines[idx % Math.max(lines.length, 1)] ?? "";
+    let ch = 0;
+    let hold: number | undefined;
+    setTyped("");
+    const t = window.setInterval(() => {
+      ch++;
+      setTyped(line.slice(0, ch));
+      if (ch >= line.length) {
+        window.clearInterval(t);
+        hold = window.setTimeout(() => setIdx((i) => (i + 1) % Math.max(lines.length, 1)), 2000);
+      }
+    }, 50);
+    return () => {
+      window.clearInterval(t);
+      window.clearTimeout(hold);
+    };
+  }, [idx, lines]);
+  return (
+    <div className="self-start rounded-md border border-border bg-background p-4">
+      <p className="mb-5 flex items-center gap-1.5 text-[10px] font-mono-light tracking-wide text-ritual">
+        <span className="listen-glow-dot inline-block h-[5px] w-[5px] rounded-full bg-[hsl(var(--ritual-green))]" />
+        <span className="listen-glow-text">the booth is listening</span>
+      </p>
+      <p className="font-control text-lg font-bold leading-tight text-foreground">{headline}</p>
+      {guidance ? (
+        <p className="mt-1 text-[11px] font-mono-light text-muted-foreground">{guidance}</p>
+      ) : null}
+      <div className="mt-6">
+        <p className="min-h-[2.6em] text-[11px] font-mono-light leading-snug text-muted-foreground/60">
+          {typed}
+          <span className="animate-pulse">|</span>
+        </p>
+        <div className="mt-1 border-b border-muted-foreground/40" />
+      </div>
+      <p className="mt-3 text-[9px] uppercase tracking-[0.2em] text-muted-foreground/50">
+        Live preview
+      </p>
+    </div>
+  );
+};
+
 const VenueOverviewRow = ({
   row,
   scans,
@@ -293,6 +364,11 @@ const VenueOverviewRow = ({
   onCopyReport,
   onDelete,
   registerDesc,
+  promptModes,
+  onPromptMode,
+  onRename,
+  linesFor,
+  defaultGreeting,
 }: {
   row: VenueAdminRow;
   scans: number | null; // null = scan counts unavailable
@@ -306,14 +382,36 @@ const VenueOverviewRow = ({
   onCopyReport: () => Promise<void>;
   onDelete: () => void;
   registerDesc?: (value: string) => string | null;
+  // prompt_modes rows: undefined = loading, null = failed (dropdown disabled —
+  // an empty list would look like there are no modes).
+  promptModes: { mode: string; version: string }[] | null | undefined;
+  onPromptMode: (value: string | null) => void;
+  onRename: (name: string) => void;
+  linesFor: (register: string) => string[];
+  defaultGreeting: { headline: string; guidance: string } | null | undefined;
 }) => {
   // Reentrancy guard for Copy report — the button is NEVER disabled (a venue with
   // no data still copies an honest report); in-flight clicks are just ignored.
   const [copying, setCopying] = useState(false);
   const [headline, setHeadline] = useState(row.headline ?? "");
   const [guidance, setGuidance] = useState(row.guidance ?? "");
+  // Rename affordance for the header identity — closed by default; the name
+  // is set once and edited rarely, so it hides behind a quiet control.
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState(row.display_name);
   const dirty =
     headline.trim() !== (row.headline ?? "") || guidance.trim() !== (row.guidance ?? "");
+  // Preview resolution mirrors the live screen's rule: headline and guidance
+  // TRAVEL TOGETHER per level (venue → site default → hardcoded) — a blank
+  // draft headline falls to the default level entirely, never mixing levels.
+  const previewHeadline = headline.trim()
+    ? headline.trim()
+    : (defaultGreeting?.headline ?? DEFAULT_PROMPT.headline);
+  const previewGuidance = headline.trim()
+    ? guidance.trim() || null
+    : (defaultGreeting?.guidance ?? DEFAULT_PROMPT.guidance) || null;
+  const previewLines = linesFor(row.register ?? "dtc");
+  const defaultModeVersion = promptModes?.find((m) => m.mode === "default")?.version;
   // Fail-safe: a missing/null status is treated as active — dimming is opt-in only.
   const active = row.active !== false;
   const completion = scans !== null && scans > 0 && completed !== null ? completed / scans : null;
@@ -363,44 +461,184 @@ const VenueOverviewRow = ({
       </div>
       {expanded ? (
         <div className="mt-3 space-y-5 pb-2 pl-7">
-          <Field label="Register">
-            <Select value={row.register ?? "default"} onValueChange={onRegister} disabled={busy}>
-              <SelectTrigger className="h-8 w-44 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REGISTER_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    <div>
-                      {o.label}
-                      {registerDesc?.(o.value) ? (
-                        <span className="block text-[10px] text-muted-foreground">
-                          {registerDesc(o.value)}
+          {/* IDENTITY — set once, not edited weekly, so it lives up here by the
+              header rather than among the working fields. The display name has
+              a quiet rename affordance; the SLUG is permanent by design (it's
+              printed on QR cards and is the attribution key on every
+              historical row) and is shown, never editable. */}
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            {renaming ? (
+              <>
+                <Input
+                  value={nameDraft}
+                  maxLength={80}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  className="h-7 w-56 text-xs"
+                />
+                <Button
+                  size="sm"
+                  disabled={busy || !nameDraft.trim() || nameDraft.trim() === row.display_name}
+                  onClick={() => {
+                    onRename(nameDraft);
+                    setRenaming(false);
+                  }}
+                >
+                  Save
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setRenaming(false)}>
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setNameDraft(row.display_name);
+                  setRenaming(true);
+                }}
+                className="underline underline-offset-2 transition-colors hover:text-foreground"
+              >
+                Rename
+              </button>
+            )}
+            <span>· slug {row.source} is permanent</span>
+          </div>
+
+          {/* GROUPED BY MOMENT, NOT BY DATA TYPE: the first three settings
+              shape what someone WRITES (they see them before they type); the
+              fourth shapes what the machine SAYS BACK (it acts after they
+              type). Naming the groups by moment means a future setting has an
+              obvious home and nobody has to remember which field does what. */}
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="space-y-5">
+              <div className="space-y-4 rounded-md border border-border/60 p-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Before they type
+                </p>
+                {/* Full-width greeting inputs — the whole line must be readable,
+                    never truncated (the old inline flex-1 layout clipped long
+                    headlines). Draft-then-commit via the Save button below —
+                    live-committing would drop input focus mid-keystroke (see
+                    the Field component note). */}
+                <Field label="Headline (blank → default prompt)">
+                  <Input
+                    value={headline}
+                    onChange={(e) => setHeadline(e.target.value)}
+                    placeholder="Confess something."
+                    className="h-8 w-full text-xs"
+                  />
+                </Field>
+                <Field label="Subline (optional)">
+                  <Input
+                    value={guidance}
+                    onChange={(e) => setGuidance(e.target.value)}
+                    className="h-8 w-full text-xs"
+                  />
+                </Field>
+                <Field label="Placeholders">
+                  <Select
+                    value={row.register ?? "default"}
+                    onValueChange={onRegister}
+                    disabled={busy}
+                  >
+                    <SelectTrigger className="h-8 w-44 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REGISTER_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          <div>
+                            {o.label}
+                            {registerDesc?.(o.value) ? (
+                              <span className="block text-[10px] text-muted-foreground">
+                                {registerDesc(o.value)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {registerDesc?.(row.register ?? "default") ? (
+                    <span className="block pt-1 text-[10px] text-muted-foreground">
+                      {registerDesc(row.register ?? "default")}
+                    </span>
+                  ) : null}
+                </Field>
+              </div>
+
+              <div className="space-y-4 rounded-md border border-border/60 p-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  After they type
+                </p>
+                <Field label="Verdict prompt">
+                  {/* A DROPDOWN, not free text — a typo'd mode would fall back
+                      to default silently at verdict time with nothing to say
+                      why. Options show mode AND live version, so a wrong
+                      version is visible without opening the Prompt modes
+                      panel. Load failure DISABLES the control — an empty list
+                      would look like there are no modes. */}
+                  {promptModes ? (
+                    <Select
+                      value={row.prompt_mode ?? "__default__"}
+                      onValueChange={(v) => onPromptMode(v === "__default__" ? null : v)}
+                      disabled={busy}
+                    >
+                      <SelectTrigger className="h-8 w-56 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Top option = NULL (the fallback), shown with the
+                            default mode's live version. Distinct from an
+                            explicit mode choice by design. */}
+                        <SelectItem value="__default__">
+                          default · {defaultModeVersion ?? "?"}
+                        </SelectItem>
+                        {promptModes
+                          .filter((m) => m.mode !== "default")
+                          .map((m) => (
+                            <SelectItem key={m.mode} value={m.mode}>
+                              {m.mode} · {m.version}
+                            </SelectItem>
+                          ))}
+                        {row.prompt_mode &&
+                        !promptModes.some((m) => m.mode === row.prompt_mode) ? (
+                          // The venue points at a mode that no longer exists in
+                          // prompt_modes — keep it selectable so the state is
+                          // visible rather than silently re-rendered as default.
+                          <SelectItem value={row.prompt_mode}>{row.prompt_mode} · ?</SelectItem>
+                        ) : null}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <>
+                      <Select disabled value={undefined}>
+                        <SelectTrigger className="h-8 w-56 text-xs">
+                          <SelectValue
+                            placeholder={
+                              promptModes === null ? "Prompt modes unavailable" : "Loading…"
+                            }
+                          />
+                        </SelectTrigger>
+                      </Select>
+                      {promptModes === null ? (
+                        <span className="block pt-1 text-[10px] text-muted-foreground">
+                          Couldn't load prompt modes — retry from the Prompt modes panel.
                         </span>
                       ) : null}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          {/* Full-width greeting inputs — the whole line must be readable, never
-              truncated (the old inline flex-1 layout clipped long headlines). */}
-          <Field label="Headline (blank → default prompt)">
-            <Input
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              placeholder="Confess something."
-              className="h-8 w-full text-xs"
+                    </>
+                  )}
+                </Field>
+              </div>
+            </div>
+
+            <ConfessPreview
+              key={row.register ?? "default"}
+              headline={previewHeadline}
+              guidance={previewGuidance}
+              lines={previewLines}
             />
-          </Field>
-          <Field label="Subline (optional)">
-            <Input
-              value={guidance}
-              onChange={(e) => setGuidance(e.target.value)}
-              className="h-8 w-full text-xs"
-            />
-          </Field>
+          </div>
           <div className="flex items-center gap-2 pt-1">
             <Button
               size="sm"
@@ -1261,7 +1499,11 @@ const Moderate = () => {
     };
     Promise.all([
       Promise.resolve(
-        from("venues").select("source,display_name,register,headline,guidance,active"),
+        // select(*) DELIBERATELY: naming prompt_mode here would fail the whole
+        // venues read on a database where the venue_prompt_mode migration
+        // hasn't landed yet — * tolerates the column's absence in either
+        // deploy order (the row type just reads undefined until it exists).
+        from("venues").select("*"),
       ).then(
         (r) => r,
         () => ({ data: null, error: { message: "request failed" } }),
@@ -1986,6 +2228,16 @@ const Moderate = () => {
     });
   };
 
+  // Preview placeholder lines for a register: the DB set when loaded and
+  // non-empty, the hardcoded fail-safe set otherwise — the same resolution
+  // order the live confess screen uses. "default" is the UI stand-in for
+  // null → DTC (same convention as registerDesc).
+  const linesForRegister = (register: string): string[] => {
+    const reg = register === "default" ? "dtc" : register;
+    const db = registerSets?.get(reg)?.lines?.filter((l) => l.trim() !== "");
+    return db && db.length > 0 ? db : getPlaceholderLines(reg);
+  };
+
   // ── Venues overview writes: optimistic update + revert-on-failure + toast, the
   // same pattern as changeRegister/toggleFeatured. One in-flight write per row. ──
   const patchVenueRow = (source: string, patch: Partial<VenueAdminRow>) =>
@@ -2055,6 +2307,55 @@ const Moderate = () => {
       title: "Greeting updated",
       description: `${venueDisplayName("", source) || source} → ${nextHeadline ?? "default prompt"}`,
     });
+  };
+
+  // Per-venue verdict prompt (venues.prompt_mode) — same optimistic pattern as
+  // the register. null = "use the default mode" (the RPC clears the column).
+  const overviewSetPromptMode = async (source: string, value: string | null) => {
+    const prev = venuesRows?.find((r) => r.source === source)?.prompt_mode ?? null;
+    if (value === prev) return;
+    setVenueBusy(source);
+    patchVenueRow(source, { prompt_mode: value });
+    const { error } = await rpc("admin_set_venue_prompt_mode", {
+      _source: source,
+      _prompt_mode: value,
+    });
+    setVenueBusy(null);
+    if (error) {
+      patchVenueRow(source, { prompt_mode: prev });
+      toast({
+        title: "Couldn't update verdict prompt",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Verdict prompt updated",
+      description: `${venueDisplayName("", source) || source} → ${value ?? "default"}`,
+    });
+  };
+
+  // Rename (display name only — the SLUG is permanent: printed on QR cards and
+  // the attribution key on every historical row). NOT optimistic: identity
+  // fronts reports and share cards, so local state updates only after the
+  // server confirms.
+  const overviewRenameVenue = async (source: string, name: string) => {
+    const next = name.trim();
+    const prev = venuesRows?.find((r) => r.source === source)?.display_name ?? "";
+    if (!next || next === prev) return;
+    setVenueBusy(source);
+    const { error } = await rpc("admin_set_venue_display_name", {
+      _source: source,
+      _display_name: next,
+    });
+    setVenueBusy(null);
+    if (error) {
+      toast({ title: "Couldn't rename venue", description: error.message, variant: "destructive" });
+      return;
+    }
+    patchVenueRow(source, { display_name: next });
+    toast({ title: "Venue renamed", description: `${source} → ${next}` });
   };
 
   // Save a placeholder set via admin_set_register_lines. NOT optimistic — the set
@@ -2622,6 +2923,11 @@ const Moderate = () => {
                         onSaveGreeting={(h, g) => overviewSaveGreeting(row.source, h, g)}
                         onCopyReport={() => copyVenueReport(row.source, row.display_name)}
                         onDelete={() => deleteVenue(row.source, row.display_name)}
+                        promptModes={promptModes}
+                        onPromptMode={(v) => overviewSetPromptMode(row.source, v)}
+                        onRename={(name) => overviewRenameVenue(row.source, name)}
+                        linesFor={linesForRegister}
+                        defaultGreeting={siteCopy}
                       />
                     ))}
                   </ul>

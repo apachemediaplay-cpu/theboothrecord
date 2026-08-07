@@ -74,6 +74,15 @@ const Confess = () => {
       setPrompt(
         resolvePrompt(cfg.headline, cfg.guidance, cfg.defaultHeadline, cfg.defaultGuidance),
       );
+      // Per-venue prompt routing: stash the venue's prompt_mode where
+      // Receiving's submit can read it (component state dies at navigation).
+      // Null CLEARS the key — a venue without an explicit mode, non-venue
+      // traffic, and every failure path all send NO mode, which the edge
+      // function hard-defaults to 'default'. Not in the handleSubmit clear
+      // list: this key describes the VENUE, not the confession, and must
+      // survive repeat confessions the same way "source" does.
+      if (cfg.promptMode) sessionStorage.setItem("promptMode", cfg.promptMode);
+      else sessionStorage.removeItem("promptMode");
     });
     return () => {
       cancelled = true;

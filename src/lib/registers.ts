@@ -108,6 +108,11 @@ export type ConfessConfig = {
   // resolver falls through to the hardcoded DEFAULT_PROMPT.
   defaultHeadline: string | null;
   defaultGuidance: string | null;
+  // Per-venue prompt routing (venues.prompt_mode): the mode this venue's
+  // confessions carry to generate-verdict. Null (no venue / no explicit
+  // choice / failure / older RPC) → the client sends NO mode and the edge
+  // function's 'default' fallback applies — same fail-safe shape as the rest.
+  promptMode: string | null;
 };
 
 const NO_CONFESS_CONFIG: ConfessConfig = {
@@ -117,6 +122,7 @@ const NO_CONFESS_CONFIG: ConfessConfig = {
   lines: null,
   defaultHeadline: null,
   defaultGuidance: null,
+  promptMode: null,
 };
 
 type ConfessConfigRow = {
@@ -126,6 +132,7 @@ type ConfessConfigRow = {
   lines: string[] | null;
   default_headline: string | null;
   default_guidance: string | null;
+  prompt_mode?: string | null;
 };
 type RpcCall = (
   fn: string,
@@ -151,6 +158,10 @@ export async function fetchConfessConfig(source?: string | null): Promise<Confes
       lines: lines.length > 0 ? lines : null,
       defaultHeadline: row.default_headline ?? null,
       defaultGuidance: row.default_guidance ?? null,
+      promptMode:
+        typeof row.prompt_mode === "string" && row.prompt_mode.trim() !== ""
+          ? row.prompt_mode.trim()
+          : null,
     };
   } catch {
     return NO_CONFESS_CONFIG;
