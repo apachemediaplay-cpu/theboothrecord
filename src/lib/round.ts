@@ -12,9 +12,11 @@
 // subset of confessions through a different pinned prompt — venue-specific
 // prompts, experiments, seasonal variants. The round was to be the FIRST
 // CALLER, not the reason. It stays regardless of whether the round is ever
-// used. Solo deliberately sends NO mode — absence hard-defaults to 'solo' at
-// every layer (edge map, create_confession), so a missing or malformed mode
-// can never change the prompt for everyone.
+// used. The solo flow deliberately sends NO mode — absence hard-defaults to
+// 'default' at every layer (edge resolver, create_confession seed), so a
+// missing or malformed mode can never change the prompt for everyone.
+// ('default' was renamed from 'solo'-the-mode-name before anything shipped;
+// "solo" in prose here still means the one-person flow.)
 //
 // THE CRITICAL MECHANIC: generation runs in the BACKGROUND. Solo waits on
 // /receiving for 12–25s; a round fires generate-verdict at submit and goes

@@ -1,63 +1,60 @@
--- Prompt-mode routing: a `mode` travels with every confession and decides
--- which pinned prompt version answers it (PROMPT_BY_MODE in the generate-
--- verdict edge function — dashboard-managed, updated alongside this paste).
--- Today every mode resolves to the same prompt, so nothing changes
--- behaviourally; the point is that a second prompt later is one dashboard
--- line — no migration, no client deploy.
+-- ╔════════════════════════════════════════════════════════════════════╗
+-- ║  APPLIED — completed and pasted in the Supabase dashboard.         ║
+-- ║  The placeholder below was filled there with the live function     ║
+-- ║  body; the applied version used p_mode DEFAULT 'solo' (the name at ║
+-- ║  the time). The live rename to 'default' is 20260808100000. This   ║
+-- ║  file stays as history parity; it is not a template to re-run.     ║
+-- ╚════════════════════════════════════════════════════════════════════╝
 --
--- THIS IS A GENERAL ROUTING LAYER, NOT ROUND CODE. Venue-specific prompts,
--- experiments, seasonal variants all use it. The (shelved) round was to be
--- the first caller, not the reason. Do not remove it as dead round code.
+-- Prompt-mode routing, corrected. The first version of this migration was
+-- written against a 4-parameter create_confession that doesn't exist; it
+-- created an ORPHANED 5-parameter overload (nothing calls it) and never
+-- touched the live 6-parameter function:
+--   create_confession(p_confession text, p_verdict text, p_source text,
+--                     p_status text, p_stamp_venue boolean default true,
+--                     p_topic text default null)
+-- This corrective drops the orphan by its exact signature, adds the mode
+-- column, and recreates the LIVE function with p_mode as a 7th parameter.
+--
+-- MODE NAME AS APPLIED: 'solo'. This migration ran with 'solo' as the
+-- default; the ALTER below backfilled EVERY existing confession row with
+-- mode='solo'. The live rename to 'default' (20260808100000) changes only
+-- the defaults going forward — rows stamped 'solo' keep it: rewriting
+-- history to match a naming decision loses the fact they were written under
+-- the old name.
 --
 -- Storing the mode is the expensive-to-retrofit part: without the column you
 -- can never ask whether verdicts from one prompt get shared more than
--- another — the rows would be indistinguishable.
+-- another. General routing layer, NOT round code.
 
+-- 1. Drop the ORPHAN — named exactly. Five text parameters
+--    (p_confession, p_verdict, p_source, p_status, p_mode). The live
+--    function has boolean in position 5, so this signature cannot hit it.
+drop function if exists public.create_confession(text, text, text, text, text);
+
+-- 2. The mode column — as applied: default 'solo' (renamed to 'default' by
+--    20260808100000; kept here as history parity).
 alter table public.confessions
   add column if not exists mode text not null default 'solo';
 
--- create_confession gains p_mode — as a CHANGED SIGNATURE (drop + recreate),
--- NOT an overload. An overload would leave both the 4- and 5-parameter
--- versions in place, and PostgREST then rejects the deployed edge function's
--- 4-argument call as ambiguous (PGRST203: cannot choose best candidate).
--- Dropping the old signature and giving p_mode a DEFAULT keeps that caller
--- working unchanged: PostgREST fills the default until the edge function is
--- updated to pass mode explicitly. Both statements run in one paste, so
--- there is no window with no function at all.
-drop function if exists public.create_confession(text, text, text, text);
+-- 3. Recreate the LIVE function with p_mode appended. DROP then CREATE —
+--    NOT create-or-replace, which would leave a third overload live. The
+--    p_mode DEFAULT means the deployed edge function's current 6-argument
+--    call keeps working the instant this lands, and keeps working until the
+--    new edge block is pasted. No ordering requirement between the two.
+drop function if exists public.create_confession(text, text, text, text, boolean, text);
 
-create or replace function public.create_confession(
-  p_confession text,
-  p_verdict text,
-  p_source text,
-  p_status text,
-  p_mode text default 'solo'
-) returns bigint
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_status text;
-  v_subject bigint;
-begin
-  v_status := case when p_status in ('pending', 'blocked') then p_status else 'pending' end;
-  insert into public.confessions (confession_text, verdict_text, source, status, mode)
-  values (
-    p_confession,
-    p_verdict,
-    coalesce(nullif(btrim(p_source), ''), 'direct'),
-    v_status,
-    -- Hard default to solo: empty/whitespace/missing all normalise. The DB
-    -- stores what the edge function resolved; it does not validate against a
-    -- mode list — the edge function's PROMPT_BY_MODE map is the gate.
-    coalesce(nullif(btrim(p_mode), ''), 'solo')
-  )
-  returning subject_number into v_subject;
-  return v_subject;
-end;
-$$;
+-- ┌────────────────────────────────────────────────────────────────────┐
+-- │  This block was a placeholder; it was FILLED IN THE DASHBOARD with │
+-- │  the live body (edited three ways: p_mode text default 'solo' as   │
+-- │  the 7th parameter; `mode` in the INSERT columns;                  │
+-- │  coalesce(nullif(btrim(p_mode), ''), 'solo') in the values) and    │
+-- │  applied there. The repo never held the body — the applied source  │
+-- │  of truth is the database; 20260808100000 renames its defaults     │
+-- │  in place via pg_get_functiondef without hand-copying it.          │
+-- └────────────────────────────────────────────────────────────────────┘
 
--- Same grant posture as the original (20260628093000): anon only.
-revoke all on function public.create_confession(text, text, text, text, text) from public;
-grant execute on function public.create_confession(text, text, text, text, text) to anon;
+-- 4. Grants restated for the new signature — mirror whatever the live
+--    grants are (expected: revoke from public; grant execute to anon).
+revoke all on function public.create_confession(text, text, text, text, boolean, text, text) from public;
+grant execute on function public.create_confession(text, text, text, text, boolean, text, text) to anon;

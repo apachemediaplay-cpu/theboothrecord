@@ -36,6 +36,11 @@ create policy "admins read prompt_modes"
 -- callPrompt passes this string straight to the Responses API, which rejects
 -- a v-prefix. (The edge function normalises a stray leading "v" from console
 -- entries, but the stored value should be the real format.)
+--
+-- HISTORY PARITY: this is what was ACTUALLY pasted and applied — seeded as
+-- 'solo'. The rename to 'default' happened LIVE afterwards, in
+-- 20260808100000_rename_prompt_mode_default.sql. Do not edit these seeds to
+-- match the new name; this file records what ran.
 insert into public.prompt_modes (mode, version)
 values ('solo', '52'), ('round', '52')
 on conflict (mode) do nothing;

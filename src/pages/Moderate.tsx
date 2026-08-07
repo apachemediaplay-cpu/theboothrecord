@@ -41,8 +41,9 @@ type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   is_test: boolean | null;
   homepage_featured: boolean | null;
   // Prompt-mode routing (20260807100000): which pinned prompt answered this
-  // row. 'solo' is the norm; anything else gets a quiet marker on the row.
-  // Optional because the generated types predate the column.
+  // row. 'default' AND historical 'solo' both render unmarked (see the marker
+  // comment at the render site); only a genuinely different mode gets the
+  // quiet badge. Optional because the generated types predate the column.
   mode?: string | null;
 };
 type Status = "pending" | "approved" | "rejected";
@@ -1428,10 +1429,10 @@ const Moderate = () => {
           setPromptModes(null);
           return;
         }
-        // solo first (the norm), then alphabetical.
+        // 'default' first (the norm), then alphabetical.
         setPromptModes(
           [...r.data].sort((a, b) =>
-            a.mode === "solo" ? -1 : b.mode === "solo" ? 1 : a.mode.localeCompare(b.mode),
+            a.mode === "default" ? -1 : b.mode === "default" ? 1 : a.mode.localeCompare(b.mode),
           ),
         );
       },
@@ -1473,7 +1474,7 @@ const Moderate = () => {
     setPromptModes((prev) =>
       prev
         ? [...prev, { mode, version }].sort((a, b) =>
-            a.mode === "solo" ? -1 : b.mode === "solo" ? 1 : a.mode.localeCompare(b.mode),
+            a.mode === "default" ? -1 : b.mode === "default" ? 1 : a.mode.localeCompare(b.mode),
           )
         : prev,
     );
@@ -3431,10 +3432,18 @@ const Moderate = () => {
                         </span>
                         <SourceBadge source={row.source} />
                         <TopicBadge topic={row.topic} />
-                        {/* Prompt-mode marker — NON-solo only: solo is the norm
-                            and marking it would be noise. Same quiet register
-                            as the rest of this metadata line. */}
-                        {row.mode && row.mode !== "solo" ? (
+                        {/* Prompt-mode marker — only for a mode that is NEITHER
+                            'default' NOR 'solo': a venue mode, an experiment,
+                            anything genuinely different. 'solo' is unmarked BY
+                            DECISION (7 Aug 2026), not oversight — the mode
+                            backfill stamped every historical row 'solo', so
+                            marking non-default would badge the entire queue,
+                            inverting "the norm is unmarked" while telling you
+                            nothing (those rows predate modes entirely). The
+                            column keeps the distinction for queries; the badge
+                            exists only to catch the unusual. Do NOT "simplify"
+                            this condition to a single comparison. */}
+                        {row.mode && row.mode !== "default" && row.mode !== "solo" ? (
                           <span className="uppercase tracking-wide">{row.mode}</span>
                         ) : null}
                         {flagged ? (

@@ -1,3 +1,155 @@
+# Live rename: prompt mode `solo` → `default`
+
+**Status: prepared and verified against the LIVE stack — nothing applied yet.
+Apply the three artifacts in the order below.**
+
+## Why
+
+`solo` only meant something next to `round`, and the round is shelved. The name
+should say what it is — the prompt every confession gets unless a venue says
+otherwise. The console already uses the word ("blank headline → default prompt").
+
+## Findings — the live state (verified)
+
+Confirmed in the Supabase dashboard and independently via anon REST probes:
+
+- **prompt_modes** is live, seeded `solo → 52`, `round → 52` (versions are the
+  bare OpenAI numbers — "52", not "v52").
+- **confessions.mode** is live. The `ALTER ... NOT NULL DEFAULT 'solo'`
+  **backfilled every pre-existing row** — the entire confession history is
+  stamped `'solo'`, not just new writes.
+- **create_confession** has exactly ONE signature —
+  `(text, text, text, text, boolean, text, text)` with
+  `p_mode text DEFAULT 'solo'` as the 7th parameter. The orphaned 5-parameter
+  overload is gone.
+- **The edge function** is the merged version, deployed and reading the table:
+  its log shows `[generate-verdict] mode=solo prompt=52 source=table`.
+- **The client** is deployed; the console's Prompt modes editor is live.
+
+The mode name appears in four places that must agree — the table row, the
+database defaults (column + `p_mode`), the edge function's resolver literals,
+and the client's marker/sort literals. All four are covered by the artifacts
+below. **Existing rows keep `mode='solo'` — deliberately never rewritten:**
+rewriting history to match a naming decision loses the fact those rows were
+written under the old name.
+
+## Order of operations, and the degradation window
+
+**1. Migration → 2. Edge paste → 3. Client deploy.**
+
+The only window is between steps 1 and 2: the deployed resolver requests
+`'solo'`, misses the renamed row, misses its `'solo'` fallback-row lookup, and
+lands on the hardcoded `"52"` floor — `source=fallback` in the logs. **Verdicts
+keep working on the same version throughout** (the floor equals the live
+version); the table just isn't read, and rows written inside the window still
+stamp `'solo'` (harmless, and consistent with the keep-history rule). Two
+precisions: the window lasts until the edge paste (not a fixed minute), and
+warm instances may serve the cached `'solo'` row for up to 60s after the
+migration — a smoother tail, not a sharper edge. After the paste, logs flip
+back to `source=table` and new rows stamp `'default'`.
+
+There is no catastrophic ordering: `p_mode` is already live, so no sequence
+can stop confessions persisting. Step 3 is cosmetic (console-only) and can
+land any time after step 2.
+
+**Marker decision (settled):** BOTH `'default'` and `'solo'` render unmarked
+in the console; only a mode that is neither — a venue mode, an experiment,
+anything genuinely different — gets the quiet badge. Reason: the backfill
+stamped every historical row `'solo'`, so marking non-default would badge the
+entire queue — inverting "the norm is unmarked" for the bulk of what you're
+looking at, and telling you nothing, because those rows predate modes
+entirely. The column keeps the distinction for queries; the badge exists only
+to catch the unusual. The condition is deliberately two comparisons — recorded
+in the code so it isn't "simplified" later.
+
+---
+
+## Artifact 1 — the migration (paste FIRST)
+
+Repo path: `supabase/migrations/20260808100000_rename_prompt_mode_default.sql`
+
+Renames the table row and the column default, and rewrites
+`create_confession`'s defaults **in place from the live definition** — the DO
+block reads `pg_get_functiondef` itself, so nothing is hand-copied and it
+cannot drift from the deployed body. `CREATE OR REPLACE` on the identical
+signature cannot create an overload and preserves grants. Guards refuse to run
+against an unexpected state.
+
+```sql
+-- LIVE RENAME: prompt mode 'solo' → 'default'. This runs against a LIVE
+-- stack: prompt_modes seeded (solo→52, round→52), confessions.mode live with
+-- every existing row stamped 'solo', create_confession live with p_mode
+-- DEFAULT 'solo' as its 7th parameter, and the edge function reading the
+-- table (source=table in its logs).
+--
+-- WHY: 'solo' only meant something next to 'round', and the round is
+-- shelved. 'default' says what it is — the prompt every confession gets
+-- unless something says otherwise.
+--
+-- EXISTING ROWS KEEP mode='solo' — deliberately NOT rewritten. Rewriting
+-- history to match a naming decision loses the fact those rows were written
+-- under the old name. Only the three DEFAULTS change; rows born after this
+-- are 'default'.
+--
+-- ORDER: paste this FIRST, then the edge function, then deploy the client.
+-- Window while only this has landed: the deployed edge resolver looks up
+-- 'solo', misses, and falls to its hardcoded "52" floor (source=fallback in
+-- the logs) — verdicts keep working on the same version; the table just
+-- isn't read, and rows written in the window still stamp 'solo'. The edge
+-- paste closes the window (plus up to 60s of warm-instance cache tail).
+
+-- 1. The table row. 'round' stays untouched — dormant, but it's the example
+--    that shows the pattern.
+update public.prompt_modes
+   set mode = 'default', updated_at = now()
+ where mode = 'solo';
+
+-- 2. The column default — new rows only; existing rows keep their value.
+alter table public.confessions
+  alter column mode set default 'default';
+
+-- 3. create_confession's p_mode DEFAULT (and any 'solo' fallback inside its
+--    body), rewritten IN PLACE from the LIVE definition. The DO block reads
+--    pg_get_functiondef itself, so this migration cannot drift from the
+--    deployed body — no hand-copied source involved. CREATE OR REPLACE with
+--    the identical signature replaces in place (no overload possible) and
+--    PRESERVES the existing grants. Guards: exactly one create_confession
+--    must exist, and its definition must still contain a 'solo' literal
+--    (otherwise this already ran — refuse rather than guess).
+do $$
+declare
+  _defs text[];
+  _def  text;
+begin
+  select array_agg(pg_get_functiondef(p.oid))
+    into _defs
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'create_confession';
+
+  if _defs is null or array_length(_defs, 1) <> 1 then
+    raise exception 'expected exactly ONE create_confession, found % — resolve overloads first',
+      coalesce(array_length(_defs, 1), 0);
+  end if;
+
+  _def := _defs[1];
+  if position('''solo''' in _def) = 0 then
+    raise exception 'create_confession has no ''solo'' literal — rename already applied?';
+  end if;
+
+  _def := replace(_def, '''solo''', '''default''');
+  execute _def;
+end $$;
+```
+
+## Artifact 2 — the edge function (paste SECOND, whole file)
+
+Repo path: `supabase/functions/generate-verdict-DASHBOARD.ts` — the dashboard
+master copy; never deployed from the repo. Already renamed (`'default'` in the
+resolver's requested-mode default, the fallback-row lookup, and the fallback
+return), so it is exactly the post-migration function.
+
+```ts
 // ╔══════════════════════════════════════════════════════════════════════╗
 // ║  DASHBOARD MASTER COPY — NEVER DEPLOYED FROM THIS REPO.               ║
 // ║  The real generate-verdict lives ONLY in the Supabase dashboard;      ║
@@ -332,3 +484,96 @@ Deno.serve(async (req) => {
     return json({ status: "error", error: "Unexpected error.", detail: String(e) }, 500);
   }
 });
+```
+
+## Artifact 3 — the client diff (deploy THIRD)
+
+Already in the working tree; these are the rename hunks.
+
+`src/pages/Moderate.tsx` — the Confession type comment:
+
+```diff
+-  // row. 'solo' is the norm; anything else gets a quiet marker on the row.
++  // row. 'default' is the norm; anything else gets a quiet marker on the row.
+```
+
+`src/pages/Moderate.tsx` — the row marker (the literal that would mis-mark
+every future row if missed):
+
+```diff
+-                        {/* Prompt-mode marker — NON-solo only: solo is the norm
+-                            and marking it would be noise. Same quiet register
+-                            as the rest of this metadata line. */}
+-                        {row.mode && row.mode !== "solo" ? (
++                        {/* Prompt-mode marker — only for a mode that is NEITHER
++                            'default' NOR 'solo': a venue mode, an experiment,
++                            anything genuinely different. 'solo' is unmarked BY
++                            DECISION (7 Aug 2026), not oversight — the mode
++                            backfill stamped every historical row 'solo', so
++                            marking non-default would badge the entire queue,
++                            inverting "the norm is unmarked" while telling you
++                            nothing (those rows predate modes entirely). The
++                            column keeps the distinction for queries; the badge
++                            exists only to catch the unusual. Do NOT "simplify"
++                            this condition to a single comparison. */}
++                        {row.mode && row.mode !== "default" && row.mode !== "solo" ? (
+                           <span className="uppercase tracking-wide">{row.mode}</span>
+                         ) : null}
+```
+
+`src/pages/Moderate.tsx` — both prompt-mode list sorts (fetch effect and add
+handler, identical expression in each):
+
+```diff
+-            a.mode === "solo" ? -1 : b.mode === "solo" ? 1 : a.mode.localeCompare(b.mode),
++            a.mode === "default" ? -1 : b.mode === "default" ? 1 : a.mode.localeCompare(b.mode),
+```
+
+`src/pages/Receiving.tsx` — the deliberate-absence comment above the
+generate-verdict invoke:
+
+```diff
+-        // No `mode` field — DELIBERATE, not an omission. Solo is the default
+-        // at every layer (the edge function's PROMPT_BY_MODE hard-defaults
+-        // missing/unrecognised modes to 'solo'; create_confession defaults
+-        // p_mode the same way), so the solo path sends nothing and can never
+-        // drift from the norm. Non-solo callers (see round.ts) pass it
+-        // explicitly.
++        // No `mode` field — DELIBERATE, not an omission. 'default' is the
++        // mode at every layer when none is sent (the edge function's resolver
++        // hard-defaults missing/unrecognised modes to 'default';
++        // create_confession defaults p_mode the same way), so this path sends
++        // nothing and can never drift from the norm. Non-default callers
++        // (see round.ts) pass a mode explicitly.
+```
+
+`src/lib/round.ts` — the module-header note (the round still sends
+`mode: "round"`, unchanged):
+
+```diff
+-// used. Solo deliberately sends NO mode — absence hard-defaults to 'solo' at
+-// every layer (edge map, create_confession), so a missing or malformed mode
+-// can never change the prompt for everyone.
++// used. The solo flow deliberately sends NO mode — absence hard-defaults to
++// 'default' at every layer (edge resolver, create_confession seed), so a
++// missing or malformed mode can never change the prompt for everyone.
++// ('default' was renamed from 'solo'-the-mode-name before anything shipped;
++// "solo" in prose here still means the one-person flow.)
+```
+
+Prose uses of "solo" meaning the one-person *flow* (across the round screens
+and comments) are deliberately untouched — the rename covers the mode name
+only. A repo-wide sweep confirms no `'solo'` mode-name literals remain outside
+the deliberate history comments; build and typecheck are clean.
+
+## Repo parity notes
+
+The two earlier migration files were corrected to record what actually ran —
+`20260807110000_prompt_modes.sql` keeps its `'solo'` seeds (what was pasted;
+the rename happens in 20260808100000), and
+`20260807100000_confession_mode.sql` is marked APPLIED, completed in the
+dashboard with `p_mode DEFAULT 'solo'`. Neither is a template to re-run.
+
+**Sharing note:** the embedded edge function includes the OpenAI prompt IDs
+and the gatekeeper/classifier setup — fine for teammates, not for anywhere
+public.
