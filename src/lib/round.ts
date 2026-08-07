@@ -6,13 +6,15 @@
 // stay in the codebase deliberately; do not clean them up as dead code.
 //
 // THE MODE PLUMBING STAYS TOO — it will look like round code and it is not.
-// The mode plumbing (the mode column on confessions, the mode parameter to
-// generate-verdict, PROMPT_BY_MODE in the edge function — all server-side,
-// outside this repo) routes any subset of confessions through a different
-// pinned prompt — by venue, by experiment, by anything. The round was the
-// FIRST CALLER, not the reason. It stays regardless of whether the round is
-// ever used. (Note: this client never sends a mode — the round submits the
-// same {confession, source} body as solo.)
+// The mode plumbing (confessions.mode + create_confession's p_mode, the mode
+// field on the generate-verdict body sent below, PROMPT_BY_MODE in the
+// dashboard-managed edge function) is a GENERAL ROUTING LAYER: it routes any
+// subset of confessions through a different pinned prompt — venue-specific
+// prompts, experiments, seasonal variants. The round was to be the FIRST
+// CALLER, not the reason. It stays regardless of whether the round is ever
+// used. Solo deliberately sends NO mode — absence hard-defaults to 'solo' at
+// every layer (edge map, create_confession), so a missing or malformed mode
+// can never change the prompt for everyone.
 //
 // THE CRITICAL MECHANIC: generation runs in the BACKGROUND. Solo waits on
 // /receiving for 12–25s; a round fires generate-verdict at submit and goes
@@ -220,7 +222,10 @@ export function submitRoundConfession(confession: string): void {
 
   const source = sessionStorage.getItem("source") || "direct";
   Promise.race([
-    supabase.functions.invoke("generate-verdict", { body: { confession, source } }),
+    // mode: "round" — the prompt-mode routing layer (see the module header).
+    // The edge function resolves it against PROMPT_BY_MODE and records it on
+    // the row via create_confession; solo callers omit the field entirely.
+    supabase.functions.invoke("generate-verdict", { body: { confession, source, mode: "round" } }),
     new Promise<never>((_, reject) => setTimeout(() => reject(TIMED_OUT), ROUND_VERDICT_TIMEOUT_MS)),
   ])
     .then((res) => {

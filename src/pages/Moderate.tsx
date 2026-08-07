@@ -40,6 +40,10 @@ type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   topic: string | null;
   is_test: boolean | null;
   homepage_featured: boolean | null;
+  // Prompt-mode routing (20260807100000): which pinned prompt answered this
+  // row. 'solo' is the norm; anything else gets a quiet marker on the row.
+  // Optional because the generated types predate the column.
+  mode?: string | null;
 };
 type Status = "pending" | "approved" | "rejected";
 
@@ -684,6 +688,91 @@ const DefaultGreetingEditor = ({
   );
 };
 
+// One prompt-mode row: the mode as a fixed label, its live version editable.
+// Same lifecycle as the default-greeting editor — seeds from the DB value,
+// parent keys on the row content so a landed save remounts clean. The version
+// shown IS what's live (within the edge function's 60s cache); there is no
+// preview, deliberately — a preview would imply a capability that doesn't
+// exist.
+const PromptModeRow = ({
+  mode,
+  initialVersion,
+  busy,
+  onSave,
+}: {
+  mode: string;
+  initialVersion: string;
+  busy: boolean;
+  onSave: (version: string) => void;
+}) => {
+  const [version, setVersion] = useState(initialVersion);
+  const dirty = version.trim() !== initialVersion.trim();
+  const valid = version.trim() !== "";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-20 shrink-0 font-mono-light text-xs uppercase tracking-wide">{mode}</span>
+      <Input
+        value={version}
+        maxLength={40}
+        onChange={(e) => setVersion(e.target.value)}
+        className="h-8 w-full text-xs"
+      />
+      <Button size="sm" disabled={!dirty || !valid || busy} onClick={() => onSave(version.trim())}>
+        {busy ? "Saving…" : "Save"}
+      </Button>
+    </div>
+  );
+};
+
+// Add-mode row: a new mode from the console without a migration. Client
+// mirror of admin_add_prompt_mode's checks (slug shape, taken, version
+// required); the server re-validates everything.
+const AddPromptModeRow = ({
+  busy,
+  taken,
+  onAdd,
+}: {
+  busy: boolean;
+  taken: string[];
+  onAdd: (mode: string, version: string) => Promise<boolean>;
+}) => {
+  const [mode, setMode] = useState("");
+  const [version, setVersion] = useState("");
+  const m = mode.trim().toLowerCase();
+  const valid = /^[a-z0-9_-]{1,40}$/.test(m) && !taken.includes(m) && version.trim() !== "";
+  return (
+    <div className="flex items-center gap-2 border-t border-border/50 pt-2">
+      <Input
+        value={mode}
+        maxLength={40}
+        placeholder="new mode"
+        onChange={(e) => setMode(e.target.value)}
+        className="h-8 w-20 shrink-0 text-xs"
+      />
+      <Input
+        value={version}
+        maxLength={40}
+        placeholder="version"
+        onChange={(e) => setVersion(e.target.value)}
+        className="h-8 w-full text-xs"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!valid || busy}
+        onClick={async () => {
+          if (await onAdd(m, version.trim())) {
+            setMode("");
+            setVersion("");
+          }
+        }}
+      >
+        {busy ? "Adding…" : "Add"}
+      </Button>
+    </div>
+  );
+};
+
 // One placeholder set (public.registers row): exactly six lines, none blank, each
 // ≤80 chars — the client mirror of admin_set_register_lines' checks. Seeds from
 // the DB row once; the parent keys this component on the row content, so a landed
@@ -877,6 +966,12 @@ const Moderate = () => {
     { headline: string; guidance: string } | null | undefined
   >(undefined);
   const [siteCopyBusy, setSiteCopyBusy] = useState(false);
+  // Prompt modes (prompt_modes table): undefined = loading, null = failed.
+  // Busy holds the mode being saved, or "__add__" for the add row.
+  const [promptModes, setPromptModes] = useState<
+    { mode: string; version: string }[] | null | undefined
+  >(undefined);
+  const [promptModeBusy, setPromptModeBusy] = useState<string | null>(null);
 
   // Pending count for the Moderate tab label. Tracks the persistent filters
   // (venue, range) — not the queue's sub-tab or search.
@@ -1311,6 +1406,80 @@ const Moderate = () => {
       cancelled = true;
     };
   }, [session, consoleTab, refreshTick]);
+
+  // Prompt modes read — venues tab only, same Retry tick as its neighbours.
+  // Plain table select: the "admins read prompt_modes" policy (is_admin()-
+  // gated) is the console's read path; the table is deliberately not
+  // anon-readable and the edge function reads it with the service role.
+  useEffect(() => {
+    if (!session || consoleTab !== "venues") return;
+    let cancelled = false;
+    setPromptModes(undefined);
+    const from = sb.from.bind(sb) as unknown as (table: string) => {
+      select(cols: string): PromiseLike<{
+        data: { mode: string; version: string }[] | null;
+        error: unknown;
+      }>;
+    };
+    Promise.resolve(from("prompt_modes").select("mode,version")).then(
+      (r) => {
+        if (cancelled) return;
+        if (r.error || !r.data) {
+          setPromptModes(null);
+          return;
+        }
+        // solo first (the norm), then alphabetical.
+        setPromptModes(
+          [...r.data].sort((a, b) =>
+            a.mode === "solo" ? -1 : b.mode === "solo" ? 1 : a.mode.localeCompare(b.mode),
+          ),
+        );
+      },
+      () => {
+        if (!cancelled) setPromptModes(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [session, consoleTab, refreshTick]);
+
+  // Save / add via the admin RPCs. NOT optimistic — a mode's version decides
+  // which prompt answers live confessions; local state updates only after the
+  // server confirms.
+  const savePromptMode = async (mode: string, version: string) => {
+    setPromptModeBusy(mode);
+    const { error } = await rpc("admin_set_prompt_mode", { _mode: mode, _version: version });
+    setPromptModeBusy(null);
+    if (error) {
+      toast({ title: "Couldn't save prompt mode", description: error.message, variant: "destructive" });
+      return;
+    }
+    setPromptModes((prev) => prev?.map((r) => (r.mode === mode ? { ...r, version } : r)) ?? prev);
+    toast({
+      title: "Prompt mode saved",
+      description: `${mode} → ${version} — live within about a minute.`,
+    });
+  };
+
+  const addPromptMode = async (mode: string, version: string): Promise<boolean> => {
+    setPromptModeBusy("__add__");
+    const { error } = await rpc("admin_add_prompt_mode", { _mode: mode, _version: version });
+    setPromptModeBusy(null);
+    if (error) {
+      toast({ title: "Couldn't add prompt mode", description: error.message, variant: "destructive" });
+      return false;
+    }
+    setPromptModes((prev) =>
+      prev
+        ? [...prev, { mode, version }].sort((a, b) =>
+            a.mode === "solo" ? -1 : b.mode === "solo" ? 1 : a.mode.localeCompare(b.mode),
+          )
+        : prev,
+    );
+    toast({ title: "Prompt mode added", description: `${mode} → ${version}` });
+    return true;
+  };
 
   // Save via admin_set_site_copy. NOT optimistic — this copy fronts the live
   // confess screen for all non-venue traffic; local state updates only after the
@@ -2340,6 +2509,49 @@ const Moderate = () => {
           )}
         </section>
 
+        {/* Prompt modes — which pinned prompt version answers each confession
+            mode (prompt_modes; the edge function reads it on a 60s cache with
+            a hardcoded floor if unreachable). On THIS tab, not its own tab:
+            the console's other global config — the default greeting above and
+            the register sets below — already lives here, and a dedicated tab
+            for a two-row table is navigation furniture. */}
+        <section className="rounded-lg border border-border px-4 py-3">
+          <p className="text-sm font-medium">Prompt modes</p>
+          {/* The warning is a quiet line, not a modal or a confirm — changing
+              a version is a deliberate action taken rarely, not something to
+              guard against. */}
+          <p className="mb-2 text-xs text-muted-foreground">
+            A change affects every confession using that mode within about a minute.
+          </p>
+          {promptModes === undefined ? (
+            <p className="py-2 text-sm text-muted-foreground">Loading…</p>
+          ) : promptModes === null ? (
+            <div className="space-y-2 py-2">
+              <p className="text-sm text-muted-foreground">Couldn't load prompt modes.</p>
+              <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2 py-1">
+              {promptModes.map((r) => (
+                <PromptModeRow
+                  key={`${r.mode}\n${r.version}`}
+                  mode={r.mode}
+                  initialVersion={r.version}
+                  busy={promptModeBusy === r.mode}
+                  onSave={(v) => savePromptMode(r.mode, v)}
+                />
+              ))}
+              <AddPromptModeRow
+                busy={promptModeBusy === "__add__"}
+                taken={promptModes.map((r) => r.mode)}
+                onAdd={addPromptMode}
+              />
+            </div>
+          )}
+        </section>
+
         <section className="rounded-lg border border-border">
           <button
             type="button"
@@ -3219,6 +3431,12 @@ const Moderate = () => {
                         </span>
                         <SourceBadge source={row.source} />
                         <TopicBadge topic={row.topic} />
+                        {/* Prompt-mode marker — NON-solo only: solo is the norm
+                            and marking it would be noise. Same quiet register
+                            as the rest of this metadata line. */}
+                        {row.mode && row.mode !== "solo" ? (
+                          <span className="uppercase tracking-wide">{row.mode}</span>
+                        ) : null}
                         {flagged ? (
                           <span className="rounded bg-amber-500/15 text-amber-500 px-1.5 py-0.5 text-[11px] font-medium">
                             review

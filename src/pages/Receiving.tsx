@@ -124,6 +124,12 @@ const Receiving = () => {
       // a ceiling from request start, not silence detection). On timeout the
       // underlying request is abandoned; a late response goes nowhere.
       const { data, error } = (await Promise.race([
+        // No `mode` field — DELIBERATE, not an omission. Solo is the default
+        // at every layer (the edge function's PROMPT_BY_MODE hard-defaults
+        // missing/unrecognised modes to 'solo'; create_confession defaults
+        // p_mode the same way), so the solo path sends nothing and can never
+        // drift from the norm. Non-solo callers (see round.ts) pass it
+        // explicitly.
         supabase.functions.invoke("generate-verdict", {
           body: { confession, source },
         }),
