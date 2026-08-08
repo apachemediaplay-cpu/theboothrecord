@@ -51,7 +51,7 @@ const VERDICT_TIMED_OUT = Symbol("verdict-timeout");
 // than patient. Same geometry as VerdictShare's mark (240-box arch + base +
 // dot), colours via currentColor so the wrapper class owns the tint.
 const BoothMark = () => (
-  <svg viewBox="0 0 240 240" className="h-7 w-7 text-foreground/65" aria-hidden="true">
+  <svg viewBox="0 0 240 240" className="h-14 w-14 text-foreground/80" aria-hidden="true">
     <path
       d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
       fill="none"
@@ -309,7 +309,10 @@ const Receiving = () => {
           confessor passes through. Still NOT on the timeout state — a brand
           mark under "Nothing on record. Try again." reads badly. */}
       {!timedOut && (
-        <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-6 pt-4">
+        // pb-8, not the wordmark's pb-6: the 24px seat matched a 24px-tall
+        // wordmark (1:1); under the 56px mark it read bottom-cramped. 32px
+        // keeps the mark anchored without pinning it to the edge.
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-8 pt-4">
           <BoothMark />
         </div>
       )}
