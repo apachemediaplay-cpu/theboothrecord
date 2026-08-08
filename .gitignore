@@ -48,3 +48,5 @@ posts/
 captures/
 outputs/
 versions/
+backups/
+supabase/.temp/
