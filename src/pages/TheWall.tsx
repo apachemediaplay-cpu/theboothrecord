@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { Instagram } from "lucide-react";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
 import GuiltyLogo from "@/components/GuiltyLogo";
@@ -238,13 +237,12 @@ const TheWall = () => {
 
           <div className="mt-2 flex justify-center">
             <a
-              href="https://instagram.com/houseofguilty"
+              href="https://instagram.com/theboothrecord"
               target="_blank"
               rel="noopener"
-              className="inline-flex items-center gap-1 text-[10px] font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
+              className="text-[10px] font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
             >
-              <Instagram size={12} strokeWidth={1.75} aria-hidden="true" />
-              @houseofguilty
+              @theboothrecord
             </a>
           </div>
         </div>

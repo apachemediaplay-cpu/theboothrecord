@@ -45,6 +45,9 @@ type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   // comment at the render site); only a genuinely different mode gets the
   // quiet badge. Optional because the generated types predate the column.
   mode?: string | null;
+  // Venue tag (confessions.stamp_venue): whether the share card / share page
+  // may name the venue. NULL counts as ON — only an explicit false is off.
+  stamp_venue?: boolean | null;
 };
 type Status = "pending" | "approved" | "rejected";
 
@@ -2329,6 +2332,29 @@ const Moderate = () => {
     });
   };
 
+  // Venue tag toggle — same optimistic-flip + revert pattern as
+  // toggleFeatured. NULL counts as ON (fail-open matches the share flow's
+  // treatment of legacy rows), so flipping FROM null goes to false. Only
+  // stamp_venue moves; row.source is never touched.
+  const toggleStampVenue = async (row: Confession) => {
+    const next = row.stamp_venue === false;
+    setBusyId(row.id);
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stamp_venue: next } : r)));
+    const { error } = await rpc("admin_set_stamp_venue", { target_id: row.id, value: next });
+    setBusyId(null);
+    if (error) {
+      setRows((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, stamp_venue: row.stamp_venue } : r)),
+      );
+      toast({ title: "Couldn't update venue tag", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: next ? "Venue tag on" : "Venue tag off",
+      description: `#${row.subject_number}`,
+    });
+  };
+
   // Optimistic register change; reverted on failure (same pattern as toggleFeatured).
   const changeRegister = async (value: string) => {
     const next = value === "default" ? null : value;
@@ -3965,6 +3991,34 @@ const Moderate = () => {
                           >
                             {row.homepage_featured ? "★" : "☆"}
                           </Button>
+                          {/* Venue tag — whether the share card / share page may
+                              name the venue. Only rendered where a venue can
+                              actually be named: a real venue source with a
+                              venues.json display name. NULL counts as ON. */}
+                          {row.source &&
+                          row.source !== "direct" &&
+                          venueDisplayName("", row.source) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId === row.id}
+                              aria-pressed={row.stamp_venue !== false}
+                              title={
+                                row.stamp_venue !== false
+                                  ? `Named as ${venueDisplayName("", row.source)} — click to withhold`
+                                  : "Venue withheld — click to name it"
+                              }
+                              onClick={() => toggleStampVenue(row)}
+                              className={cn(
+                                "text-[11px]",
+                                row.stamp_venue !== false
+                                  ? "text-ritual"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              Venue
+                            </Button>
+                          ) : null}
                           {/* Reel KEEPS its label + Queued state: it starts a
                               render on the Mac via booth_watch.py, and the
                               Queued text is the only confirmation the clipboard

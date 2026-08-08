@@ -554,7 +554,7 @@
 
 @keyframes recordPulseDot {
   0%, 100% {
-    opacity: 0.5;
+    opacity: 0.6;
     box-shadow:
       0 0 2px hsl(var(--ritual-green) / 0.5),
       0 0 5px hsl(var(--ritual-green) / 0.2),
