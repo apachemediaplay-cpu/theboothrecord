@@ -246,6 +246,17 @@ const nightBucketFrom = (nightsBack: number): string | null => {
 // Ratio (0–1+) → whole-percent. For CLIENT-computed rates (confessions/scans etc.), which
 // are fractions. null → em dash, never NaN.
 const fmtPct = (rate: number | null) => (rate === null ? "—" : `${Math.round(rate * 100)}%`);
+
+// Relative time for the venue sample's metadata line — the wall's register
+// ("2 hr ago"), console-cased.
+const fmtAgo = (iso: string): string => {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 3600) return `${Math.max(1, Math.floor(s / 60))} min ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
+  const d = Math.floor(s / 86400);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
+};
+
 // admin_venue_report already returns completion_rate/share_rate as WHOLE percents
 // (SQL: round(100.0 * a / b, 1)), and null on divide-by-zero (scans=0 / confessions=0).
 // So DON'T multiply — just append "%". null/non-numeric → "—" (never "0%"/"NaN%"). A real
@@ -360,6 +371,10 @@ const VenueOverviewRow = ({
   row,
   scans,
   completed,
+  approved,
+  pending,
+  oldestPendingAt,
+  onOpenQueue,
   busy,
   expanded,
   onToggleExpand,
@@ -378,6 +393,10 @@ const VenueOverviewRow = ({
   row: VenueAdminRow;
   scans: number | null; // null = scan counts unavailable
   completed: number | null; // null = confession counts unavailable
+  approved: number | null; // ALL-TIME approved count; null = unavailable → "—"
+  pending: number | null; // ALL-TIME pending count; null = unavailable
+  oldestPendingAt: string | null; // oldest pending created_at; null = omit age
+  onOpenQueue: () => void; // → Moderate tab, this venue, Pending sub-tab
   busy: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
@@ -455,7 +474,14 @@ const VenueOverviewRow = ({
         <SourceBadge source={row.source} />
         <span className="text-[11px] text-muted-foreground tabular-nums">
           {registerLabel(row.register ?? "default")} · scans {scans === null ? "—" : scans} ·{" "}
-          completion {fmtPct(completion)}
+          {/* ALL-TIME approved (the windowed stats above are range-scoped; this
+              deliberately isn't): under 3, /record/:venue redirects — that
+              threshold is what decides whether the venue has a page you can
+              send them, hence "page dormant". "—" on failure, the scans
+              convention. */}
+          {approved === null ? "—" : approved} approved
+          {approved !== null && approved < 3 ? " · page dormant" : ""} · completion{" "}
+          {fmtPct(completion)}
         </span>
         <label className="ml-auto flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -634,6 +660,76 @@ const VenueOverviewRow = ({
                     </>
                   )}
                 </Field>
+              </div>
+
+              {/* ON THE RECORD answers exactly TWO questions and only two:
+                  does this venue have anything on the wall, and is anything
+                  waiting on me. NO confession or verdict text — judging
+                  verdicts happens in the Moderate tab where they can be acted
+                  on; one out of context here doesn't help decide anything. */}
+              <div className="space-y-1.5 rounded-md border border-border/60 p-3">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  On the record
+                </p>
+                {approved === null && pending === null ? (
+                  <p className="text-xs text-muted-foreground">—</p>
+                ) : (approved ?? 0) === 0 && (pending ?? 0) === 0 ? (
+                  <p className="text-xs text-muted-foreground">No confessions yet</p>
+                ) : (
+                  <>
+                    {/* "page dormant" / "page live" is the ONLY warning that
+                        See the record bounces to /thewall below the 3-approved
+                        floor — the link itself stays unconditional (below). */}
+                    <p className="text-xs tabular-nums">
+                      {approved === null ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : approved < 3 ? (
+                        <>
+                          <span className="text-foreground">{approved} of 3 approved</span>
+                          <span className="text-muted-foreground"> · page dormant</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-foreground">{approved} approved</span>
+                          <span className="text-muted-foreground"> · page live</span>
+                        </>
+                      )}
+                    </p>
+                    {pending !== null && pending > 0 ? (
+                      <p className="text-xs tabular-nums">
+                        <span className="text-foreground">{pending} pending</span>
+                        {oldestPendingAt ? (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · oldest {fmtAgo(oldestPendingAt)}
+                          </span>
+                        ) : null}
+                      </p>
+                    ) : null}
+                    <div className="flex items-center gap-4 pt-1">
+                      <button
+                        type="button"
+                        onClick={onOpenQueue}
+                        className="text-[11px] text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                      >
+                        Open the queue →
+                      </button>
+                      {/* ALWAYS shown, NO threshold and NO conditional label:
+                          below 3 approved, /record/:venue redirects to
+                          /thewall BY DESIGN — "page dormant" above is the one
+                          warning, and link logic restating it would be a
+                          second place to keep in step. */}
+                      <a
+                        href={`/record/${row.source}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+                      >
+                        See the record →
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1358,11 +1454,19 @@ const Moderate = () => {
   const [venueStats, setVenueStats] = useState<{
     scans: Map<string, number> | null;
     completed: Map<string, number> | null;
+    // ALL-TIME approved counts (a venue absent from the map has 0) — feeds
+    // the row summary's "N approved" and the sub-3 "page dormant" note.
+    approved: Map<string, number> | null;
+    // ALL-TIME pending counts — feeds the ON THE RECORD "N pending" line.
+    pending: Map<string, number> | null;
   } | null>(null);
   const [venueBusy, setVenueBusy] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   // Single expand: at most one venue row open; opening another closes the last.
   const [expandedVenue, setExpandedVenue] = useState<string | null>(null);
+  // created_at of the EXPANDED venue's oldest pending row (see the lazy
+  // effect below). Null = none / not loaded / failed → the age is omitted.
+  const [oldestPendingAt, setOldestPendingAt] = useState<string | null>(null);
   // Sources with ≥1 real scan in the last 30 nights (fixed window — see the
   // quiet-venues effect below). null = unknown (fetch failed / not yet loaded)
   // → the quiet-venues line renders nothing.
@@ -1586,7 +1690,14 @@ const Moderate = () => {
       ),
       safe(rpc("admin_scan_counts", rangeArgs)),
       safe(rpc("admin_confession_counts", rangeArgs)),
-    ]).then(([v, scans, conf]) => {
+      // Approved counts, ALL-TIME (_from null) — deliberately NOT reused from
+      // the windowed call above: the "page dormant" threshold mirrors
+      // /record/:venue, which redirects below 3 approved ALL-TIME, so a
+      // 7-night count would call live pages dormant whenever the window is
+      // narrow. Same RPC, one extra round trip for ALL venues at once,
+      // grouped client-side — never per venue.
+      safe(rpc("admin_confession_counts", { _tz: tz, _from: null, _to: null })),
+    ]).then(([v, scans, conf, confAll]) => {
       if (cancelled) return;
       setVenuesLoading(false);
       if (v.error || !v.data) {
@@ -1605,17 +1716,63 @@ const Moderate = () => {
           completed.set(r.source, (completed.get(r.source) ?? 0) + num(r.completed));
         }
       }
+      const approved = new Map<string, number>();
+      const pendingAll = new Map<string, number>();
+      if (!confAll.error) {
+        for (const r of (confAll.data as ConfCount[]) ?? []) {
+          if (r.status === "approved")
+            approved.set(r.source, (approved.get(r.source) ?? 0) + num(r.total));
+          if (r.status === "pending")
+            pendingAll.set(r.source, (pendingAll.get(r.source) ?? 0) + num(r.total));
+        }
+      }
       setVenueStats({
         scans: scans.error
           ? null
           : new Map(((scans.data as ScanCount[]) ?? []).map((r) => [r.source, num(r.scans)])),
         completed: conf.error ? null : completed,
+        // null on failure → "—", the scans column's convention. Both all-time
+        // (the dormant threshold mirrors /record/:venue, which counts all-time).
+        approved: confAll.error ? null : approved,
+        pending: confAll.error ? null : pendingAll,
       });
     });
     return () => {
       cancelled = true;
     };
   }, [session, rangeArgs, refreshTick]);
+
+  // Oldest pending row's age for the EXPANDED venue — one lazy call per
+  // expand, and only when the pending count is non-zero. The list RPC orders
+  // newest-first, so the OLDEST row is the last page: offset = count − 1,
+  // limit 1. If the aggregate count is momentarily stale and nothing comes
+  // back, the age is simply omitted — the pending count still shows.
+  useEffect(() => {
+    setOldestPendingAt(null);
+    if (!session || consoleTab !== "venues" || !expandedVenue) return;
+    const n = venueStats?.pending?.get(expandedVenue) ?? 0;
+    if (n <= 0) return;
+    let cancelled = false;
+    safe(
+      rpc("admin_list_confessions", {
+        _status: "pending",
+        _source: expandedVenue,
+        _tz: tz,
+        _from: null,
+        _to: null,
+        _include_test: false,
+        _limit: 1,
+        _offset: Math.max(0, n - 1),
+      }),
+    ).then((r) => {
+      if (cancelled) return;
+      const row = ((r.data as Confession[]) ?? [])[0];
+      if (!r.error && row?.created_at) setOldestPendingAt(row.created_at);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, consoleTab, expandedVenue, venueStats, tz, refreshTick]);
 
   // ── Quiet venues: ACTIVE venues with no non-test scan in the last 30 nights ──
   // The one thing the console can't show by looking: a QR card that's come off a
@@ -2164,6 +2321,13 @@ const Moderate = () => {
   const changeVenue = (v: string) => {
     setVenue(v);
     setPage(0);
+  };
+  // "Open the queue →" from a venue panel: Moderate tab, THIS venue's filter,
+  // Pending sub-tab — landing exactly on what's waiting.
+  const openVenueQueue = (source: string) => {
+    changeTab("pending");
+    changeVenue(source);
+    changeConsoleTab("moderate");
   };
   const changeRange = (r: Range) => {
     setRange(r);
@@ -3164,6 +3328,14 @@ const Moderate = () => {
                         completed={
                           venueStats?.completed ? (venueStats.completed.get(row.source) ?? 0) : null
                         }
+                        approved={
+                          venueStats?.approved ? (venueStats.approved.get(row.source) ?? 0) : null
+                        }
+                        pending={
+                          venueStats?.pending ? (venueStats.pending.get(row.source) ?? 0) : null
+                        }
+                        oldestPendingAt={expandedVenue === row.source ? oldestPendingAt : null}
+                        onOpenQueue={() => openVenueQueue(row.source)}
                         busy={venueBusy === row.source}
                         expanded={expandedVenue === row.source}
                         onToggleExpand={() =>
@@ -4199,7 +4371,13 @@ const Moderate = () => {
                                 row.stamp_venue !== false ? "text-ritual" : "text-muted-foreground",
                               )}
                             >
-                              Venue
+                              {/* The WORD is the signal ("Named"/"Withheld"),
+                                  colour only reinforces it — a colour-only
+                                  toggle sat next to the green source badge,
+                                  which means something different (where the
+                                  confession came from, not whether the name
+                                  prints). Two greens competing. */}
+                              {row.stamp_venue !== false ? "Named" : "Withheld"}
                             </Button>
                           ) : null}
                           {/* Reel KEEPS its label + Queued state: it starts a
