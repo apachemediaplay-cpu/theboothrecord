@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
-import BoothFooter from "@/components/BoothFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { tagConfession, logBoothEvent, recoverVerdict } from "@/lib/metrics";
 
@@ -39,6 +38,30 @@ const VERDICT_TIMEOUT_MS = 35_000;
 const RECOVERY_TIMEOUT_MS = 5_000;
 // Sentinel so the catch can tell the ceiling firing apart from a real error.
 const VERDICT_TIMED_OUT = Symbol("verdict-timeout");
+
+// The Booth mark — REPLACES the GUILTY wordmark here DELIBERATELY, not
+// dropped: the Booth may not remain a GUILTY property, and the share card
+// carries the branding where it travels. WHITE at 65%, not green: full white
+// pulls the eye off the green line above it, and green would make the mark
+// read as a SIGNAL — green in this app means live and active, and a static
+// mark sitting still while nothing happens is at odds with that. Dimmed
+// white is a mark rather than a state. STATIC, solid-dot version as on the
+// share page — the typed text is already this screen's one moving element;
+// a second, on a screen whose job is making someone wait, reads busy rather
+// than patient. Same geometry as VerdictShare's mark (240-box arch + base +
+// dot), colours via currentColor so the wrapper class owns the tint.
+const BoothMark = () => (
+  <svg viewBox="0 0 240 240" className="h-7 w-7 text-foreground/65" aria-hidden="true">
+    <path
+      d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="31"
+    />
+    <rect x="32" y="210" width="175" height="18" fill="currentColor" />
+    <circle cx="120" cy="161" r="19" fill="currentColor" />
+  </svg>
+);
 
 const Receiving = () => {
   const navigate = useNavigate();
@@ -280,12 +303,16 @@ const Receiving = () => {
         )}
       </div>
 
-      {/* GUILTY wordmark — Receiving is the one screen EVERY confessor passes
-          through (roughly one in four reaches the wall: 44 wall visits against
-          189 confessions), so this is the only placement that guarantees nobody
-          completes the flow without seeing the word once. NOT on the timeout
-          state — "GUILTY" under "Nothing on record. Try again." reads badly. */}
-      {!timedOut && <BoothFooter />}
+      {/* The Booth mark at the foot — same slot and roughly the same scale as
+          the GUILTY wordmark it replaced (see the note on BoothMark above for
+          why the wordmark went). Receiving is still the one screen EVERY
+          confessor passes through. Still NOT on the timeout state — a brand
+          mark under "Nothing on record. Try again." reads badly. */}
+      {!timedOut && (
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-6 pt-4">
+          <BoothMark />
+        </div>
+      )}
     </div>
   );
 };

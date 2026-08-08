@@ -243,10 +243,6 @@ const nightBucketFrom = (nightsBack: number): string | null => {
   return fmtYmd(d);
 };
 
-// Ratio (0–1+) → whole-percent. For CLIENT-computed rates (confessions/scans etc.), which
-// are fractions. null → em dash, never NaN.
-const fmtPct = (rate: number | null) => (rate === null ? "—" : `${Math.round(rate * 100)}%`);
-
 // Relative time for the venue sample's metadata line — the wall's register
 // ("2 hr ago"), console-cased.
 const fmtAgo = (iso: string): string => {
@@ -370,7 +366,6 @@ const ConfessPreview = ({
 const VenueOverviewRow = ({
   row,
   scans,
-  completed,
   approved,
   pending,
   oldestPendingAt,
@@ -392,7 +387,6 @@ const VenueOverviewRow = ({
 }: {
   row: VenueAdminRow;
   scans: number | null; // null = scan counts unavailable
-  completed: number | null; // null = confession counts unavailable
   approved: number | null; // ALL-TIME approved count; null = unavailable → "—"
   pending: number | null; // ALL-TIME pending count; null = unavailable
   oldestPendingAt: string | null; // oldest pending created_at; null = omit age
@@ -438,7 +432,6 @@ const VenueOverviewRow = ({
   const defaultModeVersion = promptModes?.find((m) => m.mode === "default")?.version;
   // Fail-safe: a missing/null status is treated as active — dimming is opt-in only.
   const active = row.active !== false;
-  const completion = scans !== null && scans > 0 && completed !== null ? completed / scans : null;
 
   // Venue QR: generated lazily on first open, cached for the row's lifetime. Black
   // modules on white stay hardcoded by design — a QR is artifact content whose
@@ -458,9 +451,13 @@ const VenueOverviewRow = ({
   };
   return (
     <li className={cn("py-4", !active && "opacity-50")}>
-      {/* Collapsed row: chevron + name + slug + muted register·scans·completion, with
+      {/* Collapsed row: chevron + name + slug + muted register·scans·approved, with
           the active toggle on the right. The whole row toggles expand EXCEPT the
-          toggle — flipping active/inactive must never require expanding. */}
+          toggle — flipping active/inactive must never require expanding.
+          NO completion percentage — scans and confessions don't measure the
+          same thing, so the ratio is meaningless (Seoul Tiger read 320%,
+          Ovolo 117%). Percentages were removed from the Stats tab for this
+          reason and must not come back here. */}
       <div
         className="flex cursor-pointer select-none flex-wrap items-center gap-x-3 gap-y-1"
         onClick={onToggleExpand}
@@ -480,8 +477,7 @@ const VenueOverviewRow = ({
               send them, hence "page dormant". "—" on failure, the scans
               convention. */}
           {approved === null ? "—" : approved} approved
-          {approved !== null && approved < 3 ? " · page dormant" : ""} · completion{" "}
-          {fmtPct(completion)}
+          {approved !== null && approved < 3 ? " · page dormant" : ""}
         </span>
         <label className="ml-auto flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -1453,7 +1449,6 @@ const Moderate = () => {
   // null map = that stat's RPC failed → the column renders "—", never 0.
   const [venueStats, setVenueStats] = useState<{
     scans: Map<string, number> | null;
-    completed: Map<string, number> | null;
     // ALL-TIME approved counts (a venue absent from the map has 0) — feeds
     // the row summary's "N approved" and the sub-3 "page dormant" note.
     approved: Map<string, number> | null;
@@ -1665,7 +1660,7 @@ const Moderate = () => {
     };
   }, [session, venue]);
 
-  // ── Venues overview: all venues + range-scoped scans/completion ──
+  // ── Venues overview: all venues + range-scoped scans + all-time approved/pending ──
   // The venues read uses the table's public-read policy (same path as the confess
   // screen); stats reuse the admin scan/confession RPCs. A failed stats fetch degrades
   // that column to "—" — only a failed venues read fails the table itself.
@@ -1689,15 +1684,13 @@ const Moderate = () => {
         () => ({ data: null, error: { message: "request failed" } }),
       ),
       safe(rpc("admin_scan_counts", rangeArgs)),
-      safe(rpc("admin_confession_counts", rangeArgs)),
-      // Approved counts, ALL-TIME (_from null) — deliberately NOT reused from
-      // the windowed call above: the "page dormant" threshold mirrors
-      // /record/:venue, which redirects below 3 approved ALL-TIME, so a
-      // 7-night count would call live pages dormant whenever the window is
-      // narrow. Same RPC, one extra round trip for ALL venues at once,
-      // grouped client-side — never per venue.
+      // Approved/pending counts, ALL-TIME (_from null) — deliberately not
+      // windowed: the "page dormant" threshold mirrors /record/:venue, which
+      // redirects below 3 approved ALL-TIME, so a 7-night count would call
+      // live pages dormant whenever the window is narrow. One round trip for
+      // ALL venues at once, grouped client-side — never per venue.
       safe(rpc("admin_confession_counts", { _tz: tz, _from: null, _to: null })),
-    ]).then(([v, scans, conf, confAll]) => {
+    ]).then(([v, scans, confAll]) => {
       if (cancelled) return;
       setVenuesLoading(false);
       if (v.error || !v.data) {
@@ -1710,12 +1703,6 @@ const Moderate = () => {
           (a, b) => a.display_name.localeCompare(b.display_name) || a.source.localeCompare(b.source),
         ),
       );
-      const completed = new Map<string, number>();
-      if (!conf.error) {
-        for (const r of (conf.data as ConfCount[]) ?? []) {
-          completed.set(r.source, (completed.get(r.source) ?? 0) + num(r.completed));
-        }
-      }
       const approved = new Map<string, number>();
       const pendingAll = new Map<string, number>();
       if (!confAll.error) {
@@ -1730,7 +1717,6 @@ const Moderate = () => {
         scans: scans.error
           ? null
           : new Map(((scans.data as ScanCount[]) ?? []).map((r) => [r.source, num(r.scans)])),
-        completed: conf.error ? null : completed,
         // null on failure → "—", the scans column's convention. Both all-time
         // (the dormant threshold mirrors /record/:venue, which counts all-time).
         approved: confAll.error ? null : approved,
@@ -3292,8 +3278,8 @@ const Moderate = () => {
               ) : venuesRows && venuesRows.length > 0 ? (
                 <>
                   <p className="pt-2 text-xs text-muted-foreground">
-                    Scans &amp; completion: {RANGE_LABELS[range].toLowerCase()}. Blank headline →
-                    default prompt.
+                    Scans: {RANGE_LABELS[range].toLowerCase()}; approved counts are all-time.
+                    Blank headline → default prompt.
                   </p>
                   {/* Armed by the quiet-venues line above the tabs. The filter
                       only applies while quietVenues is resolvable — if either
@@ -3325,9 +3311,6 @@ const Moderate = () => {
                         registerDesc={registerDesc}
                         row={row}
                         scans={venueStats?.scans ? (venueStats.scans.get(row.source) ?? 0) : null}
-                        completed={
-                          venueStats?.completed ? (venueStats.completed.get(row.source) ?? 0) : null
-                        }
                         approved={
                           venueStats?.approved ? (venueStats.approved.get(row.source) ?? 0) : null
                         }
