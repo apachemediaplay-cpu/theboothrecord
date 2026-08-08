@@ -40,14 +40,16 @@ type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   topic: string | null;
   is_test: boolean | null;
   homepage_featured: boolean | null;
+  // Whether the share card prints the venue name or LOCATION WITHHELD. Written
+  // once by generate-verdict from the illegal-content classifier, now editable
+  // here via admin_set_stamp_venue. NULL is treated as ON — older rows predate
+  // the column and every screen fails open on null, not closed.
+  stamp_venue?: boolean | null;
   // Prompt-mode routing (20260807100000): which pinned prompt answered this
   // row. 'default' AND historical 'solo' both render unmarked (see the marker
   // comment at the render site); only a genuinely different mode gets the
   // quiet badge. Optional because the generated types predate the column.
   mode?: string | null;
-  // Venue tag (confessions.stamp_venue): whether the share card / share page
-  // may name the venue. NULL counts as ON — only an explicit false is off.
-  stamp_venue?: boolean | null;
 };
 type Status = "pending" | "approved" | "rejected";
 
@@ -1304,9 +1306,21 @@ const Moderate = () => {
   const [focusIdx, setFocusIdx] = useState(0);
   const [confirmBulk, setConfirmBulk] = useState<{ status: Status; label: string } | null>(null);
   // Hard delete: the row pending permanent deletion (confirm dialog open) + the
-  // in-flight lock. SINGLE row only — there is deliberately no bulk delete.
+  // in-flight lock.
   const [confirmDelete, setConfirmDelete] = useState<Confession | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  // BULK hard delete. This reverses the earlier "single row only, deliberately no
+  // bulk delete" rule, and the guards are the reason it's safe to reverse:
+  //   1. REJECTED TAB ONLY. Reject is reversible, delete is not — so the workflow
+  //      is reject first, purge second. A bulk delete sitting over 228 pending
+  //      rows next to "select all matching" is one mis-click from losing the record.
+  //   2. TYPE THE COUNT. The confirm dialog requires typing the number of rows,
+  //      so "select all 228 matching" can never be purged by muscle memory.
+  // Neither guard is decoration; remove one and this becomes the most dangerous
+  // control in the console.
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [bulkDeleteInput, setBulkDeleteInput] = useState("");
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<number | null>(null);
 
   // Cross-venue rollup (venue === "all"). Stats-tab disclosure toggles: full topic
   // list, zero-confession sources, and the nightly table (all default collapsed).
@@ -2159,6 +2173,12 @@ const Moderate = () => {
     if (next === tab) return;
     setTab(next);
     setPage(0);
+    // GUARD 1 of the bulk delete (the UI guard): selection is per-tab IN FACT,
+    // not just in spirit — without this, rows selected on Pending ride along
+    // to Rejected and sit inside "Delete N permanently". Guard 2 (the status
+    // filter in bulkDelete) is the guard that actually holds: a UI guard can
+    // be routed around; a handler guard can't.
+    setSelected(new Map());
   };
 
   const sendLink = async (e: FormEvent) => {
@@ -2302,6 +2322,77 @@ const Moderate = () => {
     toast({ title: `Deleted #${row.subject_number} permanently` });
   };
 
+  // Bulk hard delete. Reuses admin_delete_confession one row at a time rather than
+  // adding a bulk RPC: the single-row function is already deployed, already
+  // admin-gated, and already proven — a new array-taking function would be a second
+  // path to the most destructive operation in the system, pasted by hand.
+  //
+  // Batched 10 at a time so a few hundred rows don't open a few hundred simultaneous
+  // connections. Failures are COUNTED, not thrown: a partial delete must leave the
+  // list honest about what actually went, so the rows that failed stay on screen.
+  // GUARD 2 of the bulk delete (the guard that actually HOLDS): only rejected
+  // rows are ever deleted, filtered HERE in the handler — guard 1 (per-tab
+  // selection, see changeTab) is the UI guard, and a UI guard can be routed
+  // around; a handler guard can't. The dialog's count and the typed
+  // confirmation derive from this same filtered list, so the number shown is
+  // the number that will actually be deleted.
+  const bulkDeleteTargets = [...selected.values()].filter((r) => r.status === "rejected");
+
+  const bulkDelete = async () => {
+    const targets = [...selected.values()].filter((r) => r.status === "rejected");
+    if (deleteBusy) return;
+    if (!targets.length) {
+      setConfirmBulkDelete(false);
+      setBulkDeleteInput("");
+      toast({ title: "Nothing rejected in the selection", description: "Only rejected confessions can be bulk-deleted." });
+      return;
+    }
+    setDeleteBusy(true);
+    setBulkDeleteProgress(0);
+    const deletedIds = new Set<string>();
+    let failed = 0;
+    for (let i = 0; i < targets.length; i += 10) {
+      const batch = targets.slice(i, i + 10);
+      const results = await Promise.all(
+        batch.map((row) =>
+          safe(rpc("admin_delete_confession", { _id: row.id })).then((res) => ({ row, res })),
+        ),
+      );
+      for (const { row, res } of results) {
+        if (res.error) failed += 1;
+        else deletedIds.add(row.id);
+      }
+      setBulkDeleteProgress(Math.min(targets.length, i + batch.length));
+    }
+    setDeleteBusy(false);
+    setBulkDeleteProgress(null);
+    setConfirmBulkDelete(false);
+    setBulkDeleteInput("");
+
+    // Prune every list that could still be holding a now-dead row.
+    setRows((prev) => prev.filter((r) => !deletedIds.has(r.id)));
+    setAllMatching((prev) => (prev ? prev.filter((r) => !deletedIds.has(r.id)) : prev));
+    setSelected((prev) => {
+      const next = new Map(prev);
+      for (const id of deletedIds) next.delete(id);
+      return next;
+    });
+    setTotalCount((c) => Math.max(0, c - deletedIds.size));
+    const pendingGone = targets.filter((r) => deletedIds.has(r.id) && r.status === "pending").length;
+    if (pendingGone)
+      setPendingCount((c) => (c === null ? c : Math.max(0, c - pendingGone)));
+
+    if (failed) {
+      toast({
+        title: `Deleted ${deletedIds.size}, ${failed} failed`,
+        description: "The rows that failed are still listed and still selected.",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: `Deleted ${deletedIds.size} permanently` });
+  };
+
   // Select every row matching the current filter, across ALL pages — the deliberate
   // second step after page-level selection. Reuses the fetched set when available.
   const selectAllMatching = async () => {
@@ -2332,12 +2423,17 @@ const Moderate = () => {
     });
   };
 
-  // Venue tag toggle — same optimistic-flip + revert pattern as
-  // toggleFeatured. NULL counts as ON (fail-open matches the share flow's
-  // treatment of legacy rows), so flipping FROM null goes to false. Only
-  // stamp_venue moves; row.source is never touched.
+  // Venue tag on/off for ONE confession: writes confessions.stamp_venue, which is
+  // what decides whether the share card prints "AS CHARGED AT <VENUE>" or
+  // "LOCATION WITHHELD". Same optimistic-flip + revert pattern as toggleFeatured.
+  //
+  // It does NOT touch row.source. source drives the venue counts, the venue wall
+  // and the venue report — hiding a name must never cost the attribution behind it.
+  //
+  // NULL counts as ON: rows written before the column existed have null and print
+  // the venue today, so the first click on those must turn the tag OFF, not on.
   const toggleStampVenue = async (row: Confession) => {
-    const next = row.stamp_venue === false;
+    const next = row.stamp_venue === false; // null/true -> false, false -> true
     setBusyId(row.id);
     setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, stamp_venue: next } : r)));
     const { error } = await rpc("admin_set_stamp_venue", { target_id: row.id, value: next });
@@ -2351,7 +2447,7 @@ const Moderate = () => {
     }
     toast({
       title: next ? "Venue tag on" : "Venue tag off",
-      description: `#${row.subject_number}`,
+      description: `#${row.subject_number} — ${next ? venueDisplayName("", row.source) || row.source : "LOCATION WITHHELD"}`,
     });
   };
 
@@ -3702,6 +3798,23 @@ const Moderate = () => {
                 </Button>
               )}
               <ReelBulkAction rows={Array.from(selected.values())} />
+              {/* Bulk delete: REJECTED TAB ONLY, and the quietest control in the
+                  bar — plain underlined text, no button chrome, same treatment as
+                  the per-row Delete. Everything else here is reversible; this is
+                  the one that isn't, so it must not look like its neighbours. */}
+              {tab === "rejected" ? (
+                <button
+                  type="button"
+                  disabled={bulkBusy || deleteBusy || bulkDeleteTargets.length === 0}
+                  onClick={() => {
+                    setBulkDeleteInput("");
+                    setConfirmBulkDelete(true);
+                  }}
+                  className="text-[11px] text-muted-foreground/70 hover:text-destructive transition-colors underline underline-offset-2 disabled:opacity-50"
+                >
+                  Delete {bulkDeleteTargets.length} permanently
+                </button>
+              ) : null}
               <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected(new Map())}>
                 Clear
               </Button>
@@ -3751,6 +3864,73 @@ const Moderate = () => {
                   }}
                 >
                   {confirmBulk?.label}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* BULK hard-delete confirmation. Deliberately harder to clear than any
+              other dialog in the console: the action stays disabled until the
+              exact row count is typed. Every other bulk action here is undoable
+              for a few seconds; this one has nothing behind it. The typed count
+              is what stops "select all 228 matching" being purged by reflex. */}
+          <AlertDialog
+            open={confirmBulkDelete}
+            onOpenChange={(o) => {
+              if (!o && !deleteBusy) {
+                setConfirmBulkDelete(false);
+                setBulkDeleteInput("");
+              }
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                {/* Every number in this dialog derives from bulkDeleteTargets —
+                    the SAME filtered list the handler deletes — so the count
+                    shown, the count typed, and the count deleted can never
+                    disagree (guard 2's honesty requirement). */}
+                <AlertDialogTitle>
+                  Delete {bulkDeleteTargets.length} confessions permanently?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This can't be undone — there is no restore and no undo toast. Any
+                  share links to these confessions will 404, and the venue counts
+                  will drop. Card images already shared stay cached on Instagram and
+                  Messages for days, so deleting does not remove what's already out
+                  there.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Type <span className="font-mono text-foreground">{bulkDeleteTargets.length}</span>{" "}
+                  to confirm.
+                </p>
+                <Input
+                  value={bulkDeleteInput}
+                  onChange={(e) => setBulkDeleteInput(e.target.value)}
+                  disabled={deleteBusy}
+                  inputMode="numeric"
+                  autoFocus
+                  className="font-mono"
+                />
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleteBusy}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={
+                    deleteBusy || bulkDeleteInput.trim() !== String(bulkDeleteTargets.length)
+                  }
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={(e) => {
+                    // The dialog must NOT auto-close: it stays open showing progress
+                    // while a few hundred sequential deletes run.
+                    e.preventDefault();
+                    bulkDelete();
+                  }}
+                >
+                  {bulkDeleteProgress === null
+                    ? `Delete ${bulkDeleteTargets.length}`
+                    : `Deleting ${bulkDeleteProgress}/${bulkDeleteTargets.length}…`}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -3991,10 +4171,15 @@ const Moderate = () => {
                           >
                             {row.homepage_featured ? "★" : "☆"}
                           </Button>
-                          {/* Venue tag — whether the share card / share page may
-                              name the venue. Only rendered where a venue can
-                              actually be named: a real venue source with a
-                              venues.json display name. NULL counts as ON. */}
+                          {/* Venue tag. KEEPS A WORD rather than an icon: ☆
+                              reads as favourite everywhere, but no glyph means
+                              "print the venue name on the card" — an icon here
+                              would be guessed wrong. Ritual green = the name
+                              prints; muted = LOCATION WITHHELD.
+                              Only rendered when there IS a venue to tag —
+                              source 'direct' (and anything venues.json doesn't
+                              know) has no name to print, so the control would
+                              be a no-op the moderator still has to read past. */}
                           {row.source &&
                           row.source !== "direct" &&
                           venueDisplayName("", row.source) ? (
@@ -4004,16 +4189,14 @@ const Moderate = () => {
                               disabled={busyId === row.id}
                               aria-pressed={row.stamp_venue !== false}
                               title={
-                                row.stamp_venue !== false
-                                  ? `Named as ${venueDisplayName("", row.source)} — click to withhold`
-                                  : "Venue withheld — click to name it"
+                                row.stamp_venue === false
+                                  ? "Venue name hidden (LOCATION WITHHELD) — click to show"
+                                  : `Card prints ${venueDisplayName("", row.source)} — click to hide`
                               }
                               onClick={() => toggleStampVenue(row)}
                               className={cn(
-                                "text-[11px]",
-                                row.stamp_venue !== false
-                                  ? "text-ritual"
-                                  : "text-muted-foreground",
+                                "px-2 text-[11px]",
+                                row.stamp_venue !== false ? "text-ritual" : "text-muted-foreground",
                               )}
                             >
                               Venue
