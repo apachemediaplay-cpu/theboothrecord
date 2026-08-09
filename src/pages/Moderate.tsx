@@ -1404,11 +1404,18 @@ const Moderate = () => {
   // BULK hard delete. This reverses the earlier "single row only, deliberately no
   // bulk delete" rule, and the guards are the reason it's safe to reverse:
   //   1. REJECTED TAB ONLY. Reject is reversible, delete is not — so the workflow
-  //      is reject first, purge second. A bulk delete sitting over 228 pending
-  //      rows next to "select all matching" is one mis-click from losing the record.
-  //   2. TYPE THE COUNT. The confirm dialog requires typing the number of rows,
-  //      so "select all 228 matching" can never be purged by muscle memory.
-  // Neither guard is decoration; remove one and this becomes the most dangerous
+  //      is reject first, purge second. Two layers (see changeTab and the
+  //      guard-2 block at bulkDelete): the UI renders the control on the
+  //      Rejected tab only and disarms selection on tab change; the handler
+  //      REFUSES the whole operation if any selected row isn't rejected —
+  //      never silently deleting a subset.
+  //   2. VISIBLE PAGE ONLY. The handler also refuses any selection reaching
+  //      beyond the visible page, so "select all N matching" (which spans
+  //      pages) can never feed the purge — clearing 12 rejects must never
+  //      delete 200 by accident.
+  //   3. TYPE THE COUNT. The confirm dialog requires typing the number of rows,
+  //      so nothing here can be purged by muscle memory.
+  // No guard is decoration; remove one and this becomes the most dangerous
   // control in the console.
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [bulkDeleteInput, setBulkDeleteInput] = useState("");
@@ -2480,21 +2487,43 @@ const Moderate = () => {
   // Batched 10 at a time so a few hundred rows don't open a few hundred simultaneous
   // connections. Failures are COUNTED, not thrown: a partial delete must leave the
   // list honest about what actually went, so the rows that failed stay on screen.
-  // GUARD 2 of the bulk delete (the guard that actually HOLDS): only rejected
-  // rows are ever deleted, filtered HERE in the handler — guard 1 (per-tab
-  // selection, see changeTab) is the UI guard, and a UI guard can be routed
-  // around; a handler guard can't. The dialog's count and the typed
-  // confirmation derive from this same filtered list, so the number shown is
-  // the number that will actually be deleted.
-  const bulkDeleteTargets = [...selected.values()].filter((r) => r.status === "rejected");
+  // GUARD 2 of the bulk delete (the guard that actually HOLDS): guard 1
+  // (per-tab selection, see changeTab; the control renders on the Rejected
+  // tab only) is the UI layer, and a UI layer can be routed around — this
+  // handler validation can't. Same two-layer shape as admin_delete_prompt_mode
+  // (the UI hides Delete for 'default'; the server refuses it anyway).
+  //
+  // REFUSAL, not filtering: if ANY selected row isn't rejected, or isn't on
+  // the VISIBLE page, the WHOLE operation refuses — a partial delete the
+  // person didn't intend is worse than a refusal. The visible-page rule keeps
+  // "Select all N matching" (which spans pages) out of the purge: someone
+  // clearing 12 rejects must never delete 200 by accident. When valid, the
+  // targets ARE the selection, so the count shown, typed, and deleted can
+  // never disagree.
+  const bulkDeleteEligible = (() => {
+    const rows = [...selected.values()];
+    if (rows.length === 0) return false;
+    const visible = new Set(visibleRows.map((r) => r.id));
+    return rows.every((r) => r.status === "rejected" && visible.has(r.id));
+  })();
+  const bulkDeleteTargets = bulkDeleteEligible ? [...selected.values()] : [];
 
   const bulkDelete = async () => {
-    const targets = [...selected.values()].filter((r) => r.status === "rejected");
     if (deleteBusy) return;
-    if (!targets.length) {
+    const targets = [...selected.values()];
+    const visible = new Set(visibleRows.map((r) => r.id));
+    if (
+      targets.length === 0 ||
+      targets.some((r) => r.status !== "rejected" || !visible.has(r.id))
+    ) {
       setConfirmBulkDelete(false);
       setBulkDeleteInput("");
-      toast({ title: "Nothing rejected in the selection", description: "Only rejected confessions can be bulk-deleted." });
+      toast({
+        title: "Bulk delete refused",
+        description:
+          "Every selected row must be a rejected confession on this page. Nothing was deleted.",
+        variant: "destructive",
+      });
       return;
     }
     setDeleteBusy(true);
@@ -2528,9 +2557,8 @@ const Moderate = () => {
       return next;
     });
     setTotalCount((c) => Math.max(0, c - deletedIds.size));
-    const pendingGone = targets.filter((r) => deletedIds.has(r.id) && r.status === "pending").length;
-    if (pendingGone)
-      setPendingCount((c) => (c === null ? c : Math.max(0, c - pendingGone)));
+    // No pendingCount adjustment: the refusal guard means every deleted row
+    // was rejected — a pending row can never reach this point.
 
     if (failed) {
       toast({
@@ -3960,14 +3988,19 @@ const Moderate = () => {
               {tab === "rejected" ? (
                 <button
                   type="button"
-                  disabled={bulkBusy || deleteBusy || bulkDeleteTargets.length === 0}
+                  disabled={bulkBusy || deleteBusy || !bulkDeleteEligible}
+                  title={
+                    bulkDeleteEligible
+                      ? undefined
+                      : "Only rejected rows on this page can be bulk-deleted — trim the selection."
+                  }
                   onClick={() => {
                     setBulkDeleteInput("");
                     setConfirmBulkDelete(true);
                   }}
                   className="text-[11px] text-muted-foreground/70 hover:text-destructive transition-colors underline underline-offset-2 disabled:opacity-50"
                 >
-                  Delete {bulkDeleteTargets.length} permanently
+                  Delete {selected.size} permanently
                 </button>
               ) : null}
               <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected(new Map())}>
