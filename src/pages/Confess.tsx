@@ -57,6 +57,19 @@ const Confess = () => {
 
   useEffect(() => {
     let cancelled = false;
+    // Prompt-mode routing, decided by SOURCE — synchronously, BEFORE the
+    // config round-trip, so a submit that beats the fetch still carries the
+    // right mode. No source / 'direct' is DTC traffic → mode 'dtc' (its own
+    // prompt_modes row, separable from venues for the first time). Anything
+    // attributed is venue-side → no key until the venue's explicit
+    // prompt_mode (below) upgrades it; a venue with nothing set, an
+    // UNREGISTERED slug (conservative: attributed traffic stays venue-side),
+    // and every failure path all send no mode → 'default'. If the dtc row is
+    // ever deleted, the edge resolver falls to 'default' — degradation,
+    // never failure. Not in handleSubmit's clear list: this key describes
+    // the TRAFFIC, not the confession, and survives repeats like "source".
+    if (source && source !== "direct") sessionStorage.removeItem("promptMode");
+    else sessionStorage.setItem("promptMode", "dtc");
     // One round-trip (get_confess_config): greeting + register + lines. The screen
     // seeded from hardcoded DTC above, so the placeholder is rotating the whole time
     // this is in flight — a failed/slow/empty response just means no swap ever fires.
@@ -74,15 +87,13 @@ const Confess = () => {
       setPrompt(
         resolvePrompt(cfg.headline, cfg.guidance, cfg.defaultHeadline, cfg.defaultGuidance),
       );
-      // Per-venue prompt routing: stash the venue's prompt_mode where
-      // Receiving's submit can read it (component state dies at navigation).
-      // Null CLEARS the key — a venue without an explicit mode, non-venue
-      // traffic, and every failure path all send NO mode, which the edge
-      // function hard-defaults to 'default'. Not in the handleSubmit clear
-      // list: this key describes the VENUE, not the confession, and must
-      // survive repeat confessions the same way "source" does.
+      // Venue traffic only: an explicit venues.prompt_mode upgrades the mode
+      // once the config lands; a venue WITHOUT one keeps no key → 'default'.
+      // (The no-venue 'dtc' decision was already made synchronously above —
+      // it does not wait on this fetch and cfg cannot override it, because
+      // cfg can't tell "no venue row" from "venue with nothing set": both
+      // return all-nulls. The SOURCE is the distinguisher.)
       if (cfg.promptMode) sessionStorage.setItem("promptMode", cfg.promptMode);
-      else sessionStorage.removeItem("promptMode");
     });
     return () => {
       cancelled = true;
