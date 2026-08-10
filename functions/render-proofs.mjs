@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { renderCardPng } from "./src/card.mjs";
-const OUT = "/private/tmp/claude-501/-Users-nara-Desktop-new-confessional/1943fe96-7443-419a-84c4-99b218f3c8e6/scratchpad";
+const OUT = "/private/tmp/claude-501/-Users-nara-Desktop-new-confessional/ddd418e2-d876-4a31-9f24-bea6f4842c24/scratchpad";
 
 const MATCH = {
   confession: "I love expensive soda",

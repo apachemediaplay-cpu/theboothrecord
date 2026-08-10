@@ -304,14 +304,36 @@ const Verdict = () => {
 
     // AS CHARGED — two lines, directly under the wordmark (group 1).
     //   line 1: "AS CHARGED" · line 2: "AT <VENUE>" or "LOCATION WITHHELD".
+    // State Blue NEON on BOTH lines — one stamp, one treatment (two colours
+    // would read as a bug). The OG card (card.mjs) carries the same core and
+    // curve via CSS text-shadow; canvas has ONE shadow per draw, so the
+    // three-layer curve is approximated with three shadow passes and a final
+    // crisp core draw. The glow passes fill with the CORE colour (identical
+    // opaque pixels each pass, so only the halos accumulate) rather than the
+    // off-canvas shadow-offset trick, which some renderers cull.
+    const drawNeonStamp = (text: string, x: number, y: number) => {
+      const layers: [number, string][] = [
+        [2.8, "rgba(52,155,189,0.97)"],
+        [10, "rgba(52,155,189,0.68)"],
+        [26, "rgba(52,155,189,0.47)"],
+      ];
+      ctx.fillStyle = "rgb(120,205,235)"; // core stays brighter than the halo
+      for (const [blur, color] of layers) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = blur;
+        ctx.fillText(text, x, y);
+      }
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.fillText(text, x, y);
+    };
     const chargeLine1 = "AS CHARGED";
     const chargeLine2 = filedVenue ? `AT ${filedVenue}` : "LOCATION WITHHELD";
     const charge1Y = stampTopY + stampH + gapStampToCharge;
     setLS("6px");
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
     ctx.font = "400 30px 'Söhne Mono', monospace";
-    ctx.fillText(chargeLine1, cx, charge1Y);
-    ctx.fillText(chargeLine2, cx, charge1Y + chargeLH);
+    drawNeonStamp(chargeLine1, cx, charge1Y);
+    drawNeonStamp(chargeLine2, cx, charge1Y + chargeLH);
     setLS("0px");
 
     // Group 2 — footer pinned to the bottom: SUBJECT # then @theboothrecord

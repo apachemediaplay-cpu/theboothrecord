@@ -126,9 +126,14 @@ const VerdictShare = () => {
         <p className="font-control font-bold text-[#F4F0EA] text-2xl md:text-3xl leading-tight mb-6">
           {row?.verdict_text}
         </p>
-        {/* Filing line in State Blue — the app's metadata colour, matching the
-            wall's stamps. (The share CARD keeps its own palette — see card.mjs.) */}
-        <p className="text-[hsl(var(--state-blue)/0.75)] text-xs font-mono-light tracking-[0.2em] uppercase">
+        {/* Filing line in State Blue NEON — venue-glow-text, the gate strip's
+            exact static treatment, reused rather than duplicated. Raised from
+            flat 75% deliberately: this is the one screen a cold stranger sees,
+            and the venue name is the thing venues are sold on. One line, on a
+            page with almost nothing else — the same conditions that make the
+            gate's version work. (Contrast the wall's stamps, which stay FLAT —
+            see ConfessionCard.) */}
+        <p className="venue-glow-text text-xs font-mono-light tracking-[0.2em] uppercase">
           {venue ? `As charged at ${venue}` : "Location withheld"}
           {row?.subject_number ? ` · Subject #${row.subject_number}` : ""}
         </p>

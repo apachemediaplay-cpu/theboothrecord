@@ -78,13 +78,21 @@ const ConfessionCard = ({
 
       {/* Filing stamp — CLOSES the record, beneath the verdict, in State Blue:
           the State's apparatus filed this; it is not the Booth's voice and not
-          the confessor's. "#1121 · 4 MIN AGO". */}
+          the confessor's. "#1121 · 4 MIN AGO".
+          FULL-STRENGTH but FLAT — no glow, deliberately, while the gate strip
+          and the share page's filing line are neon (venue-glow-text). There
+          are forty of these on a scrolling page, one under every verdict:
+          neon here would be forty light sources competing with the verdicts
+          they belong to. The stamps are filing marks — the least important
+          thing in each record — and glow would make them the most visually
+          active. Flat at 100% gets the presence without the competition. Do
+          not "make this consistent" with the neon ones. */}
       <div className="mt-3.5 flex items-center gap-3">
-        <span className="text-[hsl(var(--state-blue)/0.65)] text-[8px] tracking-[0.22em] uppercase font-mono-light">
+        <span className="text-[hsl(var(--state-blue))] text-[8px] tracking-[0.22em] uppercase font-mono-light">
           {entry.confessorId}
         </span>
-        <span className="text-[hsl(var(--state-blue)/0.65)] text-[8px]">·</span>
-        <span className="text-[hsl(var(--state-blue)/0.65)] text-[8px] tracking-[0.22em] uppercase font-mono-light">
+        <span className="text-[hsl(var(--state-blue))] text-[8px]">·</span>
+        <span className="text-[hsl(var(--state-blue))] text-[8px] tracking-[0.22em] uppercase font-mono-light">
           {displayTime}
         </span>
       </div>

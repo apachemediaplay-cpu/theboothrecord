@@ -89,11 +89,19 @@ function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri 
     } }, [
       h("img", { key: "wm", src: wordmarkDataUri, width: 560, height: 188,
         style: { transform: "rotate(-10deg)" } }),
+      // AS CHARGED stamp in State Blue NEON — BOTH lines, one treatment (a
+      // two-line stamp in two colours reads as a bug). Same core + curve as
+      // the app's venue-glow-text; the canvas story card mirrors this with
+      // layered shadow passes (see Verdict.tsx drawNeonStamp).
       h("div", { key: "c1", style: {
-        marginTop: 64, fontSize: 30, letterSpacing: 6, color: "rgba(255,255,255,0.6)",
+        marginTop: 64, fontSize: 30, letterSpacing: 6, color: "rgb(120,205,235)",
+        textShadow:
+          "0 0 2.8px rgba(52,155,189,0.97), 0 0 10px rgba(52,155,189,0.68), 0 0 26px rgba(52,155,189,0.47)",
       } }, "AS CHARGED"),
       h("div", { key: "c2", style: {
-        marginTop: 12, fontSize: 30, letterSpacing: 6, color: "rgba(255,255,255,0.6)",
+        marginTop: 12, fontSize: 30, letterSpacing: 6, color: "rgb(120,205,235)",
+        textShadow:
+          "0 0 2.8px rgba(52,155,189,0.97), 0 0 10px rgba(52,155,189,0.68), 0 0 26px rgba(52,155,189,0.47)",
       } }, chargeLine2),
     ]),
     // Footer
@@ -103,9 +111,11 @@ function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri 
       subjectNumber ? h("div", { key: "sn", style: {
         fontSize: 24, letterSpacing: 4, color: "rgba(255,255,255,0.28)", marginBottom: 34,
       } }, `SUBJECT #${subjectNumber}`) : null,
-      // NOTE: State Blue (hsl 197 57% 47%) is the APP's metadata colour — the
-      // wall stamps and the share page's filing line use it. The CARD deliberately
-      // keeps its own white-alpha palette; do not "fix" it for consistency.
+      // NOTE: the card keeps its own white-alpha palette with ONE deliberate
+      // exception — the AS CHARGED stamp above is State Blue neon. The stamp
+      // is what the venue is sold on, and it receded too far in white for a
+      // venue looking at their own card to feel seen. Everything else here
+      // (SUBJECT #, handle, URL) STAYS white — do not extend the blue.
       // Handle and URL are near-repetition on purpose: the handle goes to
       // Instagram, the URL goes to the Booth — different destinations.
       h("div", { key: "hg", style: {
