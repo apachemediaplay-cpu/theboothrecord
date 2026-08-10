@@ -134,9 +134,17 @@ const VerdictShare = () => {
         </p>
       </div>
 
-      {/* Hairline rule — same treatment as the Verdict screen — separating the record
-          above (left-aligned) from the actions below (centred). */}
-      <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-3">
+      {/* NO divider rule above this block — REMOVED, deliberately, matching both
+          Verdict states (the notfound state above never had one). This page
+          doesn't scroll: the large gap, the Control→mono switch, and the
+          left-record/centred-actions change already separate record from
+          actions — a fourth signal was furniture. Checked before removal:
+          the State Blue filing line stays glued to the verdict (24px above,
+          ~300px+ to the actions, opposite alignment) and does NOT read as
+          part of the action block. The wall's rule STAYS: a scrolling feed
+          meeting a pinned bar is a real boundary — don't remove it for
+          consistency. pt-6 kept: the separation was always the gap's job. */}
+      <div className="shrink-0 w-full pt-6 flex flex-col items-center gap-3">
         {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
             hairline (muted-foreground/40, the divider's own rule),
             transparent — the glow is the only colour in the box. The

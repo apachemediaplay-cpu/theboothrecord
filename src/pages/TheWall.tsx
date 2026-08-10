@@ -311,6 +311,12 @@ const TheWall = () => {
       {/* Solid bar + a gradient feather above it: records fade out into background
           rather than colliding with the button's edge. Content shares the records
           column's 680px frame — one axis. */}
+      {/* The border-t rule here is DELIBERATELY KEPT while the verdict screens
+          (Verdict both states, VerdictShare found) dropped theirs: this one
+          marks where a SCROLLING feed meets a pinned bar — a real boundary
+          that moves under the content. The verdict screens are static, where
+          gap + type change + alignment already do the separating. Do not
+          remove this rule for consistency with them. */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-border/30 bg-background pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {/* Tight fade — 16px: content stays legible until it is close to the
             button; the feather only kills the hard collision at the bar's edge. */}

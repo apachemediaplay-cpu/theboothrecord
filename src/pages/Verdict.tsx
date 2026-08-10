@@ -528,9 +528,16 @@ const Verdict = () => {
         </div>
       </div>
 
-      {/* Hairline rule — same treatment as the confess input rule — separating the
-          record above (left-aligned) from the actions below (centred). */}
-      <div className="shrink-0 w-full border-t border-muted-foreground/40 pt-6 flex flex-col items-center gap-6">
+      {/* NO divider rule above this block — REMOVED, deliberately, from all three
+          static verdict screens (both states here + VerdictShare found). This
+          page doesn't scroll: three signals already separate the record from
+          the actions — the large gap, the switch from Control to mono, and
+          the change from left-aligned record to centred actions — and a
+          fourth saying the same thing was furniture. The wall's rule STAYS:
+          there it marks where a scrolling feed meets a pinned bar, a real
+          boundary — don't remove that one for consistency. The pt-6 is kept:
+          it was always the breathing room; the rule only underlined it. */}
+      <div className="shrink-0 w-full pt-6 flex flex-col items-center gap-6">
         {/* Feature 2 — email capture (currently gated OFF via ENABLE_EMAIL_CAPTURE) */}
         {ENABLE_EMAIL_CAPTURE &&
           (claimState === "claimed" ? (
