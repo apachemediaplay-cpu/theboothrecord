@@ -701,3 +701,23 @@
     animation: none;
   }
 }
+
+/* ── VENUE glow (State Blue, the gate's AT <VENUE> location strip) ──
+   STATIC BY DESIGN — no animation, no keyframes. Everything that animates
+   in this app means live or active (the primary-label glows, the record
+   pulse), and a venue name is neither: it's metadata. That is also why
+   there is NO prefers-reduced-motion gate — nothing moves, so there is
+   nothing to gate; do not add one.
+   The core text colour rgb(76,182,216) is one step brighter than State
+   Blue (--state-blue, #349BBD), which supplies the halo — the core MUST
+   stay brighter than the halo or the strip reads as blur rather than
+   light. Radii sit at the button glows' trough (2/6/14) and never rise:
+   those curves were built for a label; this is metadata that shouldn't
+   compete with the headline. */
+.venue-glow-text {
+  color: rgb(76, 182, 216);
+  text-shadow:
+    0 0 2px rgba(52, 155, 189, 0.7),
+    0 0 6px rgba(52, 155, 189, 0.45),
+    0 0 14px rgba(52, 155, 189, 0.25);
+}

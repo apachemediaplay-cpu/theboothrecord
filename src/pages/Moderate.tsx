@@ -146,7 +146,15 @@ const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key;
 // Venue register (venues.register): which /confess placeholder set the venue shows.
 // "default" is the UI stand-in for null (Radix Select can't hold an empty value);
 // it maps back to null on write → the DTC set.
-const REGISTER_OPTIONS = [
+//
+// This hardcoded list is the BUILT-INS only. Registers are console-creatable
+// (Placeholder sets panel → admin_create_register), so every picker renders
+// the dynamic registerOptions computed in the component — built-ins first,
+// then custom keys from the registers fetch. A register created in the panel
+// appears in the venue pickers AND Direct's without a second change, because
+// they all read that one list.
+type RegisterOption = { value: string; label: string };
+const REGISTER_OPTIONS: readonly RegisterOption[] = [
   { value: "default", label: "Default (DTC)" },
   { value: "social", label: "Social" },
   { value: "intimate", label: "Intimate" },
@@ -154,14 +162,17 @@ const REGISTER_OPTIONS = [
   { value: "greed", label: "Greed" },
   { value: "vanity", label: "Vanity" },
   { value: "appetite", label: "Appetite" },
-] as const;
+];
 const registerLabel = (value: string) =>
   REGISTER_OPTIONS.find((o) => o.value === value)?.label ?? value;
 
-// The four editable placeholder sets (public.registers keys). 'dtc' is the default
-// set — what venues.register null resolves to — and is never itself a
-// venues.register value. Content rules mirrored from admin_set_register_lines,
-// plus the six-line rule so rotation pacing never drifts between sets.
+// The BUILT-IN placeholder sets (public.registers keys with hardcoded twins in
+// src/lib/registers.ts). 'dtc' is the default set — what venues.register null
+// resolves to — and is never itself a venues.register value. Content rules
+// mirrored from admin_set_register_lines, plus the six-line rule so rotation
+// pacing never drifts between sets. The panel renders these plus every custom
+// key found in the registers fetch; these seven can never be deleted (they're
+// the fail-safe set, referenced in code — the RPC refuses them too).
 const REGISTER_SET_META = [
   { key: "dtc", label: "Default (DTC)" },
   { key: "social", label: "Social" },
@@ -171,6 +182,12 @@ const REGISTER_SET_META = [
   { key: "vanity", label: "Vanity" },
   { key: "appetite", label: "Appetite" },
 ] as const;
+const BUILTIN_REGISTERS = REGISTER_SET_META.map((m) => m.key as string);
+
+// Register NAME rule (client mirror of admin_create_register): the name is a
+// key — lowercase letters and digits only, starts with a letter, 2–40 chars.
+// 'default' is reserved (the pickers use it as the stand-in for null above).
+const REGISTER_NAME_RE = /^[a-z][a-z0-9]{1,39}$/;
 
 // Register row as fetched from public.registers: the six lines plus the DB-owned
 // description (surfaced under the register label in the dropdowns and the sets
@@ -452,6 +469,7 @@ const DirectChannelRow = ({
   onPromptMode,
   onRegister,
   registerDesc,
+  registerOptions,
   linesFor,
   onRetry,
 }: {
@@ -465,6 +483,9 @@ const DirectChannelRow = ({
   onPromptMode: (value: string | null) => void;
   onRegister: (value: string) => void;
   registerDesc?: (value: string) => string | null;
+  // Built-ins + console-created registers — the one dynamic list every
+  // register picker shares (see REGISTER_OPTIONS).
+  registerOptions: readonly RegisterOption[];
   linesFor: (register: string) => string[];
   onRetry: () => void;
 }) => {
@@ -550,7 +571,7 @@ const DirectChannelRow = ({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {REGISTER_OPTIONS.map((o) => (
+                        {registerOptions.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
                             <div>
                               {o.label}
@@ -620,6 +641,7 @@ const VenueOverviewRow = ({
   onCopyReport,
   onDelete,
   registerDesc,
+  registerOptions,
   promptModes,
   onPromptMode,
   onRename,
@@ -641,6 +663,7 @@ const VenueOverviewRow = ({
   onCopyReport: () => Promise<void>;
   onDelete: () => void;
   registerDesc?: (value: string) => string | null;
+  registerOptions: readonly RegisterOption[];
   // prompt_modes rows: undefined = loading, null = failed (dropdown disabled —
   // an empty list would look like there are no modes).
   promptModes: { mode: string; version: string }[] | null | undefined;
@@ -812,7 +835,7 @@ const VenueOverviewRow = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {REGISTER_OPTIONS.map((o) => (
+                      {registerOptions.map((o) => (
                         <SelectItem key={o.value} value={o.value}>
                           <div>
                             {o.label}
@@ -1037,9 +1060,11 @@ const AddVenueForm = ({
   onAdd,
   onClose,
   registerDesc,
+  registerOptions,
 }: {
   takenSlugs: Set<string>;
   registerDesc?: (value: string) => string | null;
+  registerOptions: readonly RegisterOption[];
   onAdd: (v: {
     source: string;
     displayName: string;
@@ -1112,7 +1137,7 @@ const AddVenueForm = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {REGISTER_OPTIONS.map((o) => (
+              {registerOptions.map((o) => (
                 <SelectItem key={o.value} value={o.value}>
                   <div>
                     {o.label}
@@ -1370,15 +1395,31 @@ const AddPromptModeRow = ({
 const RegisterSetEditor = ({
   label,
   description,
+  usage,
   initial,
   busy,
   onSave,
+  onDelete,
+  deleteBlocked,
 }: {
   label: string;
   description?: string | null;
+  // Usage in plain words ("used by 2 venues" / "used by direct" / "not in
+  // use") — derived client-side from the venue list + site_copy.register,
+  // same convention as the Prompt modes captions. Null = reads unresolved →
+  // no line, never fake zeros.
+  usage?: string | null;
   initial: string[];
   busy: boolean;
   onSave: (lines: string[]) => void;
+  // Delete, custom registers only — ABSENT for the seven built-ins, which can
+  // never be deleted at all (fail-safe set, referenced in code; the RPC
+  // refuses them independently of this UI).
+  onDelete?: () => void;
+  // Non-null = the delete control renders DISABLED with this reason (register
+  // in use, or usage not yet resolved). Deleting an in-use register would
+  // silently drop its venues to the DTC fallback.
+  deleteBlocked?: string | null;
 }) => {
   const [lines, setLines] = useState<string[]>(() => {
     const seeded = initial.slice(0, REGISTER_SET_LINES);
@@ -1395,6 +1436,9 @@ const RegisterSetEditor = ({
         {/* DB-owned description — a reminder of the intended room, not a heading. */}
         {description ? (
           <p className="text-[11px] text-muted-foreground">{description}</p>
+        ) : null}
+        {usage ? (
+          <p className="text-[10px] text-muted-foreground/70">{usage}</p>
         ) : null}
       </div>
       {lines.map((line, i) => (
@@ -1422,6 +1466,161 @@ const RegisterSetEditor = ({
           {busy ? "Saving…" : "Save"}
         </Button>
         {!valid ? (
+          <span className="text-[11px] text-destructive">six non-blank lines required</span>
+        ) : null}
+        {onDelete ? (
+          deleteBlocked ? (
+            <span className="ml-auto text-[11px] text-muted-foreground/70">
+              can't delete — {deleteBlocked}
+            </span>
+          ) : (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className="ml-auto text-[11px] text-destructive/80 underline underline-offset-2 transition-colors hover:text-destructive"
+                >
+                  Delete
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete register {label}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Its six lines are gone for good. The server refuses if any venue or
+                    the Direct channel still uses it.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={onDelete}
+                  >
+                    Delete {label}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+// Add-register form: a new placeholder set from the console without a
+// migration. Client mirror of admin_create_register's checks (name shape,
+// taken, description required, exactly six lines ≤80 chars); the server
+// re-validates everything.
+//
+// A register is NOT owned by a venue. Any venue can point at any register,
+// including one created mid-pitch for a specific room — a "frenchie" register
+// is shared vocabulary the moment it exists, and nothing scopes it to
+// Frenchie. Name registers for the ROOM TYPE they describe.
+const AddRegisterForm = ({
+  taken,
+  busy,
+  onAdd,
+}: {
+  taken: string[];
+  busy: boolean;
+  onAdd: (register: string, description: string, lines: string[]) => Promise<boolean>;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [lines, setLines] = useState<string[]>(() => Array(REGISTER_SET_LINES).fill(""));
+  const key = name.trim().toLowerCase();
+  const nameTaken = taken.includes(key);
+  const nameValid = REGISTER_NAME_RE.test(key) && key !== "default" && !nameTaken;
+  const trimmed = lines.map((l) => l.trim());
+  const linesValid = trimmed.every((l) => l !== "" && l.length <= REGISTER_LINE_MAX);
+  const valid = nameValid && description.trim() !== "" && linesValid;
+  if (!open) {
+    return (
+      <div className="py-3">
+        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+          Add register
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2 py-3">
+      <p className="text-sm font-semibold">New register</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Name — lowercase letters and numbers only, no spaces">
+          <Input
+            value={name}
+            maxLength={40}
+            placeholder="e.g. lobby"
+            onChange={(e) => setName(e.target.value.toLowerCase())}
+            className="h-8 text-xs"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {key !== "" && !nameValid ? (
+            <span className="block pt-1 text-[11px] text-destructive">
+              {nameTaken
+                ? "already exists"
+                : key === "default"
+                  ? "'default' is reserved"
+                  : "lowercase letters and numbers only, 2–40 chars"}
+            </span>
+          ) : null}
+        </Field>
+        <Field label="Description — what room is this for">
+          <Input
+            value={description}
+            maxLength={120}
+            placeholder="e.g. Hotel lobbies. Waiting, watching, passing through."
+            onChange={(e) => setDescription(e.target.value)}
+            className="h-8 text-xs"
+          />
+        </Field>
+      </div>
+      {lines.map((line, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <Input
+            value={line}
+            maxLength={REGISTER_LINE_MAX}
+            placeholder={`line ${i + 1}`}
+            onChange={(e) =>
+              setLines((cur) => cur.map((l, j) => (j === i ? e.target.value : l)))
+            }
+            className="h-8 w-full text-xs"
+          />
+          <span
+            className={cn(
+              "w-12 shrink-0 text-right text-[11px] tabular-nums",
+              line.trim() === "" ? "text-destructive" : "text-muted-foreground",
+            )}
+          >
+            {line.trim() === "" ? "blank" : `${line.trim().length}/${REGISTER_LINE_MAX}`}
+          </span>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 pt-1">
+        <Button
+          size="sm"
+          disabled={!valid || busy}
+          onClick={async () => {
+            if (await onAdd(key, description.trim(), trimmed)) {
+              setName("");
+              setDescription("");
+              setLines(Array(REGISTER_SET_LINES).fill(""));
+              setOpen(false);
+            }
+          }}
+        >
+          {busy ? "Adding…" : "Add register"}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+        {!linesValid ? (
           <span className="text-[11px] text-destructive">six non-blank lines required</span>
         ) : null}
       </div>
@@ -2073,6 +2272,34 @@ const Moderate = () => {
   // render label-only until it lands.
   const registerDesc = (value: string): string | null =>
     registerSets?.get(value === "default" ? "dtc" : value)?.description ?? null;
+
+  // The one dynamic register list every picker shares: built-ins (stable order,
+  // renderable before the fetch lands) + console-created keys from the registers
+  // fetch, sorted, labelled by their raw key. A register created in the panel
+  // shows up in the venue pickers and Direct's without a second change.
+  const registerOptions = useMemo<readonly RegisterOption[]>(() => {
+    if (!registerSets) return REGISTER_OPTIONS;
+    const extras = [...registerSets.keys()]
+      .filter((k) => k !== "dtc" && !REGISTER_OPTIONS.some((o) => o.value === k))
+      .sort()
+      .map((k) => ({ value: k, label: k }));
+    return [...REGISTER_OPTIONS, ...extras];
+  }, [registerSets]);
+
+  // Per-register usage caption, same convention as promptModeCaption: WHO uses
+  // this set, derived client-side from venuesRows + site_copy.register — no new
+  // query. 'dtc' counts null assignments (null means dtc on both venue and
+  // Direct). Null = the reads haven't resolved → no caption, never fake zeros.
+  const registerUsageCaption = (key: string): string | null => {
+    if (!venuesRows || siteCopy === undefined) return null;
+    const venues = venuesRows.filter((v) => (v.register ?? "dtc") === key).length;
+    const direct = siteCopy !== null && (siteCopy.register ?? "dtc") === key;
+    if (venues === 0 && !direct) return "not in use";
+    const venuePart = venues > 0 ? `${venues} venue${venues === 1 ? "" : "s"}` : "";
+    if (venues > 0 && direct) return `used by ${venuePart} + direct`;
+    if (direct) return "used by direct";
+    return `used by ${venuePart}`;
+  };
 
   // Direct-channel read (site_copy) — venues tab only, same Retry tick.
   // site_copy is public-read (the confess screen resolves the same row via
@@ -3094,6 +3321,66 @@ const Moderate = () => {
     });
   };
 
+  // Create a register via admin_create_register. NOT optimistic — the new set
+  // is immediately offerable to venues, so it enters local state only after
+  // the server confirms. "__add__" reuses the busy slot, same convention as
+  // the prompt-modes add row.
+  const createRegister = async (
+    register: string,
+    description: string,
+    lines: string[],
+  ): Promise<boolean> => {
+    setRegisterSetBusy("__add__");
+    const { error } = await rpc("admin_create_register", {
+      _register: register,
+      _description: description,
+      _lines: lines,
+    });
+    setRegisterSetBusy(null);
+    if (error) {
+      toast({
+        title: "Couldn't create register",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+    setRegisterSets((prev) => {
+      const next = new Map(prev ?? []);
+      next.set(register, { lines, description });
+      return next;
+    });
+    toast({
+      title: "Register created",
+      description: `${register} — now offered in every register picker.`,
+    });
+    return true;
+  };
+
+  // Delete a register via admin_delete_register. The UI only offers this on a
+  // custom register showing "not in use", but the server re-checks everything
+  // (built-in, venue use, Direct use) — a stale venue list must not slip a
+  // deletion through, so the RPC error is surfaced verbatim.
+  const deleteRegister = async (register: string) => {
+    setRegisterSetBusy(register);
+    const { error } = await rpc("admin_delete_register", { _register: register });
+    setRegisterSetBusy(null);
+    if (error) {
+      toast({
+        title: "Couldn't delete register",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    setRegisterSets((prev) => {
+      const next = new Map(prev ?? []);
+      next.delete(register);
+      return next;
+    });
+    toast({ title: "Register deleted", description: register });
+  };
+
   // Delete a venue via admin_delete_venue. NOT optimistic — the destructive action
   // removes the row only after the server confirms. The RPC refuses venues with real
   // (non-test) confessions; that error surfaces in the toast and the row stays.
@@ -3610,6 +3897,7 @@ const Moderate = () => {
                       onPromptMode={saveDirectPromptMode}
                       onRegister={saveDirectRegister}
                       registerDesc={registerDesc}
+                      registerOptions={registerOptions}
                       linesFor={linesForRegister}
                       onRetry={() => setRefreshTick((t) => t + 1)}
                     />
@@ -3624,6 +3912,7 @@ const Moderate = () => {
                       <VenueOverviewRow
                         key={row.source}
                         registerDesc={registerDesc}
+                        registerOptions={registerOptions}
                         row={row}
                         scans={venueStats?.scans ? (venueStats.scans.get(row.source) ?? 0) : null}
                         approved={
@@ -3661,6 +3950,7 @@ const Moderate = () => {
                   <AddVenueForm
                     takenSlugs={takenSlugs}
                     registerDesc={registerDesc}
+                    registerOptions={registerOptions}
                     onAdd={addVenue}
                     onClose={() => setAddOpen(false)}
                   />
@@ -3706,20 +3996,54 @@ const Moderate = () => {
                     The rotating /confess example lines per register. Exactly six lines, max{" "}
                     {REGISTER_LINE_MAX} chars each. Saves go live on the next confess-screen
                     load; if this table is ever unreachable the app falls back to its built-in
-                    copies.
+                    copies. Registers are room types shared by every venue — a register
+                    created for one pitch is offered to all of them.
                   </p>
                   <div className="divide-y divide-border">
-                    {REGISTER_SET_META.map(({ key, label }) => (
-                      <RegisterSetEditor
-                        key={`${key}:${(registerSets.get(key)?.lines ?? []).join("\n")}`}
-                        label={label}
-                        description={registerSets.get(key)?.description ?? null}
-                        initial={registerSets.get(key)?.lines ?? []}
-                        busy={registerSetBusy === key}
-                        onSave={(lines) => saveRegisterSet(key, label, lines)}
-                      />
-                    ))}
+                    {/* Built-ins in their fixed order, then console-created
+                        registers sorted by key. Custom rows get the delete
+                        control (built-ins never do) and everything gets the
+                        usage caption. */}
+                    {[
+                      ...REGISTER_SET_META.map(({ key, label }) => ({
+                        key: key as string,
+                        label: label as string,
+                        builtin: true,
+                      })),
+                      ...[...registerSets.keys()]
+                        .filter((k) => !BUILTIN_REGISTERS.includes(k))
+                        .sort()
+                        .map((k) => ({ key: k, label: k, builtin: false })),
+                    ].map(({ key, label, builtin }) => {
+                      const usage = registerUsageCaption(key);
+                      return (
+                        <RegisterSetEditor
+                          key={`${key}:${(registerSets.get(key)?.lines ?? []).join("\n")}`}
+                          label={label}
+                          description={registerSets.get(key)?.description ?? null}
+                          usage={usage}
+                          initial={registerSets.get(key)?.lines ?? []}
+                          busy={registerSetBusy === key}
+                          onSave={(lines) => saveRegisterSet(key, label, lines)}
+                          onDelete={builtin ? undefined : () => deleteRegister(key)}
+                          deleteBlocked={
+                            builtin
+                              ? null
+                              : usage === null
+                                ? "usage still loading"
+                                : usage !== "not in use"
+                                  ? usage
+                                  : null
+                          }
+                        />
+                      );
+                    })}
                   </div>
+                  <AddRegisterForm
+                    taken={[...registerSets.keys()]}
+                    busy={registerSetBusy === "__add__"}
+                    onAdd={createRegister}
+                  />
                 </>
               )}
             </div>
@@ -3877,7 +4201,7 @@ const Moderate = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {REGISTER_OPTIONS.map((o) => (
+                    {registerOptions.map((o) => (
                       <SelectItem key={o.value} value={o.value}>
                         <div>
                           {o.label}

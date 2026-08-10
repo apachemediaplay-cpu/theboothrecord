@@ -7,6 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 // DTC is the default AND the fail-safe: no source, unknown source, unknown register,
 // or a failed venues lookup all resolve to DTC. Never an error, never an empty set.
 
+// The BUILT-IN registers — the fail-safe set with hardcoded lines below. This
+// union is deliberately NOT the universe of register names: registers are
+// console-creatable (admin_create_register) and every boundary that carries a
+// register name types it as a plain string. The union's one job is the
+// Record<Register, string[]> on SETS — the compiler proves every built-in has
+// a hardcoded fail-safe array. Do not widen it to string (that check would go
+// silent) and do not add a name here without adding its set.
 export type Register = "social" | "intimate" | "edgy" | "greed" | "vanity" | "appetite";
 
 const DTC: string[] = [
@@ -82,7 +89,12 @@ const SETS: Record<Register, string[]> = {
 };
 
 // null / undefined / anything unrecognised → DTC. The one resolution path every
-// caller goes through, so the fail-safe can't be bypassed.
+// caller goes through, so the fail-safe can't be bypassed. "Unrecognised"
+// includes every console-created register: they have no hardcoded twin, so if
+// the DB lines are unavailable they land on DTC — acceptable because the only
+// way a LIVE custom register's lines can be missing while its assignment is
+// readable is a deleted row, and admin_delete_register plus the venues/
+// site_copy foreign keys forbid deleting a register in use.
 export function getPlaceholderLines(register?: string | null): string[] {
   const r = (register || "").trim().toLowerCase();
   return SETS[r as Register] ?? DTC;
