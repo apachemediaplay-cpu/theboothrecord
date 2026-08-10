@@ -177,6 +177,19 @@ const Verdict = () => {
     return lines;
   };
 
+  // TWO RENDERERS, ONE CARD: this canvas renderer (POST TO STORY, drawn
+  // client-side) and functions/src/card.mjs (the /v/ link's OG image, rendered
+  // server-side) draw the same card independently — a change to one needs the
+  // same change in the other, or they drift. They have drifted twice already
+  // (footer handle, both times). The footers are now ALIGNED — handle over
+  // theboothrecord.com, one step dimmer — and must stay so: this card is the
+  // MORE untappable of the two (it lands in an Instagram Story with no link,
+  // no preview, no way to act on it — the address is the only route back;
+  // the OG card at least sits on a link someone has already tapped).
+  // Aligned means CONTENT AND TREATMENT, not position: this footer rides
+  // ~160px higher than the OG card's, clear of Instagram's bottom-250px
+  // story safe zone (see the footer note below). The OG card is a link
+  // preview with no safe zone — do not raise it to match.
   const generateShareCard = async (filedVenue: string): Promise<Blob> => {
     const W = 1080;
     const H = 1920;
@@ -253,7 +266,8 @@ const Verdict = () => {
     // ── Lower composition: TWO GROUPS ──
     // Group 1 (centred): GUILTY wordmark + AS CHARGED stamp, centred in the space below
     //   the verdict so the larger wordmark breathes.
-    // Group 2 (footer, pinned to the bottom): SUBJECT # + @houseofguilty.
+    // Group 2 (footer, pinned to the bottom): SUBJECT # + @theboothrecord +
+    //   theboothrecord.com.
     const img = await loadImage(guiltyWordmark);
     const stampW = 560;
     const ratio = img.height && img.width ? img.height / img.width : 335.5 / 1000;
@@ -263,10 +277,20 @@ const Verdict = () => {
     const chargeLH = 44;
     const groupH = stampH + gapStampToCharge + chargeLH; // wordmark + AS CHARGED (2 lines)
 
-    // Centre group 1 between the verdict and the pinned footer.
+    // Centre group 1 between the verdict and the pinned footer. The group's
+    // BOTTOM is clamped to regionBottom: when long text shrinks the region
+    // below groupH, overflow spills UPWARD into the verdict gap, never
+    // downward into the footer — if something has to give, it should be
+    // whitespace between two readable things, not two lines of text printing
+    // over each other. A cramped card is legible; an overlapping one isn't.
+    // (Without the clamp, a 140-char confession + a ~140-char verdict printed
+    // LOCATION WITHHELD through SUBJECT #.)
     const regionTop = y + 70;
-    const regionBottom = H - 220; // leave room for the bottom-pinned footer
-    const stampTopY = regionTop + Math.max(0, (regionBottom - regionTop - groupH) / 2);
+    const regionBottom = H - 420; // leave room for the bottom-pinned footer (3 lines)
+    const stampTopY = Math.min(
+      regionTop + Math.max(0, (regionBottom - regionTop - groupH) / 2),
+      regionBottom - groupH
+    );
 
     const cx = W / 2;
     const cy = stampTopY + stampH / 2;
@@ -290,18 +314,32 @@ const Verdict = () => {
     ctx.fillText(chargeLine2, cx, charge1Y + chargeLH);
     setLS("0px");
 
-    // Group 2 — footer pinned to the bottom: SUBJECT # then @houseofguilty.
+    // Group 2 — footer pinned to the bottom: SUBJECT # then @theboothrecord
+    // then theboothrecord.com. The footer sits ABOVE Instagram's bottom safe
+    // zone — Meta reserves the bottom 250px of a 1080×1920 story (from y=1670)
+    // for the reply box / send / swipe UI, and the handle and address are the
+    // only things telling a viewer where the card came from. Lowest ink lands
+    // at ~1649 (address baseline H - 270), 20px above the band. This is a
+    // DELIBERATE geometry difference from the OG card, which is a link
+    // preview with no safe zone — the pair-note's "aligned" means content and
+    // treatment, not position. Do not push this footer back down.
     if (subjectNumber) {
       setLS("4px");
       ctx.fillStyle = "rgba(255,255,255,0.28)";
       ctx.font = "400 24px 'Söhne Mono', monospace";
-      ctx.fillText(`SUBJECT #${subjectNumber}`, cx, H - 170);
+      ctx.fillText(`SUBJECT #${subjectNumber}`, cx, H - 370);
       setLS("0px");
     }
 
     ctx.fillStyle = "rgba(255,255,255,0.4)";
     ctx.font = "400 28px 'Söhne Mono', monospace";
-    ctx.fillText("@houseofguilty", cx, H - 110);
+    ctx.fillText("@theboothrecord", cx, H - 310);
+
+    // theboothrecord.com — one step dimmer than the handle (the SUBJECT #
+    // alpha), the OG card's treatment. Handle and URL are near-repetition on
+    // purpose: the handle goes to Instagram, the URL goes to the Booth.
+    ctx.fillStyle = "rgba(255,255,255,0.28)";
+    ctx.fillText("theboothrecord.com", cx, H - 270);
     ctx.textAlign = "left";
 
     return await new Promise<Blob>((resolve, reject) => {

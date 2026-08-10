@@ -45,6 +45,15 @@ function confessionSize(text) {
   return text.length <= 120 ? 42 : 36;
 }
 
+// TWO RENDERERS, ONE CARD: this server-side OG renderer and the client-side
+// canvas renderer in src/pages/Verdict.tsx (generateShareCard, POST TO STORY)
+// draw the same card independently — a change to one needs the same change in
+// the other, or they drift. They have drifted twice already (footer handle,
+// both times). The footers are now ALIGNED — handle over theboothrecord.com,
+// one step dimmer — and must stay so: the story card is the MORE untappable
+// of the two (it lands in an Instagram Story with no link, no preview, no way
+// to act on it — the address is the only route back; this card at least sits
+// on a link someone has already tapped).
 function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri }) {
   const vSize = verdictSize(verdict);
   const cSize = confessionSize(confession);
@@ -102,8 +111,9 @@ function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri 
       h("div", { key: "hg", style: {
         fontSize: 28, color: "rgba(255,255,255,0.4)",
       } }, "@theboothrecord"),
-      // The card is the only dead end in the flow — an image can't be tapped —
-      // so the address is the only way someone who sees it can act on it.
+      // An image can't be tapped — the address is the only way someone who
+      // sees the card can act on it. (The canvas story card carries it too,
+      // for the same reason — see the renderer-pair note above.)
       // Same treatment as the handle, one step dimmer (the SUBJECT# alpha).
       h("div", { key: "url", style: {
         marginTop: 12, fontSize: 28, color: "rgba(255,255,255,0.28)",
