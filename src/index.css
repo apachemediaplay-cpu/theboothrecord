@@ -708,16 +708,17 @@
    pulse), and a venue name is neither: it's metadata. That is also why
    there is NO prefers-reduced-motion gate — nothing moves, so there is
    nothing to gate; do not add one.
-   The core text colour rgb(76,182,216) is one step brighter than State
-   Blue (--state-blue, #349BBD), which supplies the halo — the core MUST
-   stay brighter than the halo or the strip reads as blur rather than
-   light. Radii sit at the button glows' trough (2/6/14) and never rise:
-   those curves were built for a label; this is metadata that shouldn't
-   compete with the headline. */
+   The core text colour rgb(120,205,235) sits well above State Blue
+   (--state-blue, #349BBD), which supplies the halo — the core MUST stay
+   brighter than the halo or the strip reads as blur rather than light.
+   Radii and alphas are the button glows' PEAK (2.8/10/26 @ .97/.68/.47),
+   held constant — a deliberate choice to make the venue name as present
+   as a primary action, because after a QR scan it is the first thing on
+   the gate: the proof the room is in on it. */
 .venue-glow-text {
-  color: rgb(76, 182, 216);
+  color: rgb(120, 205, 235);
   text-shadow:
-    0 0 2px rgba(52, 155, 189, 0.7),
-    0 0 6px rgba(52, 155, 189, 0.45),
-    0 0 14px rgba(52, 155, 189, 0.25);
+    0 0 2.8px rgba(52, 155, 189, 0.97),
+    0 0 10px rgba(52, 155, 189, 0.68),
+    0 0 26px rgba(52, 155, 189, 0.47);
 }
