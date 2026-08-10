@@ -628,15 +628,19 @@
    One box per screen. Below it, text links. Every box sets
    hover:bg-transparent — btn-booth's grey hover:bg-muted wins back without an
    explicit override, so do not remove it.
-   The grey mono caption above is required ONLY where the action needs framing:
-   SHARE VERDICT and THE FIRST OFFENCE need one; YOUR TURN and ENTER THE BOOTH
-   don't, because they say what they do.
+   The grey mono caption above is required ONLY where it does a job: framing
+   an action that needs it (SHARE VERDICT — "Your words. Not your name."), or
+   marking a STATE change (post-share CONFESS AGAIN — "It's out there now.",
+   which exists because pre- and post-share otherwise differ only by which
+   action is boxed). YOUR TURN and ENTER THE BOOTH carry none, because they
+   say what they do and their screens have one state.
    Current primaries: BEGIN (white, the gate — the ONLY white-label instance),
-   SHARE VERDICT (ritual green, Verdict pre-share), THE FIRST OFFENCE
-   (#FF4800, Verdict post-share), YOUR TURN (ritual green, VerdictShare
-   found), ENTER THE BOOTH (ritual green, VerdictShare notfound) and
-   YOUR TURN (ritual green, the wall's pinned bar). The glow classes are
-   enter-glow-text (green), offence-glow-text (orange) and begin-glow-text
+   SHARE VERDICT (ritual green, Verdict pre-share), CONFESS AGAIN (ritual
+   green, Verdict post-share — replaced THE FIRST OFFENCE when the purchase
+   block was removed), YOUR TURN (ritual green, VerdictShare found), ENTER
+   THE BOOTH (ritual green, VerdictShare notfound) and YOUR TURN (ritual
+   green, the wall's pinned bar). The glow classes are enter-glow-text
+   (green), offence-glow-text (orange, currently unused) and begin-glow-text
    (white) below. */
 
 /* ── ENTER glow (green primary labels) ────────────────────────────

@@ -576,8 +576,22 @@ const Verdict = () => {
              on any screen. (offence_events and log_offence_tap stay in the
              database; nothing writes to them any more.) */
           <div className="w-full max-w-xs flex flex-col items-center gap-5">
+            {/* Caption marks the STATE, not the action: pre- and post-share now
+                differ only by which action sits in the box, and an empty
+                caption slot made the flip easy to miss (the orange buy box
+                used to make it unmissable). KNOWN LIMITATION, accepted:
+                hasShared flips when SHARE VERDICT is TAPPED, not when the
+                share completes — the share sheet doesn't reliably report
+                completion — so someone who taps then cancels sees a line
+                asserting something that didn't happen. The alternative is no
+                confirmation at all. Do NOT write copy that leans harder on
+                the claim. */}
+            <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
+              It's out there now.
+            </p>
             {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
-                hairline, transparent. No caption — CONFESS AGAIN says what it
+                hairline, transparent. The caption above frames the STATE (see
+                its note), not this action — CONFESS AGAIN still says what it
                 does. Same handler and confess_again logging as the old link. */}
             <button
               onClick={handleConfessAgain}
