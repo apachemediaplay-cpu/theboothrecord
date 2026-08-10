@@ -113,6 +113,10 @@ export type ConfessConfig = {
   // choice / failure / older RPC) → the client sends NO mode and the edge
   // function's 'default' fallback applies — same fail-safe shape as the rest.
   promptMode: string | null;
+  // The DIRECT channel's verdict prompt (site_copy.prompt_mode): what
+  // no-source traffic sends once the config lands, replacing the mount-time
+  // 'dtc' marker. Null (unset / failure / older RPC) → no mode → 'default'.
+  directPromptMode: string | null;
 };
 
 const NO_CONFESS_CONFIG: ConfessConfig = {
@@ -123,6 +127,7 @@ const NO_CONFESS_CONFIG: ConfessConfig = {
   defaultHeadline: null,
   defaultGuidance: null,
   promptMode: null,
+  directPromptMode: null,
 };
 
 type ConfessConfigRow = {
@@ -133,6 +138,7 @@ type ConfessConfigRow = {
   default_headline: string | null;
   default_guidance: string | null;
   prompt_mode?: string | null;
+  direct_prompt_mode?: string | null;
 };
 type RpcCall = (
   fn: string,
@@ -161,6 +167,10 @@ export async function fetchConfessConfig(source?: string | null): Promise<Confes
       promptMode:
         typeof row.prompt_mode === "string" && row.prompt_mode.trim() !== ""
           ? row.prompt_mode.trim()
+          : null,
+      directPromptMode:
+        typeof row.direct_prompt_mode === "string" && row.direct_prompt_mode.trim() !== ""
+          ? row.direct_prompt_mode.trim()
           : null,
     };
   } catch {

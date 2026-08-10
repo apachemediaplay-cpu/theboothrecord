@@ -363,6 +363,247 @@ const ConfessPreview = ({
   );
 };
 
+// The verdict-prompt dropdown — ONE component for venues and the Direct
+// channel (same options, same guarantees), so the two can never drift.
+// A DROPDOWN, not free text — a typo'd mode would fall back to default
+// silently at verdict time with nothing to say why. Options show mode AND
+// live version, so a wrong version is visible without opening the Prompt
+// modes panel. Load failure DISABLES the control — an empty list would look
+// like there are no modes. 'dtc' is EXCLUDED from the options: it's the
+// Direct channel's compatibility shim (an audience marker, not a prompt
+// style) and nothing should ever be pointed at it deliberately.
+const VerdictPromptSelect = ({
+  value,
+  busy,
+  promptModes,
+  onChange,
+}: {
+  value: string | null; // null = "use the default mode"
+  busy: boolean;
+  promptModes: { mode: string; version: string }[] | null | undefined;
+  onChange: (value: string | null) => void;
+}) => {
+  if (!promptModes) {
+    return (
+      <>
+        <Select disabled value={undefined}>
+          <SelectTrigger className="h-8 w-56 text-xs">
+            <SelectValue
+              placeholder={promptModes === null ? "Prompt modes unavailable" : "Loading…"}
+            />
+          </SelectTrigger>
+        </Select>
+        {promptModes === null ? (
+          <span className="block pt-1 text-[10px] text-muted-foreground">
+            Couldn't load prompt modes — retry from the Prompt modes panel.
+          </span>
+        ) : null}
+      </>
+    );
+  }
+  const defaultModeVersion = promptModes.find((m) => m.mode === "default")?.version;
+  const options = promptModes.filter((m) => m.mode !== "default" && m.mode !== "dtc");
+  return (
+    <Select
+      value={value ?? "__default__"}
+      onValueChange={(v) => onChange(v === "__default__" ? null : v)}
+      disabled={busy}
+    >
+      <SelectTrigger className="h-8 w-56 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {/* Top option = NULL (the fallback), shown with the default mode's
+            live version. Distinct from an explicit choice by design. */}
+        <SelectItem value="__default__">default · {defaultModeVersion ?? "?"}</SelectItem>
+        {options.map((m) => (
+          <SelectItem key={m.mode} value={m.mode}>
+            {m.mode} · {m.version}
+          </SelectItem>
+        ))}
+        {value && !options.some((m) => m.mode === value) ? (
+          // Pointing at a mode that isn't offered (deleted, or the dtc shim) —
+          // keep it selectable so the state stays visible rather than being
+          // silently re-rendered as default.
+          <SelectItem value={value}>
+            {value} · {promptModes.find((m) => m.mode === value)?.version ?? "?"}
+          </SelectItem>
+        ) : null}
+      </SelectContent>
+    </Select>
+  );
+};
+
+// DIRECT — the first channel in the Channels list, and deliberately IN THIS
+// LIST rather than in Prompt modes: Direct is an AUDIENCE, not a prompt
+// style. Nobody assigns a venue to it (the client picks it when there's no
+// source), so its venue count is structurally always zero — shown as a peer
+// of the modes it read as a dead row inviting deletion. Here it reads as
+// what it is: the channel carrying the largest traffic slice, with the same
+// two-part shape as a venue (BEFORE THEY TYPE: the site_copy greeting;
+// AFTER THEY TYPE: a verdict prompt), so nobody has to remember it's
+// special. It cannot be created, renamed, deactivated or deleted — no
+// Rename, no ACTIVE toggle, no Delete, no QR, no slug.
+const DirectChannelRow = ({
+  siteCopy,
+  busy,
+  promptModes,
+  onSaveGreeting,
+  onPromptMode,
+  onRegister,
+  registerDesc,
+  linesFor,
+  onRetry,
+}: {
+  siteCopy:
+    | { headline: string; guidance: string; promptMode: string | null; register: string | null }
+    | null
+    | undefined;
+  busy: boolean;
+  promptModes: { mode: string; version: string }[] | null | undefined;
+  onSaveGreeting: (headline: string, guidance: string) => void;
+  onPromptMode: (value: string | null) => void;
+  onRegister: (value: string) => void;
+  registerDesc?: (value: string) => string | null;
+  linesFor: (register: string) => string[];
+  onRetry: () => void;
+}) => {
+  // Expanded by default — Direct is the channel most often being tuned.
+  const [expanded, setExpanded] = useState(true);
+  // Live-preview draft: tracks the greeting editor's KEYSTROKES (via
+  // onDraftChange) so the preview updates as you type, exactly as a venue's
+  // does; resets to the committed values whenever they change (save landed
+  // or refetch).
+  const [draft, setDraft] = useState<{ headline: string; guidance: string } | null>(null);
+  const committedHeadline = siteCopy && siteCopy !== null ? siteCopy.headline : "";
+  const committedGuidance = siteCopy && siteCopy !== null ? siteCopy.guidance : "";
+  useEffect(() => {
+    setDraft(null);
+  }, [committedHeadline, committedGuidance]);
+  // Preview resolution mirrors the live screen's rule for DIRECT traffic:
+  // Direct's greeting IS the site default, so a blank headline falls straight
+  // to the hardcoded pair — headline and guidance travelling together.
+  const effHeadline = draft ? draft.headline : committedHeadline;
+  const effGuidance = draft ? draft.guidance : committedGuidance;
+  const previewHeadline = effHeadline.trim() || DEFAULT_PROMPT.headline;
+  const previewGuidance = effHeadline.trim()
+    ? effGuidance.trim() || null
+    : DEFAULT_PROMPT.guidance || null;
+  const register = siteCopy && siteCopy !== null ? (siteCopy.register ?? "default") : "default";
+  return (
+    <li className="py-4">
+      <div
+        className="flex cursor-pointer select-none flex-wrap items-center gap-x-3 gap-y-1"
+        onClick={() => setExpanded((e) => !e)}
+      >
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        )}
+        <span className="text-sm font-semibold">Direct</span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+          no venue
+        </span>
+        <span className="text-[11px] text-muted-foreground">
+          Instagram · shared cards · typed URL
+        </span>
+      </div>
+      {expanded ? (
+        <div className="mt-3 space-y-5 pb-2 pl-7">
+          {siteCopy === undefined ? (
+            <p className="py-2 text-sm text-muted-foreground">Loading…</p>
+          ) : siteCopy === null ? (
+            <div className="space-y-2 py-2">
+              <p className="text-sm text-muted-foreground">Couldn't load the Direct channel.</p>
+              <Button size="sm" variant="outline" onClick={onRetry}>
+                Retry
+              </Button>
+            </div>
+          ) : (
+            // Same two-column shape as a venue: groups left, live preview
+            // right. Direct is the panel that most NEEDS the preview — the
+            // largest audience, and the one channel that can't be checked by
+            // scanning a QR in a venue.
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+              <div className="space-y-5">
+                <div className="space-y-4 rounded-md border border-border/60 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Before they type
+                  </p>
+                  <DefaultGreetingEditor
+                    key={`${siteCopy.headline}\n${siteCopy.guidance}`}
+                    initialHeadline={siteCopy.headline}
+                    initialGuidance={siteCopy.guidance}
+                    busy={busy}
+                    onSave={onSaveGreeting}
+                    onDraftChange={(h, g) => setDraft({ headline: h, guidance: g })}
+                  />
+                  <Field label="Placeholders">
+                    {/* Same control every venue has — stored in
+                        site_copy.register, driving the LIVE placeholder set
+                        for all no-source traffic (venue → site_copy → 'dtc'
+                        coalesce in get_confess_config), and giving the
+                        preview its register. */}
+                    <Select value={register} onValueChange={onRegister} disabled={busy}>
+                      <SelectTrigger className="h-8 w-44 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REGISTER_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            <div>
+                              {o.label}
+                              {registerDesc?.(o.value) ? (
+                                <span className="block text-[10px] text-muted-foreground">
+                                  {registerDesc(o.value)}
+                                </span>
+                              ) : null}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {registerDesc?.(register) ? (
+                      <span className="block pt-1 text-[10px] text-muted-foreground">
+                        {registerDesc(register)}
+                      </span>
+                    ) : null}
+                  </Field>
+                </div>
+                <div className="space-y-4 rounded-md border border-border/60 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                    After they type
+                  </p>
+                  <Field label="Verdict prompt">
+                    {/* The SAME component and options as a venue's dropdown.
+                        Stored in site_copy.prompt_mode (Direct has no venue
+                        row); the client sends the stored mode once the config
+                        lands, replacing its mount-time 'dtc' marker. Unset →
+                        'default'. */}
+                    <VerdictPromptSelect
+                      value={siteCopy.promptMode}
+                      busy={busy}
+                      promptModes={promptModes}
+                      onChange={onPromptMode}
+                    />
+                  </Field>
+                </div>
+              </div>
+              <ConfessPreview
+                key={register}
+                headline={previewHeadline}
+                guidance={previewGuidance}
+                lines={linesFor(register)}
+              />
+            </div>
+          )}
+        </div>
+      ) : null}
+    </li>
+  );
+};
+
 const VenueOverviewRow = ({
   row,
   scans,
@@ -429,7 +670,6 @@ const VenueOverviewRow = ({
     ? guidance.trim() || null
     : (defaultGreeting?.guidance ?? DEFAULT_PROMPT.guidance) || null;
   const previewLines = linesFor(row.register ?? "dtc");
-  const defaultModeVersion = promptModes?.find((m) => m.mode === "default")?.version;
   // Fail-safe: a missing/null status is treated as active — dimming is opt-in only.
   const active = row.active !== false;
 
@@ -599,62 +839,15 @@ const VenueOverviewRow = ({
                   After they type
                 </p>
                 <Field label="Verdict prompt">
-                  {/* A DROPDOWN, not free text — a typo'd mode would fall back
-                      to default silently at verdict time with nothing to say
-                      why. Options show mode AND live version, so a wrong
-                      version is visible without opening the Prompt modes
-                      panel. Load failure DISABLES the control — an empty list
-                      would look like there are no modes. */}
-                  {promptModes ? (
-                    <Select
-                      value={row.prompt_mode ?? "__default__"}
-                      onValueChange={(v) => onPromptMode(v === "__default__" ? null : v)}
-                      disabled={busy}
-                    >
-                      <SelectTrigger className="h-8 w-56 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Top option = NULL (the fallback), shown with the
-                            default mode's live version. Distinct from an
-                            explicit mode choice by design. */}
-                        <SelectItem value="__default__">
-                          default · {defaultModeVersion ?? "?"}
-                        </SelectItem>
-                        {promptModes
-                          .filter((m) => m.mode !== "default")
-                          .map((m) => (
-                            <SelectItem key={m.mode} value={m.mode}>
-                              {m.mode} · {m.version}
-                            </SelectItem>
-                          ))}
-                        {row.prompt_mode &&
-                        !promptModes.some((m) => m.mode === row.prompt_mode) ? (
-                          // The venue points at a mode that no longer exists in
-                          // prompt_modes — keep it selectable so the state is
-                          // visible rather than silently re-rendered as default.
-                          <SelectItem value={row.prompt_mode}>{row.prompt_mode} · ?</SelectItem>
-                        ) : null}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <>
-                      <Select disabled value={undefined}>
-                        <SelectTrigger className="h-8 w-56 text-xs">
-                          <SelectValue
-                            placeholder={
-                              promptModes === null ? "Prompt modes unavailable" : "Loading…"
-                            }
-                          />
-                        </SelectTrigger>
-                      </Select>
-                      {promptModes === null ? (
-                        <span className="block pt-1 text-[10px] text-muted-foreground">
-                          Couldn't load prompt modes — retry from the Prompt modes panel.
-                        </span>
-                      ) : null}
-                    </>
-                  )}
+                  {/* Shared with the Direct channel — see VerdictPromptSelect
+                      for the dropdown-not-free-text and disabled-on-failure
+                      reasoning. */}
+                  <VerdictPromptSelect
+                    value={row.prompt_mode ?? null}
+                    busy={busy}
+                    promptModes={promptModes}
+                    onChange={onPromptMode}
+                  />
                 </Field>
               </div>
 
@@ -979,11 +1172,16 @@ const DefaultGreetingEditor = ({
   initialGuidance,
   busy,
   onSave,
+  onDraftChange,
 }: {
   initialHeadline: string;
   initialGuidance: string;
   busy: boolean;
   onSave: (headline: string, guidance: string) => void;
+  // Reports keystrokes upward so the Direct channel's live preview can track
+  // the DRAFT, not just the committed values. Optional — the editor's own
+  // draft-then-commit behaviour is unchanged.
+  onDraftChange?: (headline: string, guidance: string) => void;
 }) => {
   const [headline, setHeadline] = useState(initialHeadline);
   const [guidance, setGuidance] = useState(initialGuidance);
@@ -996,7 +1194,10 @@ const DefaultGreetingEditor = ({
         <Input
           value={headline}
           maxLength={80}
-          onChange={(e) => setHeadline(e.target.value)}
+          onChange={(e) => {
+            setHeadline(e.target.value);
+            onDraftChange?.(e.target.value, guidance);
+          }}
           className="h-8 w-full text-xs"
         />
       </Field>
@@ -1004,7 +1205,10 @@ const DefaultGreetingEditor = ({
         <Input
           value={guidance}
           maxLength={80}
-          onChange={(e) => setGuidance(e.target.value)}
+          onChange={(e) => {
+            setGuidance(e.target.value);
+            onDraftChange?.(headline, e.target.value);
+          }}
           className="h-8 w-full text-xs"
         />
       </Field>
@@ -1034,19 +1238,17 @@ const PromptModeRow = ({
   mode,
   initialVersion,
   busy,
-  usage,
+  caption,
   onSave,
   onDelete,
 }: {
   mode: string;
   initialVersion: string;
   busy: boolean;
-  // The usage line: venue count derived client-side from venuesRows (null
-  // prompt_mode counts toward 'default' — that's what null resolves to);
-  // confession count from admin_prompt_mode_usage, with the backfilled
-  // 'solo' stamps folded into the default row. Null = usage read failed —
-  // the line is simply absent rather than showing zeros that look real.
-  usage: { venues: number; confessions: number; allTime: boolean } | null;
+  // Usage in plain words ("used by 8 venues + direct" / "not in use") —
+  // derived client-side, see promptModeCaption. Null = reads unresolved →
+  // no line, never fake zeros.
+  caption: string | null;
   onSave: (version: string) => void;
   // Absent for 'default' — the fallback the whole system rests on can never
   // offer a delete control at all.
@@ -1102,12 +1304,8 @@ const PromptModeRow = ({
           </AlertDialog>
         ) : null}
       </div>
-      {usage ? (
-        <p className="pl-20 text-[10px] text-muted-foreground/70 tabular-nums">
-          {usage.venues === 0 ? "no venues" : `${usage.venues} venue${usage.venues === 1 ? "" : "s"}`} ·{" "}
-          {usage.confessions.toLocaleString()} confession{usage.confessions === 1 ? "" : "s"}
-          {usage.allTime ? " (all time)" : ""}
-        </p>
+      {caption ? (
+        <p className="pl-20 text-[10px] text-muted-foreground/70">{caption}</p>
       ) : null}
     </div>
   );
@@ -1131,19 +1329,22 @@ const AddPromptModeRow = ({
   const valid = /^[a-z0-9_-]{1,40}$/.test(m) && !taken.includes(m) && version.trim() !== "";
   return (
     <div className="flex items-center gap-2 border-t border-border/50 pt-2">
+      {/* Name gets the flexible width (mode names are words and the narrow
+          box clipped its own placeholder); version is fixed narrow — it's a
+          two-digit OpenAI version number. */}
       <Input
         value={mode}
         maxLength={40}
         placeholder="new mode"
         onChange={(e) => setMode(e.target.value)}
-        className="h-8 w-20 shrink-0 text-xs"
+        className="h-8 w-full text-xs"
       />
       <Input
         value={version}
         maxLength={40}
         placeholder="version"
         onChange={(e) => setVersion(e.target.value)}
-        className="h-8 w-full text-xs"
+        className="h-8 w-24 shrink-0 text-xs"
       />
       <Button
         size="sm"
@@ -1352,7 +1553,9 @@ const Moderate = () => {
   // ── Default (no-venue) greeting: site_copy.default_prompt.
   // undefined = loading, null = load failed, object = editable values.
   const [siteCopy, setSiteCopy] = useState<
-    { headline: string; guidance: string } | null | undefined
+    | { headline: string; guidance: string; promptMode: string | null; register: string | null }
+    | null
+    | undefined
   >(undefined);
   const [siteCopyBusy, setSiteCopyBusy] = useState(false);
   // Prompt modes (prompt_modes table): undefined = loading, null = failed.
@@ -1361,12 +1564,6 @@ const Moderate = () => {
     { mode: string; version: string }[] | null | undefined
   >(undefined);
   const [promptModeBusy, setPromptModeBusy] = useState<string | null>(null);
-  // Confession counts by RAW mode (admin_prompt_mode_usage): undefined =
-  // loading, null = failed → no usage line. Folding/labelling happens in
-  // promptModeUsageFor, not here.
-  const [promptModeUsage, setPromptModeUsage] = useState<Map<string, number> | null | undefined>(
-    undefined,
-  );
 
   // Pending count for the Moderate tab label. Tracks the persistent filters
   // (venue, range) — not the queue's sub-tab or search.
@@ -1548,6 +1745,38 @@ const Moderate = () => {
     let cancelled = false;
     setListLoading(true);
     setListError(false);
+    // ALL-DIGITS query (with or without a leading #) → EXACT subject-number
+    // lookup via admin_find_by_subject instead of the text search: the wall's
+    // most prominent identifier is #1461, and _q only matches text, so the
+    // read-the-wall → pull-it-in-the-console workflow had no direct route.
+    // Tab and venue filters apply client-side so the semantics stay per-tab,
+    // exactly like text search (an approved row won't surface on Pending).
+    // The date range deliberately does NOT apply: an exact ID lookup that
+    // silently missed rows older than the selected window would read as
+    // "not found" when the row plainly exists.
+    const numMatch = qDebounced.trim().match(/^#?(\d+)$/);
+    if (numMatch) {
+      safe(rpc("admin_find_by_subject", { _subject_number: Number(numMatch[1]) })).then((res) => {
+        if (cancelled) return;
+        setListLoading(false);
+        if (res.error) {
+          if (/authoriz/i.test(res.error.message)) setNotAuthorized(true);
+          else setListError(true);
+          setRows([]);
+          setTotalCount(0);
+          return;
+        }
+        setNotAuthorized(false);
+        const found = ((res.data as Confession[]) ?? []).filter(
+          (r) => r.status === tab && (venue === "all" || r.source === venue),
+        );
+        setRows(found);
+        setTotalCount(found.length);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     const filters = {
       _status: tab,
       _source: venue === "all" ? null : venue,
@@ -1845,19 +2074,30 @@ const Moderate = () => {
   const registerDesc = (value: string): string | null =>
     registerSets?.get(value === "default" ? "dtc" : value)?.description ?? null;
 
-  // Default-greeting read — venues tab only, same Retry tick. site_copy is
-  // public-read (the confess screen resolves the same row via get_confess_config).
+  // Direct-channel read (site_copy) — venues tab only, same Retry tick.
+  // site_copy is public-read (the confess screen resolves the same row via
+  // get_confess_config). select(*) DELIBERATELY: naming prompt_mode would
+  // fail the whole read on a database where the direct_prompt_mode migration
+  // hasn't landed — * tolerates the column's absence in either deploy order.
   useEffect(() => {
     if (!session || consoleTab !== "venues") return;
     let cancelled = false;
     setSiteCopy(undefined);
     const from = sb.from.bind(sb) as unknown as (table: string) => {
       select(cols: string): PromiseLike<{
-        data: { key: string; value_headline: string | null; value_guidance: string | null }[] | null;
+        data:
+          | {
+              key: string;
+              value_headline: string | null;
+              value_guidance: string | null;
+              prompt_mode?: string | null;
+              register?: string | null;
+            }[]
+          | null;
         error: unknown;
       }>;
     };
-    Promise.resolve(from("site_copy").select("key,value_headline,value_guidance")).then(
+    Promise.resolve(from("site_copy").select("*")).then(
       (r) => {
         if (cancelled) return;
         const row = r.data?.find((x) => x.key === "default_prompt");
@@ -1865,7 +2105,12 @@ const Moderate = () => {
           setSiteCopy(null);
           return;
         }
-        setSiteCopy({ headline: row.value_headline ?? "", guidance: row.value_guidance ?? "" });
+        setSiteCopy({
+          headline: row.value_headline ?? "",
+          guidance: row.value_guidance ?? "",
+          promptMode: row.prompt_mode ?? null,
+          register: row.register ?? null,
+        });
       },
       () => {
         if (!cancelled) setSiteCopy(null);
@@ -1880,80 +2125,64 @@ const Moderate = () => {
   // Plain table select: the "admins read prompt_modes" policy (is_admin()-
   // gated) is the console's read path; the table is deliberately not
   // anon-readable and the edge function reads it with the service role.
-  // The usage counts RIDE ALONG here (admin_prompt_mode_usage — confession
-  // counts by raw mode) rather than adding a per-load query anywhere else;
-  // venue counts need no read at all (derived from venuesRows client-side).
-  // A failed usage read degrades to no usage line, never to fake zeros, and
-  // never blocks the editor itself.
+  // No usage read any more: the captions are venue+direct usage in plain
+  // words, derived client-side from venuesRows and site_copy — zero extra
+  // queries. (admin_prompt_mode_usage stays in the database, unused here.)
   useEffect(() => {
     if (!session || consoleTab !== "venues") return;
     let cancelled = false;
     setPromptModes(undefined);
-    setPromptModeUsage(undefined);
     const from = sb.from.bind(sb) as unknown as (table: string) => {
       select(cols: string): PromiseLike<{
         data: { mode: string; version: string }[] | null;
         error: unknown;
       }>;
     };
-    Promise.all([
-      Promise.resolve(from("prompt_modes").select("mode,version")).then(
-        (r) => r,
-        () => ({ data: null, error: { message: "request failed" } }),
-      ),
-      safe(rpc("admin_prompt_mode_usage")),
-    ]).then(([modes, usage]) => {
-      if (cancelled) return;
-      if (modes.error || !modes.data) {
-        setPromptModes(null);
-      } else {
+    Promise.resolve(from("prompt_modes").select("mode,version")).then(
+      (r) => {
+        if (cancelled) return;
+        if (r.error || !r.data) {
+          setPromptModes(null);
+          return;
+        }
         // 'default' first (the norm), then alphabetical.
         setPromptModes(
-          [...modes.data].sort((a, b) =>
+          [...r.data].sort((a, b) =>
             a.mode === "default" ? -1 : b.mode === "default" ? 1 : a.mode.localeCompare(b.mode),
           ),
         );
-      }
-      if (usage.error || !Array.isArray(usage.data)) {
-        setPromptModeUsage(null);
-      } else {
-        setPromptModeUsage(
-          new Map(
-            (usage.data as { mode: string; confessions: number | string }[]).map((r) => [
-              r.mode,
-              num(r.confessions),
-            ]),
-          ),
-        );
-      }
-    });
+      },
+      () => {
+        if (!cancelled) setPromptModes(null);
+      },
+    );
     return () => {
       cancelled = true;
     };
   }, [session, consoleTab, refreshTick]);
 
-  // Per-mode usage for the editor's line. VENUES: from venuesRows, with a
-  // null prompt_mode counting toward 'default' — that is what null resolves
-  // to. CONFESSIONS: raw counts from admin_prompt_mode_usage, with the
-  // BACKFILLED 'solo' stamps folded into the default row — every pre-routing
-  // confession was stamped 'solo' by the mode backfill, and all of them were
-  // answered by the default prompt lineage, but the resulting number is
-  // "every confession ever", NOT "confessions since this mode existed" — so
-  // the default row's count carries an explicit "(all time)" label rather
-  // than letting it masquerade as mode-era volume. Either read failing means
-  // NO line (null), never zeros that look like real counts.
-  const promptModeUsageFor = (
-    mode: string,
-  ): { venues: number; confessions: number; allTime: boolean } | null => {
-    if (!promptModeUsage || !venuesRows) return null;
+  // Per-mode caption, in plain words: WHO uses this prompt. Venue counts come
+  // from venuesRows (null prompt_mode counts toward 'default'); Direct counts
+  // toward whichever mode its dropdown stores (site_copy.prompt_mode, null →
+  // 'default'). No confession counts here any more — a mode's row is about
+  // who's routed to it, and "no venues" on a mode no venue can point at was
+  // reading as dead. Null = the reads haven't resolved → no caption, never
+  // fake zeros.
+  const promptModeCaption = (mode: string): string | null => {
+    if (!venuesRows || siteCopy === undefined) return null;
     const venues = venuesRows.filter((v) =>
       mode === "default"
         ? !v.prompt_mode || v.prompt_mode === "default"
         : v.prompt_mode === mode,
     ).length;
-    const own = promptModeUsage.get(mode) ?? 0;
-    const confessions = mode === "default" ? own + (promptModeUsage.get("solo") ?? 0) : own;
-    return { venues, confessions, allTime: mode === "default" };
+    const direct =
+      siteCopy !== null &&
+      (mode === "default" ? !siteCopy.promptMode || siteCopy.promptMode === "default" : siteCopy.promptMode === mode);
+    if (venues === 0 && !direct) return "not in use";
+    const venuePart = venues > 0 ? `${venues} venue${venues === 1 ? "" : "s"}` : "";
+    if (venues > 0 && direct) return `used by ${venuePart} + direct`;
+    if (direct) return "used by direct";
+    return `used by ${venuePart}`;
   };
 
   // Save / add via the admin RPCs. NOT optimistic — a mode's version decides
@@ -2032,10 +2261,63 @@ const Moderate = () => {
       });
       return;
     }
-    setSiteCopy({ headline, guidance });
+    setSiteCopy((prev) => ({
+      headline,
+      guidance,
+      promptMode: prev?.promptMode ?? null,
+      register: prev?.register ?? null,
+    }));
     toast({
       title: "Default greeting saved",
       description: `${headline} — live on the next confess-screen load.`,
+    });
+  };
+
+  // The Direct channel's verdict prompt (site_copy.prompt_mode) — the same
+  // choice a venue stores in venues.prompt_mode, stored where Direct's other
+  // settings already live. NOT optimistic, matching saveSiteCopy: this routes
+  // live confessions. null clears → Direct falls back to 'default'.
+  const saveDirectPromptMode = async (value: string | null) => {
+    setSiteCopyBusy(true);
+    const { error } = await rpc("admin_set_direct_prompt_mode", { _prompt_mode: value });
+    setSiteCopyBusy(false);
+    if (error) {
+      toast({
+        title: "Couldn't update Direct's verdict prompt",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    setSiteCopy((prev) => (prev ? { ...prev, promptMode: value } : prev));
+    toast({
+      title: "Direct verdict prompt updated",
+      description: `Direct → ${value ?? "default"}`,
+    });
+  };
+
+  // Direct's placeholder register (site_copy.register) — drives the live
+  // /confess placeholder set for all no-source traffic via get_confess_config's
+  // venue → site_copy → 'dtc' coalesce. Same commit-on-change shape as the
+  // venue register; NOT optimistic (routes live traffic).
+  const saveDirectRegister = async (value: string) => {
+    const next = value === "default" ? null : value;
+    if (next === (siteCopy && siteCopy !== null ? siteCopy.register : null)) return;
+    setSiteCopyBusy(true);
+    const { error } = await rpc("admin_set_direct_register", { _register: next });
+    setSiteCopyBusy(false);
+    if (error) {
+      toast({
+        title: "Couldn't update Direct's placeholders",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    setSiteCopy((prev) => (prev ? { ...prev, register: next } : prev));
+    toast({
+      title: "Direct placeholders updated",
+      description: `Direct → ${registerLabel(value)}`,
     });
   };
 
@@ -3184,7 +3466,7 @@ const Moderate = () => {
             variant={consoleTab === "venues" ? "secondary" : "ghost"}
             onClick={() => changeConsoleTab("venues")}
           >
-            Venues{venuesRows ? ` · ${venuesRows.length}` : ""}
+            Channels{venuesRows ? ` · ${venuesRows.length + 1}` : ""}
           </Button>
           <Button
             size="sm"
@@ -3202,36 +3484,14 @@ const Moderate = () => {
           </Button>
         </div>
 
-        {/* ── VENUES TAB — every venue as a row: register, greeting, status. ── */}
+        {/* ── VENUES TAB — channels: Direct + every venue as a row. ── */}
         {consoleTab === "venues" ? (
         <>
-        {/* Default greeting — the no-venue /confess copy (site_copy.default_prompt).
-            Editable here so iterating never needs a deploy; the client falls back to
-            its hardcoded constant only if this row is unreachable. */}
-        <section className="rounded-lg border border-border px-4 py-3">
-          <p className="text-sm font-medium">Default greeting (no venue)</p>
-          <p className="mb-2 text-xs text-muted-foreground">
-            What Instagram, shared-card and direct traffic sees on /confess.
-          </p>
-          {siteCopy === undefined ? (
-            <p className="py-2 text-sm text-muted-foreground">Loading…</p>
-          ) : siteCopy === null ? (
-            <div className="space-y-2 py-2">
-              <p className="text-sm text-muted-foreground">Couldn't load the default greeting.</p>
-              <Button size="sm" variant="outline" onClick={() => setRefreshTick((t) => t + 1)}>
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <DefaultGreetingEditor
-              key={`${siteCopy.headline}\n${siteCopy.guidance}`}
-              initialHeadline={siteCopy.headline}
-              initialGuidance={siteCopy.guidance}
-              busy={siteCopyBusy}
-              onSave={saveSiteCopy}
-            />
-          )}
-        </section>
+        {/* The old standalone "Default greeting (no venue)" section is GONE —
+            it was the Direct channel's settings panel without a name, missing
+            its second half. It now lives as the FIRST ROW of the Channels
+            list below (DirectChannelRow), with the same greeting editor plus
+            the verdict-prompt half a venue gets. */}
 
         {/* Prompt modes — which pinned prompt version answers each confession
             mode (prompt_modes; the edge function reads it on a 60s cache with
@@ -3263,17 +3523,26 @@ const Moderate = () => {
             </div>
           ) : (
             <div className="space-y-2 py-1">
-              {promptModes.map((r) => (
-                <PromptModeRow
-                  key={`${r.mode}\n${r.version}`}
-                  mode={r.mode}
-                  initialVersion={r.version}
-                  busy={promptModeBusy === r.mode}
-                  usage={promptModeUsageFor(r.mode)}
-                  onSave={(v) => savePromptMode(r.mode, v)}
-                  onDelete={r.mode === "default" ? undefined : () => deletePromptMode(r.mode)}
-                />
-              ))}
+              {/* 'dtc' is HIDDEN from this list, not deleted: the row stays in
+                  the database as the Direct channel's compatibility shim (the
+                  client's mount-time marker + older deployed clients resolve
+                  through it). It isn't a peer of the prompt styles — Prompt
+                  modes is the LIBRARY of prompts; the Channels list above is
+                  who gets which. Showing it here read as a dead row ("no
+                  venues" forever, by design) and invited deletion. */}
+              {promptModes
+                .filter((r) => r.mode !== "dtc")
+                .map((r) => (
+                  <PromptModeRow
+                    key={`${r.mode}\n${r.version}`}
+                    mode={r.mode}
+                    initialVersion={r.version}
+                    busy={promptModeBusy === r.mode}
+                    caption={promptModeCaption(r.mode)}
+                    onSave={(v) => savePromptMode(r.mode, v)}
+                    onDelete={r.mode === "default" ? undefined : () => deletePromptMode(r.mode)}
+                  />
+                ))}
               <AddPromptModeRow
                 busy={promptModeBusy === "__add__"}
                 taken={promptModes.map((r) => r.mode)}
@@ -3289,7 +3558,9 @@ const Moderate = () => {
             onClick={() => setOverviewOpen((o) => !o)}
             className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium"
           >
-            <span>Venues{venuesRows ? ` · ${venuesRows.length}` : ""}</span>
+            {/* Channels, not "Venues": Direct is a channel too — the +1.
+                Where confessions come from, venue or not. */}
+            <span>Channels{venuesRows ? ` · ${venuesRows.length + 1}` : ""}</span>
             <span className="text-xs text-muted-foreground">{overviewOpen ? "Hide" : "Show"}</span>
           </button>
           {overviewOpen ? (
@@ -3306,8 +3577,9 @@ const Moderate = () => {
               ) : venuesRows && venuesRows.length > 0 ? (
                 <>
                   <p className="pt-2 text-xs text-muted-foreground">
-                    Scans: {RANGE_LABELS[range].toLowerCase()}; approved counts are all-time.
-                    Blank headline → default prompt.
+                    Where confessions come from. Scans:{" "}
+                    {RANGE_LABELS[range].toLowerCase()}; approved counts are all-time. Blank
+                    headline → default prompt.
                   </p>
                   {/* Armed by the quiet-venues line above the tabs. The filter
                       only applies while quietVenues is resolvable — if either
@@ -3326,6 +3598,21 @@ const Moderate = () => {
                     </p>
                   ) : null}
                   <ul className="divide-y divide-border">
+                    {/* Direct first — see DirectChannelRow for why it's a
+                        CHANNEL here rather than a Prompt modes row. Not
+                        subject to the quiet-venues filter (it has no scans
+                        to go quiet). */}
+                    <DirectChannelRow
+                      siteCopy={siteCopy}
+                      busy={siteCopyBusy}
+                      promptModes={promptModes}
+                      onSaveGreeting={saveSiteCopy}
+                      onPromptMode={saveDirectPromptMode}
+                      onRegister={saveDirectRegister}
+                      registerDesc={registerDesc}
+                      linesFor={linesForRegister}
+                      onRetry={() => setRefreshTick((t) => t + 1)}
+                    />
                     {(sortedVenueRows ?? [])
                       .filter(
                         (row) =>
@@ -3449,6 +3736,21 @@ const Moderate = () => {
             Last 7 nights vs the 7 before. Fixed windows, 4am night cutoff, test sessions
             excluded.
           </p>
+          {/* Moderation happens one row at a time, so the only thing Moderate
+              structurally can't show is how approved verdicts read AS A PAGE —
+              three in a row opening the same way, two on the same topic, four
+              flexes with no change of pace. The wall is the only place that's
+              visible. (Deliberately NOT admin controls on /thewall itself:
+              that ships admin code to every public visitor for a convenience
+              the search box already covers — search "#1461" instead.) */}
+          <a
+            href="/thewall"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-[11px] text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
+          >
+            Open the wall →
+          </a>
           {wallFunnelError ? (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Couldn't load the funnel.</p>
@@ -3925,7 +4227,7 @@ const Moderate = () => {
             </Select>
             <Input
               type="search"
-              placeholder="Search text…"
+              placeholder="Search text or #number…"
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
               className="h-8 min-w-40 flex-1 text-xs"

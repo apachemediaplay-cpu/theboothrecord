@@ -87,13 +87,27 @@ const Confess = () => {
       setPrompt(
         resolvePrompt(cfg.headline, cfg.guidance, cfg.defaultHeadline, cfg.defaultGuidance),
       );
-      // Venue traffic only: an explicit venues.prompt_mode upgrades the mode
-      // once the config lands; a venue WITHOUT one keeps no key → 'default'.
-      // (The no-venue 'dtc' decision was already made synchronously above —
-      // it does not wait on this fetch and cfg cannot override it, because
-      // cfg can't tell "no venue row" from "venue with nothing set": both
-      // return all-nulls. The SOURCE is the distinguisher.)
-      if (cfg.promptMode) sessionStorage.setItem("promptMode", cfg.promptMode);
+      // Once the config lands, the stored choice replaces the mount-time
+      // marker (the SOURCE is still the channel distinguisher — cfg can't
+      // tell "no venue row" from "venue with nothing set"; both are nulls):
+      //   venue traffic  → venues.prompt_mode, else no key → 'default'
+      //   direct traffic → site_copy.prompt_mode (the Direct channel's
+      //     dropdown in the console), else no key → 'default'. The mount-time
+      //     'dtc' marker survives only the fetch window and fetch failures —
+      //     the dtc prompt_modes row is the compatibility shim for exactly
+      //     those sends.
+      const isVenueTraffic = !!source && source !== "direct";
+      if (isVenueTraffic) {
+        if (cfg.promptMode) sessionStorage.setItem("promptMode", cfg.promptMode);
+      } else if (cfg.directPromptMode) {
+        sessionStorage.setItem("promptMode", cfg.directPromptMode);
+      } else if (cfg.defaultHeadline !== null) {
+        // Fetch SUCCEEDED (a live config always carries the site_copy
+        // greeting) and the choice is genuinely unset → 'default'.
+        sessionStorage.removeItem("promptMode");
+      }
+      // else: the fetch failed — keep the mount-time 'dtc' marker; the dtc
+      // shim row exists for exactly these sends.
     });
     return () => {
       cancelled = true;
