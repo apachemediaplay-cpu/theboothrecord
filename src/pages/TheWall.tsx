@@ -186,7 +186,11 @@ const TheWall = () => {
             must be the biggest type. Both bars are pinned, so every px here is
             feed space. Content capped to the SAME 680px frame as the records
             column — one axis. */}
-        <div className="mx-auto max-w-[680px] pt-6 pb-6 md:pt-8 md:pb-7 px-6 text-center">
+        {/* pb-5, not pb-6: the Instagram line grew 10px → 13px (a link — the
+            functional tier — made more present, still subordinate to the
+            36px masthead), and the padding absorbs the ~4px so the masthead
+            stays ≈111px and the feed clearance stays 17px untouched. */}
+        <div className="mx-auto max-w-[680px] pt-6 pb-5 md:pt-8 md:pb-6 px-6 text-center">
           {/* NO GUILTY wordmark above the title — removed DELIBERATELY, and it
               was the last visible one in the app: the Booth may not remain a
               GUILTY property, and the share card carries the branding where it
@@ -236,12 +240,15 @@ const TheWall = () => {
             </p>
           )}
 
+          {/* The page's handle — 13px, up from the 10px credit line it was:
+              present enough to register as identity, still muted and a third
+              of PUBLIC RECORD's 36px so it never competes with the masthead. */}
           <div className="mt-2 flex justify-center">
             <a
               href="https://instagram.com/theboothrecord"
               target="_blank"
               rel="noopener"
-              className="text-[10px] font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
+              className="text-[13px] font-mono-light tracking-wide text-muted-foreground hover:text-foreground transition-opacity"
             >
               @theboothrecord
             </a>

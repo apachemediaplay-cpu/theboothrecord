@@ -97,9 +97,11 @@ function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri 
       // NOTE: State Blue (hsl 197 57% 47%) is the APP's metadata colour — the
       // wall stamps and the share page's filing line use it. The CARD deliberately
       // keeps its own white-alpha palette; do not "fix" it for consistency.
+      // Handle and URL are near-repetition on purpose: the handle goes to
+      // Instagram, the URL goes to the Booth — different destinations.
       h("div", { key: "hg", style: {
         fontSize: 28, color: "rgba(255,255,255,0.4)",
-      } }, "@houseofguilty"),
+      } }, "@theboothrecord"),
       // The card is the only dead end in the flow — an image can't be tapped —
       // so the address is the only way someone who sees it can act on it.
       // Same treatment as the handle, one step dimmer (the SUBJECT# alpha).
