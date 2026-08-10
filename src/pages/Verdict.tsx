@@ -2,11 +2,10 @@ import { useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useState, useEffect, useRef } from "react";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
-import { resolveVenueDisplayName, isPhysicalScan, mayStampVenue } from "@/lib/source";
+import { resolveVenueDisplayName, mayStampVenue } from "@/lib/source";
 import {
   logShare,
   logBoothEvent,
-  logOffenceTap,
   resolveShareId,
   fetchSharedVerdict,
 } from "@/lib/metrics";
@@ -565,51 +564,38 @@ const Verdict = () => {
             </div>
           </div>
         ) : (
-          /* Post-share: the BUY becomes the boxed primary — the eye goes to the
-             biggest tappable thing, and post-share the sharing job is done, so the
-             box holds the next job. The share actions drop to an equal-weight
-             text-link row (still fully working for repeat shares); SEE THE RECORD
-             closes the screen as a quiet link. Pre-share hierarchy is deliberately
-             unchanged: SHARE VERDICT keeps the box there — sharing is the growth
-             loop. No Instagram, no promise line. */
+          /* Post-share: CONFESS AGAIN is the boxed primary — the sharing job is
+             done, so the box holds the next confession. The share actions drop
+             to an equal-weight text-link row (still fully working for repeat
+             shares); SEE THE RECORD closes the screen as a quiet link.
+             Pre-share hierarchy is deliberately unchanged: SHARE VERDICT keeps
+             the box there — sharing is the growth loop.
+             THE PURCHASE BLOCK IS GONE — DELIBERATE: "Reoffend." and THE FIRST
+             OFFENCE — $55 were removed here, and this was the LAST purchase
+             link in the app. There is now no route from the Booth to the shop
+             on any screen. (offence_events and log_offence_tap stay in the
+             database; nothing writes to them any more.) */
           <div className="w-full max-w-xs flex flex-col items-center gap-5">
-            {/* Sampler CTA — NOT for in-venue scanners (physical ?venue= card): showing a
-                "buy online" link there poaches the host. isPhysicalScan() is false for
-                direct / Instagram / share-through, so those do get it. Unlike the shared
-                card (VerdictShare), this is gated — that viewer is never in-venue.
-                "Reoffend." stays ABOVE the box — keeps the button label clean and
-                keeps the product name. The box border is the sign's own orange at
-                25%, static — ties frame to label without a second light source.
-                onClick is a fire-and-forget tap metric — never preventDefault,
-                never await: navigation proceeds regardless. */}
-            {!isPhysicalScan() && (
-              <div className="w-full flex flex-col items-center gap-2">
-                <p className="text-[11px] font-mono-light tracking-wide text-muted-foreground">
-                  Reoffend.
-                </p>
-                <a
-                  href="https://houseofguilty.com/contraband?source=booth-verdict"
-                  target="_blank"
-                  rel="noopener"
-                  onClick={() => logOffenceTap(rowSource)}
-                  className="btn-booth block w-full border border-muted-foreground/40 bg-transparent text-center text-[13px] hover:bg-transparent"
-                >
-                  <span className="offence-glow-text text-[#FF4800] hover:opacity-80 transition-colors">
-                    THE FIRST OFFENCE — $55
-                  </span>
-                </a>
-              </div>
-            )}
-            {/* Identical link row to pre-share (SHARE AGAIN dropped: post-share
-                the screen's job is what-next, not do-it-again — three links
-                crowded the two people actually want). Only the caption and the
-                box differ between states. */}
+            {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
+                hairline, transparent. No caption — CONFESS AGAIN says what it
+                does. Same handler and confess_again logging as the old link. */}
+            <button
+              onClick={handleConfessAgain}
+              className="btn-booth border border-muted-foreground/40 bg-transparent text-sm text-center hover:bg-transparent"
+            >
+              <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
+                CONFESS AGAIN
+              </span>
+            </button>
+            {/* Link row: POST TO STORY · SHARE VERDICT — with CONFESS AGAIN
+                promoted to the box, SHARE VERDICT drops to the row on the same
+                handler the pre-share box uses (repeat shares keep working). */}
             <div className="flex items-center gap-6">
               <button onClick={handleOnRecordConfirm} disabled={sharing} className={shareSecondary}>
                 {sharing ? "PREPARING…" : "POST TO STORY"}
               </button>
-              <button onClick={handleConfessAgain} className={shareSecondary}>
-                CONFESS AGAIN
+              <button onClick={handleShareLink} disabled={sharingLink} className={shareSecondary}>
+                {sharingLink ? "FILING…" : "SHARE VERDICT"}
               </button>
             </div>
             {verdictResponse !== "Entry withheld" && (

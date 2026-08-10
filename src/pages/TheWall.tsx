@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import BoothFooter from "@/components/BoothFooter";
 import ConfessionCard from "@/components/wall/ConfessionCard";
-import GuiltyLogo from "@/components/GuiltyLogo";
 import type { ConfessionEntry } from "@/components/wall/ConfessionCard";
 
 import { useWallSound } from "@/hooks/useWallSound";
@@ -164,7 +163,7 @@ const TheWall = () => {
         }}
       />
 
-      {/* Pinned header: wordmark + title + Instagram follow. FIXED (not sticky): the
+      {/* Pinned header: title + Instagram follow. FIXED (not sticky): the
           outer wrapper's overflow-hidden breaks position:sticky, so this is pinned to the
           viewport and the feed below carries matching top padding. Stays on arrival and
           while the feed scrolls. */}
@@ -188,9 +187,11 @@ const TheWall = () => {
             feed space. Content capped to the SAME 680px frame as the records
             column — one axis. */}
         <div className="mx-auto max-w-[680px] pt-6 pb-6 md:pt-8 md:pb-7 px-6 text-center">
-          <div className="mb-2 flex justify-center">
-            <GuiltyLogo />
-          </div>
+          {/* NO GUILTY wordmark above the title — removed DELIBERATELY, and it
+              was the last visible one in the app: the Booth may not remain a
+              GUILTY property, and the share card carries the branding where it
+              travels. Not replaced with the Booth mark either — the masthead
+              is already the page's identity. */}
           {/* Venue view: the venue's display name replaces PUBLIC RECORD, on a
               SIZE STEP by name length (never two lines — a wrapped title grows
               the fixed masthead and breaks the feed-padding clearance).
@@ -248,17 +249,17 @@ const TheWall = () => {
         </div>
       </div>
 
-      {/* Confession feed. Top padding clears the FIXED masthead (≈143px mobile
-          since the wordmark + bigger title landed, taller at md where its
-          paddings/type grow; the venue view's ON RECORD line adds ~25px, so it
-          gets one step more); bottom padding clears the single-row pinned bar
-          (≈107px) so the last confession isn't hidden underneath.
+      {/* Confession feed. Top padding clears the FIXED masthead (≈111px mobile
+          now the wordmark is gone, taller at md where its paddings/type grow;
+          the venue view's ON RECORD line adds ~20px, so it gets one step
+          more); bottom padding clears the single-row pinned bar (≈107px) so
+          the last confession isn't hidden underneath.
           680px cap: verdicts ran ~100 chars at 720; comfortable measure is 45–75.
           Below 680px viewport the cap is inert — mobile is unchanged. */}
       <div
         className={
           "max-w-[680px] mx-auto px-6 pb-[132px] " +
-          (venueView ? "pt-48 md:pt-56" : "pt-40 md:pt-48")
+          (venueView ? "pt-40 md:pt-48" : "pt-32 md:pt-40")
         }
       >
         {loading ? (
