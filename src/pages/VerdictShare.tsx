@@ -133,9 +133,13 @@ const VerdictShare = () => {
             page with almost nothing else — the same conditions that make the
             gate's version work. (Contrast the wall's stamps, which stay FLAT —
             see ConfessionCard.) */}
+        {/* No SUBJECT # here, deliberately: this page is a stranger's first
+            contact, and the subject number is an internal reference that
+            means nothing to them — it doubled the line for no reader. (It
+            still travels on the story card and the verdict screen, where the
+            confessor it belongs to can see it.) */}
         <p className="venue-glow-text text-xs font-mono-light tracking-[0.2em] uppercase">
           {venue ? `As charged at ${venue}` : "Location withheld"}
-          {row?.subject_number ? ` · Subject #${row.subject_number}` : ""}
         </p>
       </div>
 
