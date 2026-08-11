@@ -482,6 +482,16 @@ const Verdict = () => {
         [46, 55],
         [40, 48],
       ];
+      // The fit solves the EXACT baseline chain the draw code below uses —
+      // not per-line reservations, which left ~17px of dead slack between
+      // the footer row and the chrome line (the row is caps-only mono: all
+      // its ink sits ABOVE the baseline, so reserving a full line-height
+      // under it bought nothing). The footer baseline lands at the chrome
+      // line minus an 8px halo allowance (the neon glow bleeds past the
+      // baseline — measured to ~7px at its faintest tier — and glow is ink
+      // too); every reclaimed pixel goes to the print, which caps at its
+      // 76% maximum on short cards.
+      const glowPad = 8;
       let vSize = 40;
       let vLH = 48;
       let vLines: string[] = [];
@@ -489,13 +499,16 @@ const Verdict = () => {
       for (const [s, lh] of vSteps) {
         ctx.font = `700 ${s}px 'Control Upright', sans-serif`;
         const vl = wrapText(ctx, verdictResponse, photoW);
-        const bandNeeded =
+        // photoBottom → footer baseline, mirroring the draws exactly.
+        const chain =
           bandGapTop +
           (cLines.length > 0 ? cLines.length * confLH + confToVerdict : 0) +
-          vl.length * lh +
+          Math.round(s * 0.8) +
+          (vl.length - 1) * lh +
+          Math.round(s * 0.2) +
           footerGap +
-          venueSize;
-        const fitH = bandBottom - photoTop - bandNeeded;
+          Math.round(venueSize * 0.8);
+        const fitH = bandBottom - glowPad - photoTop - chain;
         vSize = s;
         vLH = lh;
         vLines = vl;
@@ -525,23 +538,33 @@ const Verdict = () => {
         photoH,
       );
 
-      // ── Stamp ON the print: the WORDMARK ALONE, pinned to the photo's top
-      // (top edge photo+44) — a stamp sits where it was struck, and the room
-      // reads underneath it. NOTHING ELSE goes on the photo: orange is the
-      // one colour proven to hold on an unknown photo, and orange is taken
-      // by the mark. Every alternative for the charge line failed on a pale
-      // photo — State Blue washes out, grey has no separation, white with an
-      // outline reads as a subtitle — so the mark carries the
-      // stamped-onto-evidence idea alone, and anything that must be READABLE
-      // lives on a surface we control (the venue line is in the band's
-      // footer row below). 340px, down from 400: it was sized to anchor a
-      // stack of three and now stands alone.
+      // ── Stamp ON the print: the WORDMARK ALONE, in the print's BOTTOM
+      // RIGHT corner (nominal box 34px in from the print's right edge, 34px
+      // up from its bottom edge). A corner mark reads as a stamp on a print
+      // rather than a header over an image, and it sits near the filing row
+      // so the mark and the record read as one system. KNOWN TRADE: the
+      // bottom of a photo is usually the foreground — the crop step
+      // mitigates this, because the position is fixed and people frame
+      // knowing where it lands.
+      // NOTHING ELSE goes on the photo: orange is the one colour proven to
+      // hold on an unknown photo, and orange is taken by the mark. Every
+      // alternative for the charge line failed on a pale photo — State Blue
+      // washes out, grey has no separation, white with an outline reads as a
+      // subtitle — so the mark carries the stamped-onto-evidence idea alone,
+      // and anything that must be READABLE lives on a surface we control
+      // (the venue line is in the band's footer row below). 340px, down from
+      // 400: it was sized to anchor a stack of three and now stands alone.
+      // NOTE the -10° tilt swings the mark's lower-left corner below its
+      // nominal box, but the SVG's ink is inset within that box and absorbs
+      // most of it. The centre is nudged UP 7px off the pure box math so the
+      // measured INK sits equidistant from the print's right and bottom
+      // edges (~35px each) — position the ink, not the box.
       const wm = await loadImage(guiltyWordmark);
       const stampW = 340;
       const wmRatio = wm.height && wm.width ? wm.height / wm.width : 335.5 / 1000;
       const stampH = stampW * wmRatio;
-      const stampTopY = photoTop + 44;
-      const cx = W / 2;
+      const stampCx = inset + photoW - 34 - stampW / 2;
+      const stampCy = photoBottom - 34 - stampH / 2 - 7;
 
       // GUILTY ORANGE, the asset's own colour — one brand mark on every
       // surface (WHITE WAS TRIED AND REVERTED: no separation on a pale
@@ -549,20 +572,20 @@ const Verdict = () => {
       // more: that was a white-stamp legibility fix, and it measured near
       // invisible even then.
       ctx.save();
-      ctx.translate(cx, stampTopY + stampH / 2);
+      ctx.translate(stampCx, stampCy);
       ctx.rotate((-10 * Math.PI) / 180);
       ctx.drawImage(wm, -stampW / 2, -stampH / 2, stampW, stampH);
       ctx.restore();
 
       // ── Band: type directly on the mount, sharing the photo's left edge.
       // Confession first, so the verdict answers a visible question — at
-      // rgb(180,175,166), BRIGHTER than the screen's muted token on purpose:
-      // at the token grey it weighed the same as the URL and read as
-      // metadata, when it's the setup the verdict answers. It must stay
-      // quieter than the verdict (#F4F0EA), never brighter.
+      // rgb(200,195,186), BRIGHTER than the screen's muted token on purpose
+      // (raised twice: 180,175,166 was judged against a full-bleed dark
+      // photo and still read as metadata against a pale room). The rule
+      // stands: quieter than the verdict (#F4F0EA), never brighter.
       let by = photoBottom + bandGapTop;
       if (cLines.length > 0) {
-        ctx.fillStyle = "rgb(180, 175, 166)";
+        ctx.fillStyle = "rgb(200, 195, 186)";
         ctx.font = `300 ${confSize}px 'Söhne Mono', monospace`;
         let cy = by + Math.round(confSize * 0.8);
         for (const ln of cLines) {
