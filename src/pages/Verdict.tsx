@@ -462,18 +462,20 @@ const Verdict = () => {
       const photoGuardH = Math.round(H * 0.55); // absolute floor, unreachable for real content
       const bandBottom = H - 250; // 1670 — the safe-zone line, hard
       const bandGapTop = 36; // photo bottom → confession
-      const confSize = 28;
-      const confLH = 38;
+      // Confession at 32 (raised from 28: it sets up the verdict and was
+      // reading as a caption; 36 and 40 were tested and both start competing
+      // with the verdict — don't raise it again).
+      const confSize = 32;
+      const confLH = 44;
       const confToVerdict = 20;
-      // Footer row: AT <VENUE> (28px, State Blue neon) left, the address
-      // (20px, grey) right, ONE baseline. The URL's drop from 24-ish to 20
-      // is what creates the hierarchy — verdict loudest, confession second,
-      // filing row quietest; without it the confession and URL tie for last.
-      // URL, not an Instagram handle: the card travels outside Instagram and
-      // the URL goes to the Booth itself rather than a feed about it.
-      const venueSize = 28;
-      const urlSize = 20;
-      const footerGap = 18; // last verdict line → footer row
+      // Filing note — ONE line at 22px: "AS CHARGED, <VENUE> · url". Four
+      // stacked elements at four sizes read as clutter; three do not — the
+      // band is setup, verdict, filing note. Venue segment State Blue neon;
+      // middot + address in the dimmer grey. URL, not an Instagram handle:
+      // the card travels outside Instagram and the URL goes to the Booth
+      // itself rather than a feed about it.
+      const filingSize = 22;
+      const footerGap = 18; // last verdict line → filing note
       const confessionText = sessionStorage.getItem("confession") || "";
       ctx.font = `300 ${confSize}px 'Söhne Mono', monospace`;
       const cLines = confessionText ? wrapText(ctx, confessionText, photoW) : [];
@@ -507,7 +509,7 @@ const Verdict = () => {
           (vl.length - 1) * lh +
           Math.round(s * 0.2) +
           footerGap +
-          Math.round(venueSize * 0.8);
+          Math.round(filingSize * 0.8);
         const fitH = bandBottom - glowPad - photoTop - chain;
         vSize = s;
         vLH = lh;
@@ -601,25 +603,30 @@ const Verdict = () => {
         ctx.fillText(ln, inset, vy);
         vy += vLH;
       }
-      // Footer row, one baseline: the venue line left (State Blue neon — the
-      // charge line that came OFF the photo, see the stamp note), the
-      // address right (grey, handle-tier alpha).
+      // Filing note, one line, left-aligned: charge + venue in State Blue
+      // neon (the charge line that came OFF the photo, see the stamp note),
+      // then a middot and the address in the dimmer grey. Generous air
+      // either side of the middot — they're two facts, not one string.
       const lastVBaseline = vy - vLH;
-      const footerBaseline =
-        lastVBaseline + Math.round(vSize * 0.2) + footerGap + Math.round(venueSize * 0.8);
-      setLS("5px");
-      ctx.font = `400 ${venueSize}px 'Söhne Mono', monospace`;
-      drawNeonStamp(
-        filedVenue ? `AT ${filedVenue}` : "LOCATION WITHHELD",
-        inset,
-        footerBaseline,
+      const filingBaseline =
+        lastVBaseline + Math.round(vSize * 0.2) + footerGap + Math.round(filingSize * 0.8);
+      setLS("2px");
+      ctx.font = `400 ${filingSize}px 'Söhne Mono', monospace`;
+      const chargeSeg = filedVenue
+        ? `AS CHARGED, ${filedVenue}`
+        : "AS CHARGED, LOCATION WITHHELD";
+      drawNeonStamp(chargeSeg, inset, filingBaseline);
+      const chargeW = ctx.measureText(chargeSeg).width;
+      const dotPad = 24;
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.fillText("·", inset + chargeW + dotPad, filingBaseline);
+      const dotW = ctx.measureText("·").width;
+      ctx.fillText(
+        "theboothrecord.com",
+        inset + chargeW + dotPad + dotW + dotPad,
+        filingBaseline,
       );
       setLS("0px");
-      ctx.textAlign = "right";
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
-      ctx.font = `400 ${urlSize}px 'Söhne Mono', monospace`;
-      ctx.fillText("theboothrecord.com", W - inset, footerBaseline);
-      ctx.textAlign = "left";
 
       return await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob(
