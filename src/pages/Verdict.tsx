@@ -440,9 +440,12 @@ const Verdict = () => {
       ctx.textBaseline = "alphabetic";
       ctx.textAlign = "left";
 
-      // Frame geometry: 56px margins; the photo tops out at 76% of the card
-      // and gives ground to the band as the text needs it — the verdict
-      // steps down (54 → 46 → 40) before the photo does.
+      // Frame geometry: 56px margins on left, right AND top — the equal
+      // three-sided border against the thick band below is what makes this
+      // read as a print on a mount rather than a photo cropped by the frame.
+      // The photo tops out at 76% of the card and gives ground to the band
+      // as the text needs it — the verdict steps down (54 → 46 → 40) before
+      // the photo does.
       // THE BAND CLEARS INSTAGRAM'S CHROME: every line's bottom stays above
       // y=1670 — the same safe-zone line the no-photo footer respects — so
       // the verdict never sits under the reply bar. That constraint outranks
@@ -462,8 +465,15 @@ const Verdict = () => {
       const confSize = 28;
       const confLH = 38;
       const confToVerdict = 20;
-      const urlSize = 26;
-      const urlGap = 18; // last verdict line → address
+      // Footer row: AT <VENUE> (28px, State Blue neon) left, the address
+      // (20px, grey) right, ONE baseline. The URL's drop from 24-ish to 20
+      // is what creates the hierarchy — verdict loudest, confession second,
+      // filing row quietest; without it the confession and URL tie for last.
+      // URL, not an Instagram handle: the card travels outside Instagram and
+      // the URL goes to the Booth itself rather than a feed about it.
+      const venueSize = 28;
+      const urlSize = 20;
+      const footerGap = 18; // last verdict line → footer row
       const confessionText = sessionStorage.getItem("confession") || "";
       ctx.font = `300 ${confSize}px 'Söhne Mono', monospace`;
       const cLines = confessionText ? wrapText(ctx, confessionText, photoW) : [];
@@ -483,8 +493,8 @@ const Verdict = () => {
           bandGapTop +
           (cLines.length > 0 ? cLines.length * confLH + confToVerdict : 0) +
           vl.length * lh +
-          urlGap +
-          urlSize;
+          footerGap +
+          venueSize;
         const fitH = bandBottom - photoTop - bandNeeded;
         vSize = s;
         vLH = lh;
@@ -515,16 +525,22 @@ const Verdict = () => {
         photoH,
       );
 
-      // ── Stamp ON the print: wordmark + single filing line, pinned to the
-      // photo's top (top edge photo+46) rather than centred — a stamp sits
-      // where it was struck, and the room reads underneath it. 400px, down
-      // again from the plate layout's 505: the print already frames the
-      // room; this is a stamp on it, not a poster.
+      // ── Stamp ON the print: the WORDMARK ALONE, pinned to the photo's top
+      // (top edge photo+44) — a stamp sits where it was struck, and the room
+      // reads underneath it. NOTHING ELSE goes on the photo: orange is the
+      // one colour proven to hold on an unknown photo, and orange is taken
+      // by the mark. Every alternative for the charge line failed on a pale
+      // photo — State Blue washes out, grey has no separation, white with an
+      // outline reads as a subtitle — so the mark carries the
+      // stamped-onto-evidence idea alone, and anything that must be READABLE
+      // lives on a surface we control (the venue line is in the band's
+      // footer row below). 340px, down from 400: it was sized to anchor a
+      // stack of three and now stands alone.
       const wm = await loadImage(guiltyWordmark);
-      const stampW = 400;
+      const stampW = 340;
       const wmRatio = wm.height && wm.width ? wm.height / wm.width : 335.5 / 1000;
       const stampH = stampW * wmRatio;
-      const stampTopY = photoTop + 46;
+      const stampTopY = photoTop + 44;
       const cx = W / 2;
 
       // GUILTY ORANGE, the asset's own colour — one brand mark on every
@@ -538,28 +554,15 @@ const Verdict = () => {
       ctx.drawImage(wm, -stampW / 2, -stampH / 2, stampW, stampH);
       ctx.restore();
 
-      // Filing line — ONE line, State Blue neon (the stamp treatment both
-      // cards share), condensed from the no-photo card's two lines: on a
-      // photo the stamp is a mark, not a block of copy.
-      ctx.textAlign = "center";
-      const chargeLine = filedVenue
-        ? `AS CHARGED AT ${filedVenue}`
-        : "AS CHARGED · LOCATION WITHHELD";
-      setLS("5px");
-      ctx.font = "400 27px 'Söhne Mono', monospace";
-      drawNeonStamp(chargeLine, cx, stampTopY + stampH + 26 + Math.round(27 * 0.8));
-      setLS("0px");
-      ctx.textAlign = "left";
-
       // ── Band: type directly on the mount, sharing the photo's left edge.
-      // Confession first (the no-photo card's voice — light mono, muted grey
-      // from the screen's own token), so the verdict answers a visible
-      // question.
-      const bandRoot = getComputedStyle(document.documentElement);
-      const bandMuted = `hsl(${bandRoot.getPropertyValue("--muted-foreground").trim()})`;
+      // Confession first, so the verdict answers a visible question — at
+      // rgb(180,175,166), BRIGHTER than the screen's muted token on purpose:
+      // at the token grey it weighed the same as the URL and read as
+      // metadata, when it's the setup the verdict answers. It must stay
+      // quieter than the verdict (#F4F0EA), never brighter.
       let by = photoBottom + bandGapTop;
       if (cLines.length > 0) {
-        ctx.fillStyle = bandMuted;
+        ctx.fillStyle = "rgb(180, 175, 166)";
         ctx.font = `300 ${confSize}px 'Söhne Mono', monospace`;
         let cy = by + Math.round(confSize * 0.8);
         for (const ln of cLines) {
@@ -575,14 +578,25 @@ const Verdict = () => {
         ctx.fillText(ln, inset, vy);
         vy += vLH;
       }
-      // Address — the card's only wayfinding (no handle, no SUBJECT #), so
-      // it keeps the handle-tier 0.4 alpha.
+      // Footer row, one baseline: the venue line left (State Blue neon — the
+      // charge line that came OFF the photo, see the stamp note), the
+      // address right (grey, handle-tier alpha).
       const lastVBaseline = vy - vLH;
-      const urlBaseline =
-        lastVBaseline + Math.round(vSize * 0.2) + urlGap + Math.round(urlSize * 0.8);
+      const footerBaseline =
+        lastVBaseline + Math.round(vSize * 0.2) + footerGap + Math.round(venueSize * 0.8);
+      setLS("5px");
+      ctx.font = `400 ${venueSize}px 'Söhne Mono', monospace`;
+      drawNeonStamp(
+        filedVenue ? `AT ${filedVenue}` : "LOCATION WITHHELD",
+        inset,
+        footerBaseline,
+      );
+      setLS("0px");
+      ctx.textAlign = "right";
       ctx.fillStyle = "rgba(255,255,255,0.4)";
       ctx.font = `400 ${urlSize}px 'Söhne Mono', monospace`;
-      ctx.fillText("theboothrecord.com", inset, urlBaseline);
+      ctx.fillText("theboothrecord.com", W - inset, footerBaseline);
+      ctx.textAlign = "left";
 
       return await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob(
