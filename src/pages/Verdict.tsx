@@ -284,21 +284,24 @@ const StoryPhotoCrop = ({
             transform: `translate(${t.ox * disp}px, ${t.oy * disp}px) scale(${t.s * disp})`,
           }}
         />
-        {/* FAINT STAMP GUIDE — the wordmark at the same relative position and
-            size it will occupy on the finished card (nominal box 34px in from
-            the print's right edge, 73px up from its bottom — the charge line
-            sits in the gap beneath it, 340/968 wide — see the card renderer),
-            at 55% opacity (raised from 28%, which
-            barely registered on a bright photo — the guide only works if
-            someone notices it and composes around it). A GUIDE, not a preview:
-            the mark's position is fixed, so showing it during framing lets
-            people compose around it — it prevents the one bad outcome (the
-            mark landing on the subject) and makes the mark feel composed
-            with rather than applied afterwards. Display-only DOM overlay:
-            the baked crop (use() above) draws background + photo and nothing
-            else, so the guide can never reach the exported card. When long
-            text shrinks the print the real mark rides slightly higher than
-            this guide (centred slice, ≤ ~22px) — accepted for a guide. */}
+        {/* THE STAMP, shown exactly as it lands — same relative position and
+            size as the finished card (nominal box 34px in from the print's
+            right edge, 73px up from its bottom — the charge line sits in the
+            gap beneath it, 340/968 wide — see the card renderer), at FULL
+            opacity. It was faded first (28%, then 55%) to say "preview, not
+            final" — but it IS final, that is precisely where the mark lands,
+            and the faintness read as an unfinished logo, creating the
+            confusion it was meant to prevent. At full strength the mark
+            explains itself and needs no label — and NO LABELS is the rule on
+            this screen (see the layout note below). The mark's position is
+            fixed, so showing it during framing lets people compose around
+            it — it prevents the one bad outcome (the mark landing on the
+            subject) and makes the mark feel composed with rather than
+            applied afterwards. Display-only DOM overlay: the baked crop
+            (use() above) draws background + photo and nothing else, so this
+            can never reach the exported card. When long text shrinks the
+            print the real mark rides slightly higher than shown here
+            (centred slice, ≤ ~22px) — accepted. */}
         <img
           src={guiltyWordmark}
           alt=""
@@ -308,11 +311,16 @@ const StoryPhotoCrop = ({
             width: `${((340 / 968) * 100).toFixed(2)}%`,
             right: `${((34 / 968) * 100).toFixed(2)}%`,
             bottom: `${((73 / 1459) * 100).toFixed(2)}%`,
-            opacity: 0.55,
+            opacity: 1,
             transform: "rotate(-10deg)",
           }}
         />
       </div>
+      {/* NO LABELS on this screen — "drag to reframe" and "the stamp lands
+          here" were both considered and REJECTED: drag and pinch on a photo
+          is the most learned gesture on a phone, and instructional text
+          makes a three-element screen read as a form. The crop screen is
+          photo, button, back. Nothing else. */}
       {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, hairline,
           transparent — the same slot every action screen uses. */}
       <button
