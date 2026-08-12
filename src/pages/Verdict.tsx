@@ -51,8 +51,23 @@ const StoryPhotoCrop = ({
   }));
   const boxRef = useRef<HTMLDivElement>(null);
   const [disp, setDisp] = useState(0.25); // screen px per card px
+  // Measure on mount AND a frame later, and on resize — the box can report
+  // clientWidth 0 at effect time (overlay still laying out), which left the
+  // photo at scale(0), invisible while cropping. Never accept 0: the bake
+  // (use()) works in print space and was never affected, but the user
+  // couldn't see what they were framing.
   useEffect(() => {
-    if (boxRef.current) setDisp(boxRef.current.clientWidth / W);
+    const measure = () => {
+      const w = boxRef.current?.clientWidth ?? 0;
+      if (w > 0) setDisp(w / W);
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   // Cover-fit clamp: the photo may never expose the frame edge.
@@ -148,6 +163,31 @@ const StoryPhotoCrop = ({
             height: ih,
             transformOrigin: "0 0",
             transform: `translate(${t.ox * disp}px, ${t.oy * disp}px) scale(${t.s * disp})`,
+          }}
+        />
+        {/* FAINT STAMP GUIDE — the wordmark at the same relative position and
+            size it will occupy on the finished card (nominal box 34px in from
+            the print's right edge, 34+7px up from its bottom, 340/968 wide —
+            see the card renderer), at ~28% opacity. A GUIDE, not a preview:
+            the mark's position is fixed, so showing it during framing lets
+            people compose around it — it prevents the one bad outcome (the
+            mark landing on the subject) and makes the mark feel composed
+            with rather than applied afterwards. Display-only DOM overlay:
+            the baked crop (use() above) draws background + photo and nothing
+            else, so the guide can never reach the exported card. When long
+            text shrinks the print the real mark rides slightly higher than
+            this guide (centred slice, ≤ ~22px) — accepted for a guide. */}
+        <img
+          src={guiltyWordmark}
+          alt=""
+          draggable={false}
+          className="pointer-events-none absolute"
+          style={{
+            width: `${((340 / 968) * 100).toFixed(2)}%`,
+            right: `${((34 / 968) * 100).toFixed(2)}%`,
+            bottom: `${((41 / 1459) * 100).toFixed(2)}%`,
+            opacity: 0.28,
+            transform: "rotate(-10deg)",
           }}
         />
       </div>
@@ -1201,10 +1241,15 @@ const Verdict = () => {
           {story.step === "choose" ? (
             <>
               <div className="flex-1 w-full max-w-xs flex flex-col items-center justify-center gap-5">
-                {/* Framing caption (THE PRIMARY-ACTION RULE): what the photo is
-                    FOR — the room the venue is sold on, not the plate. */}
+                {/* Framing caption (THE PRIMARY-ACTION RULE): states what the
+                    photo is FOR and leaves the framing to them — the same
+                    register as LOCATION WITHHELD and AS CHARGED. Replaced
+                    "THE ROOM, NOT YOUR DINNER": dinner assumed a restaurant
+                    (the Booth also runs at bars, hotels and with no venue at
+                    all), and it was advice about framing rather than a
+                    statement of purpose. */}
                 <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
-                  THE ROOM, NOT YOUR DINNER
+                  WHERE IT HAPPENED.
                 </p>
                 {/* capture="environment" opens the back camera directly; the
                     library lives behind the quiet link below (its input has no
