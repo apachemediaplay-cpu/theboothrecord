@@ -93,6 +93,14 @@ const Receiving = () => {
       }
       sessionStorage.setItem("verdictSource", rowSource);
       sessionStorage.setItem("stampVenue", stampVenue ? "true" : "false");
+      // Filing timestamp for the story card's header: captured HERE, the
+      // moment the verdict lands (the same moment the server stamps
+      // created_at), so a card shared hours later still shows the night's
+      // time. Device-local = venue-local, because this runs on the
+      // confessor's phone at the venue — no timezone column needed (neither
+      // confessions nor venues carries one). Overwritten on every filing, so
+      // it never needs to join Confess.handleSubmit's five-key clear list.
+      sessionStorage.setItem("filedAt", String(Date.now()));
       navigate("/verdict");
     },
     [navigate],
