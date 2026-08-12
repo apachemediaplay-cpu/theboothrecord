@@ -628,7 +628,6 @@ const Verdict = () => {
         };
       };
       const rootStyle = getComputedStyle(document.documentElement);
-      const stateBlue = `hsl(${rootStyle.getPropertyValue("--state-blue").trim()})`;
       const ritualGreen = `hsl(${rootStyle.getPropertyValue("--ritual-green").trim()})`;
 
       // THE GAP SCALE — two steps, not three near-identical values (40/44/40
@@ -685,20 +684,41 @@ const Verdict = () => {
       const chipCenterY = chipBoxTop + chipBoxH / 2;
       const headerBottom = chipBoxTop + chipBoxH;
 
-      ctx.strokeStyle = stateBlue;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(chipBoxLeft, chipBoxTop, chipTextW + chipPadX * 2, chipBoxH);
-      ctx.fillStyle = stateBlue;
+      // NEON header — drawNeonStamp for both texts, and the same three-layer
+      // halo on the chip's box (stroke passes mirroring the text treatment,
+      // crisp core stroke last). KNOWN COST, measured: the halo bleeds a few
+      // px beyond the box on all sides, softening the edge that defines the
+      // chip — accepted because the header always sits on the mount's flat
+      // #171513, never on the photo, so the edge never has to fight a busy
+      // background.
+      const strokeNeonRect = (x0: number, y0: number, w0: number, h0: number) => {
+        const layers: [number, string][] = [
+          [2.8, "rgba(52,155,189,0.97)"],
+          [10, "rgba(52,155,189,0.68)"],
+          [26, "rgba(52,155,189,0.47)"],
+        ];
+        ctx.strokeStyle = "rgb(120,205,235)"; // core stays brighter than the halo
+        ctx.lineWidth = 2;
+        for (const [blur, color] of layers) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = blur;
+          ctx.strokeRect(x0, y0, w0, h0);
+        }
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.strokeRect(x0, y0, w0, h0);
+      };
+      strokeNeonRect(chipBoxLeft, chipBoxTop, chipTextW + chipPadX * 2, chipBoxH);
       setLS("2px");
       ctx.font = chipFont;
-      ctx.fillText(
+      drawNeonStamp(
         chipText,
         chipBoxLeft + chipPadX,
         chipBoxTop + chipPadY + chipInk.asc,
       );
       setLS("0px");
       ctx.font = timeFont;
-      ctx.fillText(timeText, inset, chipCenterY + timeInk.asc / 2);
+      drawNeonStamp(timeText, inset, chipCenterY + timeInk.asc / 2);
 
       // ── Print size: the photo takes everything the fixed stack doesn't
       // need — no ceiling; the % is an OUTCOME (reported per render in dev).
