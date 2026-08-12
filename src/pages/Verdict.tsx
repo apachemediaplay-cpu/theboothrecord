@@ -254,7 +254,11 @@ const StoryPhotoCrop = ({
           the overlay padding): pinch-and-drag done one-handed in a dark room
           needs precision more than anywhere else in the flow, and a small
           frame makes it fiddly. Width binds on phones (full width minus the
-          overlay's 24px gutters); height binds on wide screens. */}
+          overlay's 24px gutters); height binds on wide screens.
+          100dvh + the safe-area inset, matching the overlay: sized against
+          100vh the frame budgets for a viewport ~100px taller than what iOS
+          Safari shows with its toolbar up, and the controls below get pushed
+          under the chrome. */}
       {/* Hairline as an inset OUTLINE, not a border: box-sizing is border-box,
           so a border would make the content box a slightly different aspect
           than 968/1520 and the photo would run 1-2px short of the frame edge.
@@ -263,7 +267,8 @@ const StoryPhotoCrop = ({
         ref={boxRef}
         className="relative overflow-hidden outline outline-1 -outline-offset-1 outline-muted-foreground/40 touch-none select-none"
         style={{
-          width: "min(100vw - 48px, (100vh - 210px) * 0.6635)",
+          width:
+            "min(100vw - 48px, (100dvh - 210px - env(safe-area-inset-bottom)) * 0.6635)",
           aspectRatio: "968 / 1520",
         }}
         onPointerDown={onPointerDown}
@@ -575,15 +580,24 @@ const Verdict = () => {
     const pad = 110;
     const maxW = W - pad * 2;
 
-    // Neon stamp (State Blue) — shared by both compositions; hoisted above the
-    // photo branch. See the AS CHARGED comment below for the layering approach.
-    const drawNeonStamp = (text: string, x: number, y: number) => {
+    // Layered neon glow — ONE structure, per-colour variants below (not
+    // special cases: any future element picks a colourway). Three shadow
+    // passes at the app's curve (2.8/10/26 @ .97/.68/.47) filled with the
+    // CORE colour so only the halos accumulate, then a crisp core draw.
+    // The core must stay brighter than the halo or it reads as blur.
+    const drawNeonText = (
+      text: string,
+      x: number,
+      y: number,
+      core: string,
+      halo: [string, string, string],
+    ) => {
       const layers: [number, string][] = [
-        [2.8, "rgba(52,155,189,0.97)"],
-        [10, "rgba(52,155,189,0.68)"],
-        [26, "rgba(52,155,189,0.47)"],
+        [2.8, halo[0]],
+        [10, halo[1]],
+        [26, halo[2]],
       ];
-      ctx.fillStyle = "rgb(120,205,235)"; // core stays brighter than the halo
+      ctx.fillStyle = core;
       for (const [blur, color] of layers) {
         ctx.shadowColor = color;
         ctx.shadowBlur = blur;
@@ -593,6 +607,22 @@ const Verdict = () => {
       ctx.shadowBlur = 0;
       ctx.fillText(text, x, y);
     };
+    // State Blue — the filing voice (both compositions' stamps, the header).
+    const drawNeonStamp = (text: string, x: number, y: number) =>
+      drawNeonText(text, x, y, "rgb(120,205,235)", [
+        "rgba(52,155,189,0.97)",
+        "rgba(52,155,189,0.68)",
+        "rgba(52,155,189,0.47)",
+      ]);
+    // Ritual green — the ask (the card's CTA). Halo is the token green
+    // (rgb(0,255,30), card.mjs's RITUAL); core lightened one step, mirroring
+    // how the blue core sits above State Blue.
+    const drawNeonGreen = (text: string, x: number, y: number) =>
+      drawNeonText(text, x, y, "rgb(140,255,150)", [
+        "rgba(0,255,30,0.97)",
+        "rgba(0,255,30,0.68)",
+        "rgba(0,255,30,0.47)",
+      ]);
 
     if (photo) {
       // ── PHOTO COMPOSITION: THE MINIMAL CARD ──────────────────────────
@@ -627,18 +657,25 @@ const Verdict = () => {
           desc: Math.round(m.actualBoundingBoxDescent),
         };
       };
-      const rootStyle = getComputedStyle(document.documentElement);
-      const ritualGreen = `hsl(${rootStyle.getPropertyValue("--ritual-green").trim()})`;
 
       // THE GAP SCALE — two steps, not three near-identical values (40/44/40
       // read as three of the same thing doing different jobs):
       //   chip bottom  → print top      40
       //   print bottom → verdict cap    64  (a break: image to text)
       //   verdict ink  → URL cap        40  (related: verdict and its footer)
-      // Margins: top (above header ink) and bottom (below last ink) EQUAL;
-      // every spare pixel goes to the print.
+      // Margins: DELIBERATELY UNEVEN — 90 above the header ink, 64 below the
+      // URL's ink. Equal margins were tried first and the text block
+      // FLOATED: far more air below the URL than above the verdict made the
+      // band read as detached from the print. Tightening the BOTTOM pulls
+      // the whole group up toward the image without crowding the verdict
+      // against the print's edge, which is what shrinking the
+      // print-to-verdict gap would have done instead. A mounted print
+      // carries more air above than below, because the lower border holds
+      // the caption and reads heavier. Every reclaimed pixel goes to the
+      // print.
       const inset = 56;
-      const margin = 81; // top AND bottom — equalized
+      const marginTop = 90; // above the header ink
+      const marginBottom = 64; // below the URL's ink bottom
       const chipToPrint = 40;
       const printToVerdict = 64;
       const verdictToUrl = 40;
@@ -678,7 +715,7 @@ const Verdict = () => {
       const chipInk = inkOf(chipFont, chipText);
       const timeInk = inkOf(timeFont, timeText);
       const chipBoxH = chipInk.asc + chipInk.desc + chipPadY * 2;
-      const chipBoxTop = margin;
+      const chipBoxTop = marginTop;
       const chipBoxRight = W - inset; // 1024
       const chipBoxLeft = chipBoxRight - (chipTextW + chipPadX * 2);
       const chipCenterY = chipBoxTop + chipBoxH / 2;
@@ -722,17 +759,26 @@ const Verdict = () => {
 
       // ── Print size: the photo takes everything the fixed stack doesn't
       // need — no ceiling; the % is an OUTCOME (reported per render in dev).
-      // The verdict steps down (54 → 46 → 40, leading 1.22) below a 65%
-      // print; 55% guards absurd inputs.
+      // The verdict steps down (42 → 38 → 34, leading 1.22) below a 65%
+      // print; 55% guards absurd inputs. 42 as the top step, down from 54:
+      // with the confession gone from the band the verdict is ALONE down
+      // there, and 54 filled the space rather than sitting in it — 42 gives
+      // the band negative space and the print grows into the difference.
       const photoTop = headerBottom + chipToPrint;
-      const ctaInk = inkOf(chipFont, "confess at theboothrecord.com");
+      // The CTA's OWN size — it inherited chipFont (24) in the minimal-card
+      // rewrite and lost its constant; the URL is the only route back to the
+      // site on an image nobody can tap, and it earns its own scale. Keep
+      // this constant so it can't get absorbed a second time.
+      const ctaSize = 28;
+      const ctaFont = `400 ${ctaSize}px 'Söhne Mono', monospace`;
+      const ctaInk = inkOf(ctaFont, "confess at theboothrecord.com");
       const vSteps: [number, number][] = [
-        [54, 66],
-        [46, 56],
-        [40, 49],
+        [42, 51],
+        [38, 46],
+        [34, 41],
       ];
-      let vSize = 40;
-      let vLH = 49;
+      let vSize = 34;
+      let vLH = 41;
       let vLines: string[] = [];
       let vTopInk = 0;
       let vBottomInk = 0;
@@ -751,7 +797,7 @@ const Verdict = () => {
           verdictToUrl +
           ctaInk.asc +
           ctaInk.desc;
-        const fitH = H - margin - below - photoTop;
+        const fitH = H - marginBottom - below - photoTop;
         vSize = s;
         vLH = lh;
         vLines = vl;
@@ -766,9 +812,11 @@ const Verdict = () => {
       const photoBottom = photoTop + photoH;
 
       // The crop step bakes the photo at 968×1520 — just above the tallest
-      // print this layout produces (a one-line verdict lands ~1500). Cards
-      // take a centred slice down to the actual print height; the slice is
-      // small on short cards and grows with the verdict.
+      // print this layout produces (a one-line verdict lands ~1515 since the
+      // 42px verdict step; only ~5px of headroom remains, so re-check this
+      // if the band shrinks again). Cards take a centred slice down to the
+      // actual print height; the slice is small on short cards and grows
+      // with the verdict.
       // FILM GRADE applied here, to the photo pixels ONLY (see gradePhoto):
       // everything drawn after this — mount, wordmark, band type — stays in
       // the app's own colours.
@@ -832,15 +880,16 @@ const Verdict = () => {
         vy += vLH;
       }
       const vInkBottom = vy - vLH + vBottomInk;
-      // URL footer — "confess at theboothrecord.com" in ritual green (the
-      // screen's own token, flat like THE BOOTH NOTICED on the no-photo
-      // card, not the button glow). 40px of ink gap: related to the verdict
-      // — its footer — where the 64px above is the image-to-text break.
+      // URL footer — "confess at theboothrecord.com" in NEON ritual green
+      // (drawNeonGreen — the same three-pass structure as the State Blue
+      // neon). It was flat first, and the card's two ends spoke differently:
+      // the header lit, the CTA not. Both lit means they read as one system.
+      // 40px of ink gap: related to the verdict — its footer — where the
+      // 64px above is the image-to-text break.
       const ctaBaseline = vInkBottom + verdictToUrl + ctaInk.asc;
       setLS("2px");
-      ctx.fillStyle = ritualGreen;
-      ctx.font = chipFont;
-      ctx.fillText("confess at theboothrecord.com", inset, ctaBaseline);
+      ctx.font = ctaFont;
+      drawNeonGreen("confess at theboothrecord.com", inset, ctaBaseline);
       setLS("0px");
 
       return await new Promise<Blob>((resolve, reject) => {
@@ -1411,8 +1460,25 @@ const Verdict = () => {
       {/* ── POST TO STORY photo flow (see the story state note). Full-screen
           overlay: choose → crop → preview. skip at the bottom of choose runs
           the old single-tap path — today's card, byte for byte. */}
+      {/* iOS SAFARI FIX (confirmed on a real phone): with `inset-0` alone
+          the overlay sizes to the LARGE viewport (toolbar hidden), so its
+          bottom controls — chooser's skip, crop's back, preview's RETAKE —
+          sat under Safari's bottom toolbar with no visible way out of the
+          flow. height:100dvh sizes to the DYNAMIC viewport (ends above the
+          toolbar; the top:0 of inset-0 + explicit height wins over bottom:0,
+          and browsers without dvh, pre-2022, ignore the invalid height and
+          fall back to inset-0). The safe-area inset handles the home
+          indicator once the toolbar minimises. screen-container already does
+          both (100dvh + pb-32); this overlay was the one unprotected
+          container in the flow. */}
       {story ? (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col items-center px-6 pt-10 pb-8 overflow-hidden animate-fade-in">
+        <div
+          className="fixed inset-0 z-50 bg-background flex flex-col items-center px-6 pt-10 overflow-hidden animate-fade-in"
+          style={{
+            height: "100dvh",
+            paddingBottom: "calc(2rem + env(safe-area-inset-bottom))",
+          }}
+        >
           {story.step === "choose" ? (
             <>
               <div className="flex-1 w-full max-w-xs flex flex-col items-center justify-center gap-5">
