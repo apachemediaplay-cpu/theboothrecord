@@ -115,7 +115,7 @@ const gradePhoto = (src: HTMLCanvasElement): HTMLCanvasElement => {
 };
 
 // ── POST TO STORY crop step: drag-and-pinch a photo into the card's PRINT
-// frame — 968×1459, the inset photo area of the print-on-a-mount layout, NOT
+// frame — 968×1440, the inset photo area of the print-on-a-mount layout, NOT
 // the full 9:16 card (the band below the print holds the type). HAND-ROLLED
 // rather than a library, deliberately: one fixed aspect, one gesture pair
 // (pan + pinch, unified under Pointer Events), one constraint (cover-fit) —
@@ -137,7 +137,7 @@ const StoryPhotoCrop = ({
   onBack: () => void;
 }) => {
   const W = 968; // print width: 1080 - 2×56 margins
-  const H = 1459; // print height at its 76% maximum
+  const H = 1440; // the print at its 75% CEILING
   const iw = img.naturalWidth;
   const ih = img.naturalHeight;
   const cover = Math.max(W / iw, H / ih);
@@ -257,14 +257,14 @@ const StoryPhotoCrop = ({
           overlay's 24px gutters); height binds on wide screens. */}
       {/* Hairline as an inset OUTLINE, not a border: box-sizing is border-box,
           so a border would make the content box a slightly different aspect
-          than 968/1459 and the photo would run 1-2px short of the frame edge.
+          than 968/1440 and the photo would run 1-2px short of the frame edge.
           An outline draws over the photo without touching the geometry. */}
       <div
         ref={boxRef}
         className="relative overflow-hidden outline outline-1 -outline-offset-1 outline-muted-foreground/40 touch-none select-none"
         style={{
           width: "min(100vw - 48px, (100vh - 210px) * 0.6635)",
-          aspectRatio: "968 / 1459",
+          aspectRatio: "968 / 1440",
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -286,9 +286,8 @@ const StoryPhotoCrop = ({
         />
         {/* THE STAMP, shown exactly as it lands — same relative position and
             size as the finished card (nominal box 34px in from the print's
-            right edge, 73px up from its bottom — the charge line sits in the
-            gap beneath it, 340/968 wide — see the card renderer), at FULL
-            opacity. It was faded first (28%, then 55%) to say "preview, not
+            right edge, 41px up from its bottom, 340/968 wide — see the card
+            renderer), at FULL opacity. It was faded first (28%, then 55%) to say "preview, not
             final" — but it IS final, that is precisely where the mark lands,
             and the faintness read as an unfinished logo, creating the
             confusion it was meant to prevent. At full strength the mark
@@ -299,9 +298,12 @@ const StoryPhotoCrop = ({
             subject) and makes the mark feel composed with rather than
             applied afterwards. Display-only DOM overlay: the baked crop
             (use() above) draws background + photo and nothing else, so this
-            can never reach the exported card. When long text shrinks the
-            print the real mark rides slightly higher than shown here
-            (centred slice, ≤ ~22px) — accepted. */}
+            can never reach the exported card. Exact at the print's 75%
+            ceiling (968×1440, which the bake matches 1:1); when long text
+            shrinks the print, the card takes a centred slice and the real
+            mark rides higher than shown — up to ~86px in the stepped
+            extreme. Accepted: short cards, the overwhelming majority, are
+            exact. */}
         <img
           src={guiltyWordmark}
           alt=""
@@ -310,7 +312,7 @@ const StoryPhotoCrop = ({
           style={{
             width: `${((340 / 968) * 100).toFixed(2)}%`,
             right: `${((34 / 968) * 100).toFixed(2)}%`,
-            bottom: `${((73 / 1459) * 100).toFixed(2)}%`,
+            bottom: `${((41 / 1440) * 100).toFixed(2)}%`,
             opacity: 1,
             transform: "rotate(-10deg)",
           }}
@@ -599,11 +601,11 @@ const Verdict = () => {
       // background — so nothing sits over it except the stamp block, and
       // nothing below it needs a plate: the card's own background IS the
       // mount. Draw order: mount (full-card background) → photo (inset,
-      // film-graded — see gradePhoto) → stamp block on the photo (mark +
-      // charge line, bottom right) → band type on the mount.
+      // film-graded — see gradePhoto) → the mark on the photo (bottom
+      // right, ALONE) → band type on the mount.
       // THE BOOTH NOTICED, SUBJECT # and the handle stay ABSENT (the photo
-      // replaces them); the band holds confession → verdict → the confess
-      // CTA.
+      // replaces them); the band holds confession → verdict → AT <VENUE> →
+      // the confess CTA.
       ctx.fillStyle = "#171513";
       ctx.fillRect(0, 0, W, H);
 
@@ -613,39 +615,47 @@ const Verdict = () => {
       // Frame geometry: 56px margins on left, right AND top — the equal
       // three-sided border against the thick band below is what makes this
       // read as a print on a mount rather than a photo cropped by the frame.
-      // The photo tops out at 76% of the card and gives ground to the band
-      // as the text needs it — the verdict steps down (54 → 46 → 40) before
-      // the photo does.
-      // THE BAND CLEARS INSTAGRAM'S CHROME: every line's bottom stays above
-      // y=1670 — the same safe-zone line the no-photo footer respects — so
-      // the verdict never sits under the reply bar. That constraint outranks
-      // the old 70% photo preference: spacing was tightened first
-      // (44/26/24 → 36/20/18), the verdict steps down second, and the photo
-      // yields last — in the extreme (longest live verdict + max-length
-      // confession) it can settle around 65%. A 55% hard guard backstops
-      // absurd inputs.
+      // The print's 75% is a CEILING, not a fixed value: short cards get the
+      // full 75%; when the verdict runs long the print yields so the band
+      // stays intact (a three-line verdict lands ~68.5%). The band stack is
+      // BOTTOM-ANCHORED: the CTA baseline sits at H-125 (y=1795) — that
+      // anchor is what makes both spec numbers true at once.
+      // THE OLD y=1670 CHROME LINE STAYS UNENFORCED: it was never verified
+      // against a real posted story, and a composer screenshot suggests more
+      // room than it assumed. This layout's last ink: ~y=1790 short cards,
+      // y=1795 otherwise. Verify on a real story before tightening.
+      // The verdict still steps down (54 → 46 → 40) for long verdicts —
+      // below a 65% print the verdict gives way before the photo does; a
+      // 55% guard backstops absurd inputs.
       const inset = 56;
       const photoTop = 56;
       const photoW = W - inset * 2; // 968 — the crop step bakes exactly this
-      const photoMaxH = Math.round(H * 0.76); // 1459
-      const photoPrefH = Math.round(H * 0.7); // step the verdict before shrinking past this
-      const photoGuardH = Math.round(H * 0.55); // absolute floor, unreachable for real content
-      const bandBottom = H - 250; // 1670 — the safe-zone line, hard
-      const bandGapTop = 36; // photo bottom → confession
-      // Confession at 32 (raised from 28: it sets up the verdict and was
-      // reading as a caption; 36 and 40 were tested and both start competing
-      // with the verdict — don't raise it again).
-      const confSize = 32;
-      const confLH = 44;
-      const confToVerdict = 20;
-      // Band foot — ONE line at 22px: "confess at theboothrecord.com" in
-      // ritual green. The FILING moved onto the photo (charge line under the
-      // mark — see the stamp block), so the band closes with the ASK instead:
-      // setup, verdict, invitation. URL, not an Instagram handle: the card
-      // travels outside Instagram and the URL goes to the Booth itself
-      // rather than a feed about it.
-      const ctaSize = 22;
-      const footerGap = 18; // last verdict line → CTA line
+      const photoMaxH = Math.round(H * 0.75); // 1440 — the ceiling
+      const photoPrefH = Math.round(H * 0.65); // step the verdict below this
+      const photoGuardH = Math.round(H * 0.55); // absolute floor
+      const ctaAnchorY = H - 125; // 1795 — CTA baseline, bottom anchor
+      // The band — THREE GROUPS, not four lines: [confession] [verdict +
+      // venue] [footer]. It read as clutter when four lines sat at roughly
+      // equal spacing with the confession and venue at similar sizes — four
+      // things queued rather than grouped. The 8px gap BINDS the venue to
+      // the verdict: that is where the charge happened, so they are one
+      // unit. The 76px gap below makes the URL a footer rather than a third
+      // fact in the same group. That is the whole fix — grouping, not sizes.
+      // Confession at 28, not 34: at 34 it collided with the venue line's
+      // weight and the two read as the same kind of thing when they do
+      // opposite jobs.
+      // REJECTED, recorded: a hairline rule between record and footer (the
+      // band is one uninterrupted mount; a rule solves a spacing problem by
+      // adding an element), and venue + URL on one footer row (the venue
+      // moved into the band specifically to sit with the verdict).
+      const bandGapTop = 30; // print bottom → confession
+      const confSize = 28;
+      const confLH = 38;
+      const confToVerdict = 44;
+      const venueSize = 28; // State Blue neon, the charge line
+      const venueGap = 8; // last verdict line → venue line: ONE unit
+      const ctaSize = 28; // ritual green footer
+      const ctaGap = 76; // venue line → CTA: the footer break
       const confessionText = sessionStorage.getItem("confession") || "";
       ctx.font = `300 ${confSize}px 'Söhne Mono', monospace`;
       const cLines = confessionText ? wrapText(ctx, confessionText, photoW) : [];
@@ -654,16 +664,6 @@ const Verdict = () => {
         [46, 55],
         [40, 48],
       ];
-      // The fit solves the EXACT baseline chain the draw code below uses —
-      // not per-line reservations, which left ~17px of dead slack between
-      // the footer row and the chrome line (the row is caps-only mono: all
-      // its ink sits ABOVE the baseline, so reserving a full line-height
-      // under it bought nothing). The footer baseline lands at the chrome
-      // line minus an 8px margin (kept from the neon filing line's halo
-      // era — the CTA line is flat green with no descenders, so this is now
-      // pure safety); every reclaimed pixel goes to the print, which caps
-      // at its 76% maximum on short cards.
-      const glowPad = 8;
       let vSize = 40;
       let vLH = 48;
       let vLines: string[] = [];
@@ -671,16 +671,18 @@ const Verdict = () => {
       for (const [s, lh] of vSteps) {
         ctx.font = `700 ${s}px 'Control Upright', sans-serif`;
         const vl = wrapText(ctx, verdictResponse, photoW);
-        // photoBottom → footer baseline, mirroring the draws exactly.
+        // photoBottom → CTA baseline, mirroring the draws exactly.
         const chain =
           bandGapTop +
           (cLines.length > 0 ? cLines.length * confLH + confToVerdict : 0) +
           Math.round(s * 0.8) +
           (vl.length - 1) * lh +
           Math.round(s * 0.2) +
-          footerGap +
+          venueGap +
+          Math.round(venueSize * 0.8) +
+          ctaGap +
           Math.round(ctaSize * 0.8);
-        const fitH = bandBottom - glowPad - photoTop - chain;
+        const fitH = ctaAnchorY - photoTop - chain;
         vSize = s;
         vLH = lh;
         vLines = vl;
@@ -688,15 +690,16 @@ const Verdict = () => {
           photoH = Math.min(photoMaxH, fitH);
           break;
         }
-        // Even the smallest verdict can't hold 70%: the photo yields to the
-        // safe zone (chrome never covers the verdict), guarded at 55%.
+        // Below 65% even at this size → try the next step; the smallest
+        // size accepts what it gets, guarded at 55%.
         photoH = Math.max(Math.min(photoMaxH, fitH), photoGuardH);
       }
       const photoBottom = photoTop + photoH;
 
-      // The crop step bakes the photo at 968×1459 (the full 76% frame). When
-      // long text shrinks the print, take a centred slice — ~4% off top and
-      // bottom at 70%, up to ~7% in the long-verdict extreme (~65%).
+      // The crop step bakes the photo at 968×1440 — the print's 75% ceiling.
+      // Short cards draw it 1:1; when long text shrinks the print, take a
+      // centred slice (up to ~86px off top and bottom in the stepped
+      // extreme, ~6%).
       // FILM GRADE applied here, to the photo pixels ONLY (see gradePhoto):
       // everything drawn after this — mount, wordmark, band type — stays in
       // the app's own colours.
@@ -714,44 +717,27 @@ const Verdict = () => {
         photoH,
       );
 
-      // ── Stamp block ON the print, BOTTOM RIGHT corner: the mark with the
-      // CHARGE LINE under it — "AT <VENUE>" in State Blue neon,
-      // right-aligned to the mark's ink edge, its ink keeping the same 34px
-      // clearance from the print's bottom that the mark held alone. AS
-      // CHARGED was dropped deliberately: under the mark it made the line
-      // read as a block of type rather than part of the stamp — "AT" places
-      // the charge in one short line, and "LOCATION WITHHELD" is a phrase
-      // that needs no preposition. A corner
-      // stamp reads as a mark on a print rather than a header over an image,
-      // and mark + charge together read as one filing. KNOWN TRADE: the
-      // bottom of a photo is usually the foreground — the crop step
-      // mitigates this, because the position is fixed and people frame
-      // knowing where it lands.
-      // REVERSAL, recorded: the charge line originally came OFF the photo
-      // because every treatment failed on a pale photo (State Blue washes
-      // out, grey has no separation, white-with-outline reads as a
-      // subtitle). It RETURNED here by design decision after two things
-      // changed — it now sits under the mark's anchor instead of floating
-      // alone, and the film grade cools and deepens exactly the shadows it
-      // washed out against. The pale-daylight caution still stands: on a
-      // bright photo this line will be faint. Accepted.
-      // 340px mark: sized down from 400 when it stood alone; the charge line
-      // beneath doesn't change that — it's a caption to the mark, not a
-      // second anchor.
+      // ── Stamp ON the print: the WORDMARK ALONE, bottom-right corner —
+      // NOTHING else goes on the print. The charge line lived here briefly
+      // (under the mark, neon) and moved to the band FOR GOOD: its
+      // legibility depended on whatever was photographed, and pale rooms
+      // washed it out — in the band it is readable on any photo. That is the
+      // second time on-print type failed for the same reason (white wordmark
+      // before it); the print carries the orange mark and only the mark.
+      // KNOWN TRADE: the bottom of a photo is usually the foreground — the
+      // crop step mitigates this, because the mark's position is fixed and
+      // people frame knowing where it lands.
       // NOTE the -10° tilt swings the mark's lower-left corner below its
       // nominal box, but the SVG's ink is inset within that box and absorbs
-      // most of it (ink rides ~7px below the nominal bottom) — the maths
-      // below positions the INK, not the box.
+      // most of it. The centre is nudged UP 7px off the pure box math so the
+      // measured INK sits equidistant from the print's right and bottom
+      // edges (~35px each) — position the ink, not the box.
       const wm = await loadImage(guiltyWordmark);
       const stampW = 340;
       const wmRatio = wm.height && wm.width ? wm.height / wm.width : 335.5 / 1000;
       const stampH = stampW * wmRatio;
-      const chargeSize = 22;
-      const chargeBaseline = photoBottom - 34; // caps line: ink bottom = baseline
-      const markToCharge = 14; // mark ink bottom → charge cap top
       const stampCx = inset + photoW - 34 - stampW / 2;
-      const stampCy =
-        chargeBaseline - Math.round(chargeSize * 0.8) - markToCharge - 7 - stampH / 2;
+      const stampCy = photoBottom - 34 - stampH / 2 - 7;
 
       // GUILTY ORANGE, the asset's own colour — one brand mark on every
       // surface (WHITE WAS TRIED AND REVERTED: no separation on a pale
@@ -763,19 +749,6 @@ const Verdict = () => {
       ctx.rotate((-10 * Math.PI) / 180);
       ctx.drawImage(wm, -stampW / 2, -stampH / 2, stampW, stampH);
       ctx.restore();
-
-      // Charge line, right-aligned to the mark's measured ink edge (36px
-      // from the print's right — the nominal 34 plus the SVG's 2px inset).
-      ctx.textAlign = "right";
-      setLS("2px");
-      ctx.font = `400 ${chargeSize}px 'Söhne Mono', monospace`;
-      drawNeonStamp(
-        filedVenue ? `AT ${filedVenue}` : "LOCATION WITHHELD",
-        inset + photoW - 36,
-        chargeBaseline,
-      );
-      setLS("0px");
-      ctx.textAlign = "left";
 
       // ── Band: type directly on the mount, sharing the photo's left edge.
       // Confession first, so the verdict answers a visible question — at
@@ -801,17 +774,28 @@ const Verdict = () => {
         ctx.fillText(ln, inset, vy);
         vy += vLH;
       }
-      // CTA line — "confess at theboothrecord.com" in ritual green (the
+      // Venue line — "AT <VENUE>" (withheld: bare "LOCATION WITHHELD"), State
+      // Blue neon, 8px under the verdict — BOUND to it as one unit, because
+      // that is where the charge happened. It lives in the BAND, not on the
+      // print: on the print its legibility depended on whatever was
+      // photographed.
+      const lastVBaseline = vy - vLH;
+      const venueBaseline =
+        lastVBaseline + Math.round(vSize * 0.2) + venueGap + Math.round(venueSize * 0.8);
+      setLS("2px");
+      ctx.font = `400 ${venueSize}px 'Söhne Mono', monospace`;
+      drawNeonStamp(
+        filedVenue ? `AT ${filedVenue}` : "LOCATION WITHHELD",
+        inset,
+        venueBaseline,
+      );
+      // CTA footer — "confess at theboothrecord.com" in ritual green (the
       // screen's own token, flat like THE BOOTH NOTICED on the no-photo
-      // card, not the button glow). The filing moved onto the photo under
-      // the mark, so the band closes with the ASK: the invitation is the
-      // last thing a stranger reads.
+      // card, not the button glow). The 76px gap above turns it into a
+      // FOOTER rather than a third fact in the venue's group.
       const bandRoot = getComputedStyle(document.documentElement);
       const ritualGreen = `hsl(${bandRoot.getPropertyValue("--ritual-green").trim()})`;
-      const lastVBaseline = vy - vLH;
-      const ctaBaseline =
-        lastVBaseline + Math.round(vSize * 0.2) + footerGap + Math.round(ctaSize * 0.8);
-      setLS("2px");
+      const ctaBaseline = venueBaseline + ctaGap + Math.round(ctaSize * 0.8);
       ctx.fillStyle = ritualGreen;
       ctx.font = `400 ${ctaSize}px 'Söhne Mono', monospace`;
       ctx.fillText("confess at theboothrecord.com", inset, ctaBaseline);
