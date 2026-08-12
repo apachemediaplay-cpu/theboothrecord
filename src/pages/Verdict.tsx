@@ -44,6 +44,17 @@ const StoryPhotoCrop = ({
   const iw = img.naturalWidth;
   const ih = img.naturalHeight;
   const cover = Math.max(W / iw, H / ih);
+  // DEFAULT: centred at minimum zoom — as much of their photo as the frame
+  // can hold, so most people never touch it: they see the frame, it's
+  // roughly what they shot, they tap through. Any adjustment is a choice,
+  // not a requirement — the crop is a step on the path to sharing, not a
+  // design tool, and every gesture it demands is friction at the moment the
+  // impulse to share is most fragile.
+  // Deliberately NO composition grid or framing guide beyond the stamp
+  // ghost: guides work where there is a correct answer (face in the oval,
+  // document in the rectangle) and there is no correct way to photograph a
+  // room. The photo is already taken by this point — the real quality lever
+  // is RETAKE on the preview screen.
   const [t, setT] = useState(() => ({
     s: cover,
     ox: (W - iw * cover) / 2,
@@ -51,23 +62,21 @@ const StoryPhotoCrop = ({
   }));
   const boxRef = useRef<HTMLDivElement>(null);
   const [disp, setDisp] = useState(0.25); // screen px per card px
-  // Measure on mount AND a frame later, and on resize — the box can report
-  // clientWidth 0 at effect time (overlay still laying out), which left the
-  // photo at scale(0), invisible while cropping. Never accept 0: the bake
-  // (use()) works in print space and was never affected, but the user
-  // couldn't see what they were framing.
+  // Track the box's real size with a ResizeObserver — a one-shot measure
+  // could catch clientWidth 0 (overlay still laying out → photo stuck at
+  // scale(0), invisible) or a pre-shift width (fonts landing grew the box
+  // ~2px after mount → the photo ran short of the frame edge). Never accept
+  // 0: the bake (use()) works in print space and was never affected, but
+  // the user couldn't see what they were framing.
   useEffect(() => {
     const measure = () => {
       const w = boxRef.current?.clientWidth ?? 0;
       if (w > 0) setDisp(w / W);
     };
     measure();
-    const raf = requestAnimationFrame(measure);
-    window.addEventListener("resize", measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", measure);
-    };
+    const ro = new ResizeObserver(measure);
+    if (boxRef.current) ro.observe(boxRef.current);
+    return () => ro.disconnect();
   }, []);
 
   // Cover-fit clamp: the photo may never expose the frame edge.
@@ -143,10 +152,23 @@ const StoryPhotoCrop = ({
 
   return (
     <div className="flex-1 w-full max-w-md flex flex-col items-center justify-center gap-5">
+      {/* The frame fills as much of the viewport as its aspect allows,
+          leaving only what USE THIS PHOTO and back need below (~210px with
+          the overlay padding): pinch-and-drag done one-handed in a dark room
+          needs precision more than anywhere else in the flow, and a small
+          frame makes it fiddly. Width binds on phones (full width minus the
+          overlay's 24px gutters); height binds on wide screens. */}
+      {/* Hairline as an inset OUTLINE, not a border: box-sizing is border-box,
+          so a border would make the content box a slightly different aspect
+          than 968/1459 and the photo would run 1-2px short of the frame edge.
+          An outline draws over the photo without touching the geometry. */}
       <div
         ref={boxRef}
-        className="relative overflow-hidden border border-muted-foreground/40 touch-none select-none"
-        style={{ width: "min(75vw, 34vh)", aspectRatio: "968 / 1459" }}
+        className="relative overflow-hidden outline outline-1 -outline-offset-1 outline-muted-foreground/40 touch-none select-none"
+        style={{
+          width: "min(100vw - 48px, (100vh - 210px) * 0.6635)",
+          aspectRatio: "968 / 1459",
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -168,7 +190,9 @@ const StoryPhotoCrop = ({
         {/* FAINT STAMP GUIDE — the wordmark at the same relative position and
             size it will occupy on the finished card (nominal box 34px in from
             the print's right edge, 34+7px up from its bottom, 340/968 wide —
-            see the card renderer), at ~28% opacity. A GUIDE, not a preview:
+            see the card renderer), at 55% opacity (raised from 28%, which
+            barely registered on a bright photo — the guide only works if
+            someone notices it and composes around it). A GUIDE, not a preview:
             the mark's position is fixed, so showing it during framing lets
             people compose around it — it prevents the one bad outcome (the
             mark landing on the subject) and makes the mark feel composed
@@ -186,7 +210,7 @@ const StoryPhotoCrop = ({
             width: `${((340 / 968) * 100).toFixed(2)}%`,
             right: `${((34 / 968) * 100).toFixed(2)}%`,
             bottom: `${((41 / 1459) * 100).toFixed(2)}%`,
-            opacity: 0.28,
+            opacity: 0.55,
             transform: "rotate(-10deg)",
           }}
         />
