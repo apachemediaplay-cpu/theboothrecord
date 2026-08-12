@@ -17,6 +17,103 @@ import { useToast } from "@/hooks/use-toast";
 // will require adding email to the function/RPC, not a client-side insert.
 const ENABLE_EMAIL_CAPTURE = false;
 
+// ── FILM GRADE for the story card's photo — strength in ONE place. ──────────
+// 0 = off, 1 = heavy; 0.5 is the shipped medium. FIXED, never adaptive and
+// never per-photo: a fixed value is what makes cards from one venue read as
+// a set, which matters more than optimising any single photo.
+const FILM_GRADE = 0.5;
+
+// Grade the baked photo and return a new canvas. Applied ONLY to the photo
+// pixels, BEFORE they are drawn into the card — never to the whole canvas:
+// grading the card would shift the #171513 mount blue and warm the orange
+// wordmark, breaking the match with the no-photo card and the app's tokens.
+// The moves, in order: split tone (shadows lifted toward cool blue-grey,
+// highlights pushed toward amber — Frenchie and Gigi already look like this,
+// so the grade amplifies the room rather than inventing a look), slight
+// contrast soften, slight desaturation, fine grain to break the digital
+// cleanliness, and a soft bloom on the brightest points.
+// EXPECTED BEHAVIOUR: strong on dark warm rooms (the venues), nearly
+// invisible on bright daytime photos (most Direct traffic) — split-toning
+// needs shadows to work on. That asymmetry is correct, not a bug.
+const gradePhoto = (src: HTMLCanvasElement): HTMLCanvasElement => {
+  const w = src.width;
+  const h = src.height;
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const g = out.getContext("2d");
+  if (!g) return src;
+  g.drawImage(src, 0, 0);
+  const S = FILM_GRADE;
+  const id = g.getImageData(0, 0, w, h);
+  const d = id.data;
+  const contrast = 1 - 0.12 * S; // soften around mid-grey
+  const desat = 0.18 * S;
+  const grain = 16 * S;
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i];
+    let gg = d[i + 1];
+    let b = d[i + 2];
+    const t = (0.299 * r + 0.587 * gg + 0.114 * b) / 255;
+    // Split tone: weight the tints by squared distance from mid so mids stay
+    // honest — shadows go cool blue-grey, highlights go amber.
+    const sw = (1 - t) * (1 - t);
+    const hw = t * t;
+    r += S * (sw * -14 + hw * 16);
+    gg += S * (sw * 2 + hw * 7);
+    b += S * (sw * 18 + hw * -14);
+    r = 128 + (r - 128) * contrast;
+    gg = 128 + (gg - 128) * contrast;
+    b = 128 + (b - 128) * contrast;
+    const l = 0.299 * r + 0.587 * gg + 0.114 * b;
+    r += (l - r) * desat;
+    gg += (l - gg) * desat;
+    b += (l - b) * desat;
+    // Fine monochrome grain (same offset on all channels = luma noise).
+    const n = (Math.random() - 0.5) * grain;
+    r += n;
+    gg += n;
+    b += n;
+    d[i] = r < 0 ? 0 : r > 255 ? 255 : r;
+    d[i + 1] = gg < 0 ? 0 : gg > 255 ? 255 : gg;
+    d[i + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
+  }
+  g.putImageData(id, 0, 0);
+  // Bloom: pull the brightest points into their own layer, blur them by
+  // round-tripping through a 1/10-scale canvas (works everywhere — no
+  // ctx.filter dependency), and screen the result back over the photo.
+  const hi = document.createElement("canvas");
+  hi.width = w;
+  hi.height = h;
+  const hictx = hi.getContext("2d");
+  if (hictx) {
+    const hid = hictx.createImageData(w, h);
+    const hd = hid.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      const m = l > 208 ? (l - 208) / 47 : 0; // only the brightest points
+      hd[i] = d[i] * m;
+      hd[i + 1] = d[i + 1] * m;
+      hd[i + 2] = d[i + 2] * m;
+      hd[i + 3] = 255;
+    }
+    hictx.putImageData(hid, 0, 0);
+    const small = document.createElement("canvas");
+    small.width = Math.max(1, Math.round(w / 10));
+    small.height = Math.max(1, Math.round(h / 10));
+    const sctx = small.getContext("2d");
+    if (sctx) {
+      sctx.drawImage(hi, 0, 0, small.width, small.height);
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      g.globalAlpha = 0.4 * S;
+      g.drawImage(small, 0, 0, small.width, small.height, 0, 0, w, h);
+      g.restore();
+    }
+  }
+  return out;
+};
+
 // ── POST TO STORY crop step: drag-and-pinch a photo into the card's PRINT
 // frame — 968×1459, the inset photo area of the print-on-a-mount layout, NOT
 // the full 9:16 card (the band below the print holds the type). HAND-ROLLED
@@ -189,8 +286,9 @@ const StoryPhotoCrop = ({
         />
         {/* FAINT STAMP GUIDE — the wordmark at the same relative position and
             size it will occupy on the finished card (nominal box 34px in from
-            the print's right edge, 34+7px up from its bottom, 340/968 wide —
-            see the card renderer), at 55% opacity (raised from 28%, which
+            the print's right edge, 73px up from its bottom — the charge line
+            sits in the gap beneath it, 340/968 wide — see the card renderer),
+            at 55% opacity (raised from 28%, which
             barely registered on a bright photo — the guide only works if
             someone notices it and composes around it). A GUIDE, not a preview:
             the mark's position is fixed, so showing it during framing lets
@@ -209,7 +307,7 @@ const StoryPhotoCrop = ({
           style={{
             width: `${((340 / 968) * 100).toFixed(2)}%`,
             right: `${((34 / 968) * 100).toFixed(2)}%`,
-            bottom: `${((41 / 1459) * 100).toFixed(2)}%`,
+            bottom: `${((73 / 1459) * 100).toFixed(2)}%`,
             opacity: 0.55,
             transform: "rotate(-10deg)",
           }}
@@ -490,14 +588,14 @@ const Verdict = () => {
     if (photo) {
       // ── PHOTO COMPOSITION: A PRINT ON A MOUNT ───────────────────────
       // The photo is an inset print with visible edges — an object, not a
-      // background — so nothing sits over it except the stamp, and nothing
-      // below it needs a plate: the card's own background IS the mount.
-      // Draw order: mount (full-card background) → photo (inset, AS SHOT —
-      // no wash, no grade, no grain; a film grade was tested and looks
-      // right, left out for now so the layout is judged on its own) →
-      // stamp on the photo → band type on the mount.
+      // background — so nothing sits over it except the stamp block, and
+      // nothing below it needs a plate: the card's own background IS the
+      // mount. Draw order: mount (full-card background) → photo (inset,
+      // film-graded — see gradePhoto) → stamp block on the photo (mark +
+      // charge line, bottom right) → band type on the mount.
       // THE BOOTH NOTICED, SUBJECT # and the handle stay ABSENT (the photo
-      // replaces them); the band holds confession → verdict → address.
+      // replaces them); the band holds confession → verdict → the confess
+      // CTA.
       ctx.fillStyle = "#171513";
       ctx.fillRect(0, 0, W, H);
 
@@ -532,14 +630,14 @@ const Verdict = () => {
       const confSize = 32;
       const confLH = 44;
       const confToVerdict = 20;
-      // Filing note — ONE line at 22px: "AS CHARGED, <VENUE> · url". Four
-      // stacked elements at four sizes read as clutter; three do not — the
-      // band is setup, verdict, filing note. Venue segment State Blue neon;
-      // middot + address in the dimmer grey. URL, not an Instagram handle:
-      // the card travels outside Instagram and the URL goes to the Booth
-      // itself rather than a feed about it.
-      const filingSize = 22;
-      const footerGap = 18; // last verdict line → filing note
+      // Band foot — ONE line at 22px: "confess at theboothrecord.com" in
+      // ritual green. The FILING moved onto the photo (charge line under the
+      // mark — see the stamp block), so the band closes with the ASK instead:
+      // setup, verdict, invitation. URL, not an Instagram handle: the card
+      // travels outside Instagram and the URL goes to the Booth itself
+      // rather than a feed about it.
+      const ctaSize = 22;
+      const footerGap = 18; // last verdict line → CTA line
       const confessionText = sessionStorage.getItem("confession") || "";
       ctx.font = `300 ${confSize}px 'Söhne Mono', monospace`;
       const cLines = confessionText ? wrapText(ctx, confessionText, photoW) : [];
@@ -553,10 +651,10 @@ const Verdict = () => {
       // the footer row and the chrome line (the row is caps-only mono: all
       // its ink sits ABOVE the baseline, so reserving a full line-height
       // under it bought nothing). The footer baseline lands at the chrome
-      // line minus an 8px halo allowance (the neon glow bleeds past the
-      // baseline — measured to ~7px at its faintest tier — and glow is ink
-      // too); every reclaimed pixel goes to the print, which caps at its
-      // 76% maximum on short cards.
+      // line minus an 8px margin (kept from the neon filing line's halo
+      // era — the CTA line is flat green with no descenders, so this is now
+      // pure safety); every reclaimed pixel goes to the print, which caps
+      // at its 76% maximum on short cards.
       const glowPad = 8;
       let vSize = 40;
       let vLH = 48;
@@ -573,7 +671,7 @@ const Verdict = () => {
           (vl.length - 1) * lh +
           Math.round(s * 0.2) +
           footerGap +
-          Math.round(filingSize * 0.8);
+          Math.round(ctaSize * 0.8);
         const fitH = bandBottom - glowPad - photoTop - chain;
         vSize = s;
         vLH = lh;
@@ -591,46 +689,61 @@ const Verdict = () => {
       // The crop step bakes the photo at 968×1459 (the full 76% frame). When
       // long text shrinks the print, take a centred slice — ~4% off top and
       // bottom at 70%, up to ~7% in the long-verdict extreme (~65%).
-      const srcY = Math.max(0, Math.round((photo.height - photoH) / 2));
+      // FILM GRADE applied here, to the photo pixels ONLY (see gradePhoto):
+      // everything drawn after this — mount, wordmark, band type — stays in
+      // the app's own colours.
+      const graded = gradePhoto(photo);
+      const srcY = Math.max(0, Math.round((graded.height - photoH) / 2));
       ctx.drawImage(
-        photo,
+        graded,
         0,
         srcY,
         photoW,
-        Math.min(photoH, photo.height),
+        Math.min(photoH, graded.height),
         inset,
         photoTop,
         photoW,
         photoH,
       );
 
-      // ── Stamp ON the print: the WORDMARK ALONE, in the print's BOTTOM
-      // RIGHT corner (nominal box 34px in from the print's right edge, 34px
-      // up from its bottom edge). A corner mark reads as a stamp on a print
-      // rather than a header over an image, and it sits near the filing row
-      // so the mark and the record read as one system. KNOWN TRADE: the
+      // ── Stamp block ON the print, BOTTOM RIGHT corner: the mark with the
+      // CHARGE LINE under it — "AT <VENUE>" in State Blue neon,
+      // right-aligned to the mark's ink edge, its ink keeping the same 34px
+      // clearance from the print's bottom that the mark held alone. AS
+      // CHARGED was dropped deliberately: under the mark it made the line
+      // read as a block of type rather than part of the stamp — "AT" places
+      // the charge in one short line, and "LOCATION WITHHELD" is a phrase
+      // that needs no preposition. A corner
+      // stamp reads as a mark on a print rather than a header over an image,
+      // and mark + charge together read as one filing. KNOWN TRADE: the
       // bottom of a photo is usually the foreground — the crop step
       // mitigates this, because the position is fixed and people frame
       // knowing where it lands.
-      // NOTHING ELSE goes on the photo: orange is the one colour proven to
-      // hold on an unknown photo, and orange is taken by the mark. Every
-      // alternative for the charge line failed on a pale photo — State Blue
-      // washes out, grey has no separation, white with an outline reads as a
-      // subtitle — so the mark carries the stamped-onto-evidence idea alone,
-      // and anything that must be READABLE lives on a surface we control
-      // (the venue line is in the band's footer row below). 340px, down from
-      // 400: it was sized to anchor a stack of three and now stands alone.
+      // REVERSAL, recorded: the charge line originally came OFF the photo
+      // because every treatment failed on a pale photo (State Blue washes
+      // out, grey has no separation, white-with-outline reads as a
+      // subtitle). It RETURNED here by design decision after two things
+      // changed — it now sits under the mark's anchor instead of floating
+      // alone, and the film grade cools and deepens exactly the shadows it
+      // washed out against. The pale-daylight caution still stands: on a
+      // bright photo this line will be faint. Accepted.
+      // 340px mark: sized down from 400 when it stood alone; the charge line
+      // beneath doesn't change that — it's a caption to the mark, not a
+      // second anchor.
       // NOTE the -10° tilt swings the mark's lower-left corner below its
       // nominal box, but the SVG's ink is inset within that box and absorbs
-      // most of it. The centre is nudged UP 7px off the pure box math so the
-      // measured INK sits equidistant from the print's right and bottom
-      // edges (~35px each) — position the ink, not the box.
+      // most of it (ink rides ~7px below the nominal bottom) — the maths
+      // below positions the INK, not the box.
       const wm = await loadImage(guiltyWordmark);
       const stampW = 340;
       const wmRatio = wm.height && wm.width ? wm.height / wm.width : 335.5 / 1000;
       const stampH = stampW * wmRatio;
+      const chargeSize = 22;
+      const chargeBaseline = photoBottom - 34; // caps line: ink bottom = baseline
+      const markToCharge = 14; // mark ink bottom → charge cap top
       const stampCx = inset + photoW - 34 - stampW / 2;
-      const stampCy = photoBottom - 34 - stampH / 2 - 7;
+      const stampCy =
+        chargeBaseline - Math.round(chargeSize * 0.8) - markToCharge - 7 - stampH / 2;
 
       // GUILTY ORANGE, the asset's own colour — one brand mark on every
       // surface (WHITE WAS TRIED AND REVERTED: no separation on a pale
@@ -642,6 +755,19 @@ const Verdict = () => {
       ctx.rotate((-10 * Math.PI) / 180);
       ctx.drawImage(wm, -stampW / 2, -stampH / 2, stampW, stampH);
       ctx.restore();
+
+      // Charge line, right-aligned to the mark's measured ink edge (36px
+      // from the print's right — the nominal 34 plus the SVG's 2px inset).
+      ctx.textAlign = "right";
+      setLS("2px");
+      ctx.font = `400 ${chargeSize}px 'Söhne Mono', monospace`;
+      drawNeonStamp(
+        filedVenue ? `AT ${filedVenue}` : "LOCATION WITHHELD",
+        inset + photoW - 36,
+        chargeBaseline,
+      );
+      setLS("0px");
+      ctx.textAlign = "left";
 
       // ── Band: type directly on the mount, sharing the photo's left edge.
       // Confession first, so the verdict answers a visible question — at
@@ -667,29 +793,20 @@ const Verdict = () => {
         ctx.fillText(ln, inset, vy);
         vy += vLH;
       }
-      // Filing note, one line, left-aligned: charge + venue in State Blue
-      // neon (the charge line that came OFF the photo, see the stamp note),
-      // then a middot and the address in the dimmer grey. Generous air
-      // either side of the middot — they're two facts, not one string.
+      // CTA line — "confess at theboothrecord.com" in ritual green (the
+      // screen's own token, flat like THE BOOTH NOTICED on the no-photo
+      // card, not the button glow). The filing moved onto the photo under
+      // the mark, so the band closes with the ASK: the invitation is the
+      // last thing a stranger reads.
+      const bandRoot = getComputedStyle(document.documentElement);
+      const ritualGreen = `hsl(${bandRoot.getPropertyValue("--ritual-green").trim()})`;
       const lastVBaseline = vy - vLH;
-      const filingBaseline =
-        lastVBaseline + Math.round(vSize * 0.2) + footerGap + Math.round(filingSize * 0.8);
+      const ctaBaseline =
+        lastVBaseline + Math.round(vSize * 0.2) + footerGap + Math.round(ctaSize * 0.8);
       setLS("2px");
-      ctx.font = `400 ${filingSize}px 'Söhne Mono', monospace`;
-      const chargeSeg = filedVenue
-        ? `AS CHARGED, ${filedVenue}`
-        : "AS CHARGED, LOCATION WITHHELD";
-      drawNeonStamp(chargeSeg, inset, filingBaseline);
-      const chargeW = ctx.measureText(chargeSeg).width;
-      const dotPad = 24;
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
-      ctx.fillText("·", inset + chargeW + dotPad, filingBaseline);
-      const dotW = ctx.measureText("·").width;
-      ctx.fillText(
-        "theboothrecord.com",
-        inset + chargeW + dotPad + dotW + dotPad,
-        filingBaseline,
-      );
+      ctx.fillStyle = ritualGreen;
+      ctx.font = `400 ${ctaSize}px 'Söhne Mono', monospace`;
+      ctx.fillText("confess at theboothrecord.com", inset, ctaBaseline);
       setLS("0px");
 
       return await new Promise<Blob>((resolve, reject) => {
@@ -1265,15 +1382,14 @@ const Verdict = () => {
           {story.step === "choose" ? (
             <>
               <div className="flex-1 w-full max-w-xs flex flex-col items-center justify-center gap-5">
-                {/* Framing caption (THE PRIMARY-ACTION RULE): states what the
-                    photo is FOR and leaves the framing to them — the same
-                    register as LOCATION WITHHELD and AS CHARGED. Replaced
-                    "THE ROOM, NOT YOUR DINNER": dinner assumed a restaurant
-                    (the Booth also runs at bars, hotels and with no venue at
-                    all), and it was advice about framing rather than a
-                    statement of purpose. */}
+                {/* Framing caption (THE PRIMARY-ACTION RULE): the evidence
+                    register — the photo is exhibit material, same voice as
+                    AS CHARGED. Replaced "WHERE IT HAPPENED." (a statement
+                    about the place; this is an instruction to the confessor),
+                    which itself replaced "THE ROOM, NOT YOUR DINNER" (assumed
+                    a restaurant, and was framing advice). */}
                 <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
-                  WHERE IT HAPPENED.
+                  GET THE EVIDENCE
                 </p>
                 {/* capture="environment" opens the back camera directly; the
                     library lives behind the quiet link below (its input has no
