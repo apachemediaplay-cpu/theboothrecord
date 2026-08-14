@@ -4,7 +4,12 @@ import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKios
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
-import { resolveVenueDisplayName, mayStampVenue, isKioskSession } from "@/lib/source";
+import {
+  resolveVenueDisplayName,
+  mayStampVenue,
+  isKioskSession,
+  kioskHandoffUrl,
+} from "@/lib/source";
 import { beginShareResolve, endShareResolve } from "@/lib/reset";
 import {
   logShare,
@@ -526,9 +531,9 @@ const Verdict = () => {
           return;
         }
         if (!shareId) setShareId(id);
-        // ?k= tags the scan as a kiosk handoff at the venue that produced it,
-        // so booth traffic stays separable from phone shares on the same link.
-        const url = `https://theboothrecord.com/v/${id}?k=woolstore`;
+        // ?k= carries the offer key VerdictShare looks up, and tags the scan as
+        // a kiosk handoff. One definition, shared with the round strip's QRs.
+        const url = kioskHandoffUrl(id);
         const dataUrl = await QRCode.toDataURL(url, {
           width: 320,
           margin: 1,
@@ -1425,6 +1430,18 @@ const Verdict = () => {
              jumps between resolving and resolved — on a booth the movement is
              the only thing anyone would notice. */
           <div className="w-full max-w-xs flex flex-col items-center gap-5">
+            {/* SUBJECT #N — kiosk only, between the verdict and the QR. It is
+                the one piece of the record a person can carry away without a
+                phone: the number they'll look for on the wall later. UPPERCASE
+                State Blue mono at the filing-mark tier (11px, wide tracking) —
+                the same voice as AS CHARGED and the wall's stamps, deliberately
+                NOT headline-sized: it labels the verdict above, it doesn't
+                compete with it. */}
+            {subjectNumber ? (
+              <p className="text-[hsl(var(--state-blue))] text-[11px] font-mono-light tracking-[0.2em] uppercase">
+                Subject #{subjectNumber}
+              </p>
+            ) : null}
             {/* lowercase, deliberately: Söhne Mono is the app's HUMAN voice —
                 caps here read as signage bolted to the machine. The uppercase
                 tier belongs to the filing marks (AS CHARGED, LOCATION

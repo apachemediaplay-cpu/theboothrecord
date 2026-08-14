@@ -1,5 +1,6 @@
 import { Navigate, useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
 import { getRound, startRound } from "@/lib/round";
 import LegalLinks from "@/components/LegalLinks";
 
@@ -11,6 +12,10 @@ const RoundStart = () => {
   const navigate = useNavigate();
   // Hold the screen awake for the whole round, this screen included.
   useWakeLock();
+  // Kiosk idle + staff reset, same as every other booth screen. 60s here — the
+  // picker is a two-second decision; a table that hasn't tapped in a minute has
+  // walked off. (No-op on a phone.)
+  const idleLeft = useKioskTimeout(60, "round_start");
 
   // A running round with anything FILED owns the flow — back/forward landing
   // here must not show a picker whose number tap would nuke filed confessions.
@@ -54,8 +59,13 @@ const RoundStart = () => {
             options reads as a spinner and implies the light landing somewhere
             matters. It doesn't. Synced says every option is live; sequential
             says watch this. */}
+        {/* TWO AND THREE ONLY. startRound still clamps 2–5 and the strip still
+            lays out five — deliberately untouched, so a 4 or 5 arriving from an
+            old session or a future brief still works. The PICKER is the
+            narrowing: at a table, four people passing one device is where the
+            format stops being a round and starts being a queue. */}
         <div className="flex items-center gap-3">
-          {[2, 3, 4, 5].map((n) => (
+          {[2, 3].map((n) => (
             <button
               key={n}
               onClick={() => begin(n)}
@@ -70,6 +80,8 @@ const RoundStart = () => {
           confessions may be published anonymously. <LegalLinks />.
         </p>
       </div>
+      <KioskIdleLine secondsLeft={idleLeft} />
+      <KioskStaffReset />
     </div>
   );
 };

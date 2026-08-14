@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
 import { getRound, roundSettled } from "@/lib/round";
 
 // REVEAL — one verdict per screen, N times. One at a time is what keeps the
@@ -13,6 +14,8 @@ const RoundReveal = () => {
   const navigate = useNavigate();
   // Hold the screen awake — reveals are read aloud, taps can be slow.
   useWakeLock();
+  // 90s: verdicts are read aloud here and the table talks between cards.
+  const idleLeft = useKioskTimeout(90, "round_reveal");
   const round = getRound();
   const [idx, setIdx] = useState(0);
 
@@ -62,6 +65,8 @@ const RoundReveal = () => {
           </span>
         </button>
       </div>
+      <KioskIdleLine secondsLeft={idleLeft} />
+      <KioskStaffReset />
     </div>
   );
 };

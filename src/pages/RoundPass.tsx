@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
+import { isKioskSession } from "@/lib/source";
 import { getRound } from "@/lib/round";
 
 // PASS THE PHONE — shown between confessions, never after the last one (the
@@ -11,6 +14,11 @@ const RoundPass = () => {
   const navigate = useNavigate();
   // Hold the screen awake for the whole round.
   useWakeLock();
+  const [kiosk] = useState(() => isKioskSession());
+  // 90s: this is the screen a table sits on while someone finishes their drink
+  // and decides to take the device. Shorter would punish exactly the pause the
+  // format is built around.
+  const idleLeft = useKioskTimeout(90, "round_pass");
   const round = getRound();
 
   // No round (deep link / evaporated) → start over. All submitted (back
@@ -28,8 +36,12 @@ const RoundPass = () => {
         <p className="text-[hsl(var(--state-blue)/0.75)] text-xs font-mono-light tracking-[0.2em] uppercase">
           {filed} filed · {toGo} to go
         </p>
+        {/* KIOSK COPY SWAP: on the booth's own tablet nobody passes a phone —
+            the device stays on the table and the next person leans in. The
+            phone wording would be a small lie about the object in front of
+            them. Non-kiosk keeps the original line exactly. */}
         <h2 className="font-control text-4xl md:text-5xl font-bold text-foreground">
-          Pass the phone.
+          {kiosk ? "Next person." : "Pass the phone."}
         </h2>
       </div>
       <div className="shrink-0 flex flex-col items-center gap-4">
@@ -47,6 +59,8 @@ const RoundPass = () => {
           18+ · your confession may be published anonymously
         </p>
       </div>
+      <KioskIdleLine secondsLeft={idleLeft} />
+      <KioskStaffReset />
     </div>
   );
 };

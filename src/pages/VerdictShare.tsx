@@ -1,7 +1,24 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import { fetchSharedVerdict, logBoothEvent, type SharedVerdict } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
+
+// ── THE ?k= OFFER ───────────────────────────────────────────────────────────
+// A kiosk QR carries ?k={key}; this page turns that key into an offer. Keyed
+// per event so each one can carry its own heading and code without a deploy
+// touching anything else — add a row, nothing above changes.
+//
+// The KEY IS UNTRUSTED (it comes from a URL): it is only ever used as a lookup
+// into this table, never rendered. An unknown or absent key renders NOTHING —
+// no empty box, no "offer expired", no trace that an offer exists at all.
+//
+// TODO: this table is hardcoded for the first event. When a second venue or a
+// second night needs its own code, move it to a table (site_copy-shaped,
+// console-edited) rather than growing this object — the console already owns
+// every other piece of per-venue copy.
+const OFFERS: Record<string, { heading: string; code: string }> = {
+  woolstore: { heading: "First round's on the record.", code: "GUILTY10" },
+};
 
 // The Booth mark — STATIC by design: this page is read, not passed through, and
 // YOUR TURN's label already carries the page's only pulse. No glow, no animation
@@ -26,6 +43,8 @@ const BoothMark = ({ marginClass = "mb-8" }: { marginClass?: string }) => (
 // or non-uuid id resolves to nothing and shows the not-found state. No names, venue only.
 const VerdictShare = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const offer = OFFERS[(searchParams.get("k") || "").trim().toLowerCase()] ?? null;
   const [status, setStatus] = useState<"loading" | "found" | "notfound">("loading");
   const [row, setRow] = useState<SharedVerdict | null>(null);
 
@@ -141,6 +160,25 @@ const VerdictShare = () => {
         <p className="venue-glow-text text-xs font-mono-light tracking-[0.2em] uppercase">
           {venue ? `As charged at ${venue}` : "Location withheld"}
         </p>
+
+        {/* THE OFFER — only ever with a known ?k=. ORANGE, and this is the ONE
+            SANCTIONED EXCEPTION to orange-means-confess: it is a buy CTA, and
+            the whole point of the exception is that a buy CTA must not be able
+            to hide inside the app's own voice. The dashed 1px border says
+            coupon, not booth: nothing else in the app is dashed, so it reads as
+            a foreign object stapled to the record — which is exactly what it
+            is. NOT tappable, deliberately: the code is read aloud at a bar, and
+            a link here would compete with YOUR TURN below. */}
+        {offer ? (
+          <div className="mt-8 w-full max-w-xs border border-dashed border-[#FF4800] px-4 py-3">
+            <p className="text-[#FF4800] text-[13px] font-mono-light leading-relaxed">
+              {offer.heading}
+            </p>
+            <p className="text-[#FF4800] text-lg font-mono-light tracking-[0.2em] uppercase mt-1">
+              {offer.code}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {/* NO divider rule above this block — REMOVED, deliberately, matching both

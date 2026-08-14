@@ -3,7 +3,7 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import LegalLinks from "@/components/LegalLinks";
-import { captureSourceFromUrl } from "@/lib/source";
+import { captureSourceFromUrl, isKioskSession } from "@/lib/source";
 import { logScan } from "@/lib/metrics";
 
 const Index = () => {
@@ -154,6 +154,14 @@ const Index = () => {
       }
     };
   }, [text2]);
+
+  // The round link is offered on the BOOTH's device only (see the render).
+  // Read once, like every other kiosk branch.
+  const [kioskGate] = useState(() => isKioskSession());
+  // Straight to the picker — the number tap there is the consent for the
+  // table, exactly as BEGIN's tap is for one person, so this link deliberately
+  // does NOT write consent itself.
+  const handleRound = () => navigate("/round");
 
   const handleEnter = () => {
     // Consent IS the tap — the legal line above BEGIN states it, no checkbox.
@@ -351,11 +359,22 @@ const Index = () => {
         >
           <span className="begin-glow-text">BEGIN</span>
         </button>
-        {/* NO link to the round here. The format is shelved — passing a phone
-            is effort the payoff doesn't justify, and a link on the one screen
-            every person passes through is a distraction. The /round/* routes
-            stay registered and reachable by URL only; nothing was deleted
-            (see the note in round.ts). */}
+        {/* THE ROUND LINK — KIOSK ONLY. On a phone this stays removed: passing
+            your own phone round a table is effort the payoff doesn't justify,
+            and a link on the screen every single person passes through is a
+            distraction (that decision stands — see round.ts). On the BOOTH's
+            device the objection disappears: the tablet is already communal, it
+            is already on the table, and a group arriving together is the case
+            the format was built for. Quiet text under BEGIN, never a second
+            box — one primary action per screen (see index.css). */}
+        {kioskGate && (
+          <button
+            onClick={handleRound}
+            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide"
+          >
+            there's more than one of us
+          </button>
+        )}
         <p className="max-w-xs text-center text-[9.5px] leading-snug font-mono-light text-muted-foreground/70">
           I agree, by tapping BEGIN, that I'm 18+ and my confession may be published
           anonymously. <LegalLinks />.

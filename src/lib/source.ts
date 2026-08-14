@@ -94,6 +94,18 @@ export function isKioskSession(): boolean {
   return sessionStorage.getItem("kiosk") === "1";
 }
 
+// The kiosk handoff URL — ONE definition, used by the verdict screen's QR and
+// by every QR on the round strip. ?k= is the OFFER KEY that VerdictShare looks
+// up (see its OFFERS table), not the venue slug: one key per event, so a venue
+// running two nights can carry two different offers.
+// TODO: single hardcoded event, matching the one row in OFFERS. When a second
+// event exists this should read the key from the venue row rather than a
+// constant — the console already owns per-venue copy.
+const KIOSK_OFFER_KEY = "woolstore";
+export function kioskHandoffUrl(uuid: string): string {
+  return `https://theboothrecord.com/v/${uuid}?k=${KIOSK_OFFER_KEY}`;
+}
+
 // Venue config — venues.json is the source of truth for the share-card DISPLAY NAME,
 // per slug. Slugs MUST match the QR and the DB `source` column.
 //

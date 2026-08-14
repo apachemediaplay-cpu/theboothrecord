@@ -1,6 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import QRCode from "qrcode";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
+import { isKioskSession, kioskHandoffUrl } from "@/lib/source";
+import { resolveShareId, logBoothEvent } from "@/lib/metrics";
+import { beginShareResolve, endShareResolve } from "@/lib/reset";
 import { getRound, markRevealed, ROUND_WORDS } from "@/lib/round";
 
 // THE STRIP — all N together. Confessions truncate to ONE line (they're
@@ -11,7 +16,15 @@ const RoundStrip = () => {
   // Hold the screen awake — the brief holds the lock for the WHOLE round,
   // and GO AGAIN restarts from here.
   useWakeLock();
+  const [kiosk] = useState(() => isKioskSession());
+  // 120s — the longest idle on the booth. This screen is where two or three
+  // people take turns getting their phones out; the timer must outlast the
+  // slowest of them, and everything here is already filed either way.
+  const idleLeft = useKioskTimeout(120, "round_strip");
   const round = getRound();
+  // One QR per slot, keyed by slot index: undefined = still resolving, null =
+  // failed (that person's line just shows no code), string = the data URL.
+  const [qrs, setQrs] = useState<Record<number, string | null>>({});
 
   // Reaching the strip IS the round ending (see markRevealed): after this,
   // /confess is solo again and /round shows a fresh picker — while the store
@@ -19,6 +32,66 @@ const RoundStrip = () => {
   useEffect(() => {
     markRevealed();
   }, []);
+
+  // KIOSK: resolve one share uuid per slot and draw its QR. Reuses
+  // resolveShareId — the SAME owner-gated resolver the solo verdict uses; no
+  // second resolver exists anywhere. All N run inside one begin/endShareResolve
+  // window so an idle reset can't rotate the session id mid-batch and orphan
+  // the rest (see lib/reset).
+  useEffect(() => {
+    if (!kiosk || !round) return;
+    let cancelled = false;
+    beginShareResolve();
+    (async () => {
+      let drawn = 0;
+      try {
+      for (let i = 0; i < round.slots.length; i++) {
+        const slot = round.slots[i];
+        if (slot.status !== "done" || !slot.subjectNumber || !slot.verdict) {
+          if (!cancelled) setQrs((m) => ({ ...m, [i]: null }));
+          continue;
+        }
+        try {
+          const id = await resolveShareId(slot.subjectNumber, slot.verdict);
+          if (cancelled) return;
+          if (!id) {
+            setQrs((m) => ({ ...m, [i]: null }));
+            continue;
+          }
+          const dataUrl = await QRCode.toDataURL(kioskHandoffUrl(id), {
+            width: 240,
+            margin: 1,
+            errorCorrectionLevel: "M",
+            color: { dark: "#00FF1E", light: "#171513" },
+          });
+          if (cancelled) return;
+          setQrs((m) => ({ ...m, [i]: dataUrl }));
+          drawn += 1;
+        } catch {
+          if (!cancelled) setQrs((m) => ({ ...m, [i]: null }));
+        }
+      }
+      // ONE event for the strip, not one per code: this is a single handoff
+      // moment with N codes in it, and per-QR events would inflate the kiosk
+      // share numbers against the solo screen's one-per-card.
+      if (!cancelled && drawn > 0) {
+        logBoothEvent("kiosk_qr", sessionStorage.getItem("source"), {
+          screen: "round_strip",
+          codes: drawn,
+        });
+      }
+      } finally {
+        // ALWAYS — an early return on cancel must not leak the in-flight
+        // count, or resetBoothSession would refuse for the rest of the night.
+        endShareResolve();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Mount-only: the round is settled by the time this screen renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kiosk]);
 
   if (!round || round.slots.length === 0) return <Navigate to="/round" replace />;
 
@@ -37,15 +110,34 @@ const RoundStrip = () => {
         {/* Pairs are a PREVIEW, not reading matter — everyone has just seen
             each one full size, one at a time. Confessions truncate to one
             line; verdicts show in full but small and tight. */}
-        <div className="space-y-3">
+        {/* KIOSK: each pair gets its OWN QR — the strip is the only screen
+            where several people's records exist at once, and one shared code
+            would hand everyone the same verdict. The code sits beside its own
+            verdict so there is no ambiguity about whose is whose; a slot whose
+            uuid can't be resolved simply shows no code rather than a broken
+            one. Non-kiosk renders the pairs exactly as before. */}
+        <div className={kiosk ? "space-y-5" : "space-y-3"}>
           {round.slots.map((slot, i) => (
-            <div key={i} className="min-w-0">
-              <p className="truncate font-mono-light text-[10px] text-muted-foreground/80">
-                {slot.confession}
-              </p>
-              <p className="font-control font-bold text-foreground text-xs leading-tight">
-                {slot.status === "done" && slot.verdict ? slot.verdict : "Nothing on record."}
-              </p>
+            <div key={i} className={kiosk ? "flex items-center gap-4" : "min-w-0"}>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-mono-light text-[10px] text-muted-foreground/80">
+                  {slot.confession}
+                </p>
+                <p className="font-control font-bold text-foreground text-xs leading-tight">
+                  {slot.status === "done" && slot.verdict ? slot.verdict : "Nothing on record."}
+                </p>
+              </div>
+              {kiosk ? (
+                <div className="h-20 w-20 shrink-0 flex items-center justify-center">
+                  {qrs[i] ? (
+                    <img src={qrs[i] as string} alt="" className="h-20 w-20" />
+                  ) : qrs[i] === null ? null : (
+                    <span className="text-[9px] font-mono-light text-muted-foreground/50">
+                      …
+                    </span>
+                  )}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -58,13 +150,18 @@ const RoundStrip = () => {
             a caption here describes something happening in front of them. */}
         {/* SHARE THE ROUND — deliberately DISABLED: the strip card render is a
             separate job, briefed separately. The box holds the slot so the
-            layout doesn't reflow when it lands. No glow on a dead control. */}
-        <button
-          disabled
-          className="btn-booth border border-muted-foreground/40 bg-transparent text-[13px] text-muted-foreground/50 hover:bg-transparent disabled:opacity-60"
-        >
-          SHARE THE ROUND
-        </button>
+            layout doesn't reflow when it lands. No glow on a dead control.
+            HIDDEN ENTIRELY IN KIOSK: sharing from the booth's device is the
+            QRs' job, and a dead control on a tablet is a thing strangers press
+            all night. */}
+        {!kiosk && (
+          <button
+            disabled
+            className="btn-booth border border-muted-foreground/40 bg-transparent text-[13px] text-muted-foreground/50 hover:bg-transparent disabled:opacity-60"
+          >
+            SHARE THE ROUND
+          </button>
+        )}
         <button
           onClick={() => navigate("/round")}
           className="text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide"
@@ -72,6 +169,8 @@ const RoundStrip = () => {
           GO AGAIN
         </button>
       </div>
+      <KioskIdleLine secondsLeft={idleLeft} />
+      <KioskStaffReset />
     </div>
   );
 };

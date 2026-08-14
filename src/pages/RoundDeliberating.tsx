@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { KioskStaffReset } from "@/hooks/useKioskTimeout";
 import { getRound, roundSettled, subscribeRound, ROUND_WORDS } from "@/lib/round";
 
 // DELIBERATING — its OWN component, not Receiving behind a flag. Receiving's
@@ -47,6 +48,10 @@ const RoundDeliberating = () => {
           <span className="type-caret" aria-hidden="true" />
         </p>
       </div>
+      {/* Staff reset only — NO idle timer on this screen: it is the round's one
+          true wait, and a countdown here would bin a table's confessions while
+          the machine is still answering. */}
+      <KioskStaffReset />
     </div>
   );
 };

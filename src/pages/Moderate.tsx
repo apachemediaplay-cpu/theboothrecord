@@ -218,6 +218,13 @@ const BOOTH_ORIGIN = "https://theboothrecord.com";
 const venueScanUrl = (source: string, displayName: string) =>
   `${BOOTH_ORIGIN}/?source=${encodeURIComponent(source)}&venue=${encodeURIComponent(displayName)}`;
 
+// The BOOTH TABLET url — /k/{slug} puts the device that opens it into kiosk
+// mode. Same origin, opposite job to the QR above: that one is printed on the
+// table for punters' own phones, this one is typed into the venue's tablet
+// ONCE and never printed. Two links per venue that do opposite things, so the
+// panel labels both.
+const venueKioskUrl = (source: string) => `${BOOTH_ORIGIN}/k/${encodeURIComponent(source)}`;
+
 // Venue selector options (the primary axis). Known venues only; slug shown to disambiguate
 // the several Frenchie slugs. "All venues" is prepended in the JSX.
 const VENUE_OPTIONS = Object.entries(venuesData as Record<string, { displayName: string }>)
@@ -702,6 +709,8 @@ const VenueOverviewRow = ({
   const [qrOpen, setQrOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrError, setQrError] = useState(false);
+  // Copy feedback for the booth-tablet URL, local to this row.
+  const [kioskCopied, setKioskCopied] = useState(false);
   const scanUrl = venueScanUrl(row.source, row.display_name);
   const toggleQr = () => {
     const opening = !qrOpen;
@@ -1020,12 +1029,42 @@ const VenueOverviewRow = ({
                     className="h-36 w-36 rounded"
                   />
                   <div className="space-y-2 text-[11px] text-muted-foreground">
+                    <p className="font-medium text-foreground/80">
+                      Printed card — punters' own phones
+                    </p>
                     <p className="max-w-64 break-all">{scanUrl}</p>
                     <Button size="sm" variant="outline" asChild>
                       <a href={qrDataUrl} download={`booth-qr-${row.source}.png`}>
                         Download PNG
                       </a>
                     </Button>
+                    {/* The OTHER link. Deliberately text-only, never a QR and
+                        never a button that opens it: opening it HERE would put
+                        the console's own browser into kiosk mode. It is typed
+                        into the venue's tablet once. */}
+                    <div className="border-t border-border/60 pt-2 space-y-1">
+                      <p className="font-medium text-foreground/80">
+                        Booth tablet only — never printed
+                      </p>
+                      <p className="max-w-64 break-all select-all">
+                        {venueKioskUrl(row.source)}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(venueKioskUrl(row.source));
+                            setKioskCopied(true);
+                            window.setTimeout(() => setKioskCopied(false), 1600);
+                          } catch {
+                            /* clipboard blocked — the text above is select-all */
+                          }
+                        }}
+                      >
+                        {kioskCopied ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
                   </div>
                 </>
               ) : (

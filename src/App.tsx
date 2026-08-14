@@ -11,6 +11,7 @@ import Confess from "./pages/Confess";
 import Receiving from "./pages/Receiving";
 import Verdict from "./pages/Verdict";
 import Blocked from "./pages/Blocked";
+import KioskEntry from "./pages/KioskEntry";
 import Held from "./pages/Held";
 import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
@@ -66,6 +67,8 @@ const App = () => {
           <Route path="/round/reveal" element={<RoundReveal />} />
           <Route path="/round/strip" element={<RoundStrip />} />
           <Route path="/verdict" element={<Verdict />} />
+          {/* Booth-tablet setup, public by design — see KioskEntry. */}
+          <Route path="/k/:slug" element={<KioskEntry />} />
           <Route path="/blocked" element={<Blocked />} />
           <Route path="/held" element={<Held />} />
           <Route path="/return" element={<Return />} />
