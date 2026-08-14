@@ -1,9 +1,25 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isKioskSession } from "@/lib/source";
+import { resetBoothSession } from "@/lib/reset";
+import { KioskStaffReset } from "@/hooks/useKioskTimeout";
 
 // SAFE STATE (locked spec). The deliberate absence of the verdict screen's performance:
 // no stamp, no verdict, no subject number, no share, no footer. Copy is locked.
+//
+// NO IDLE TIMEOUT HERE, kiosk or not — deliberately. Every other booth screen
+// returns itself to the gate on a timer; this one does not, because someone who
+// just wrote something serious does not get the screen pulled out from under
+// them while they read a crisis line. Close is the only exit.
 const Blocked = () => {
   const navigate = useNavigate();
+  const [kiosk] = useState(() => isKioskSession());
+  const close = () => {
+    // The one way out — and on the booth, the one place the device is handed
+    // on, so it resets here. Phone behaviour is the plain navigate it was.
+    if (kiosk) resetBoothSession();
+    navigate("/");
+  };
 
   return (
     <div
@@ -31,7 +47,7 @@ const Blocked = () => {
 
       {/* A quiet way out — no CTA styling */}
       <button
-        onClick={() => navigate("/")}
+        onClick={close}
         className="font-mono-light"
         style={{
           color: "#5f574f",
@@ -44,6 +60,10 @@ const Blocked = () => {
       >
         Close
       </button>
+
+      {/* The staff long-press is the ONLY automatic-ish exit this screen has —
+          it still carries no idle timer (see the note above). */}
+      <KioskStaffReset />
     </div>
   );
 };

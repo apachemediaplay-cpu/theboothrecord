@@ -58,7 +58,15 @@ export type BoothEventType =
   | "confess_again"
   | "verdict_timeout"
   | "verdict_recovery"
-  | "see_guilty";
+  | "see_guilty"
+  // KIOSK ONLY. kiosk_qr fires when the handoff QR actually renders (not when
+  // the resolve starts) — it is the kiosk's equivalent of a share, and the
+  // only signal that the record left the booth.
+  | "kiosk_qr"
+  // Idle reset. DELIBERATELY NOT verdict_timeout: that one means the machine
+  // failed to answer in time, this one means a person walked away. Merging
+  // them would make the recovery numbers lie.
+  | "kiosk_timeout";
 
 // Fire-and-forget, same contract as every metric here: a failure must never
 // block, delay or surface to the user.

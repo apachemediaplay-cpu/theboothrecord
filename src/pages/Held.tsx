@@ -1,9 +1,24 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { isKioskSession } from "@/lib/source";
+import { resetBoothSession } from "@/lib/reset";
+import { KioskStaffReset } from "@/hooks/useKioskTimeout";
 
 // HELD (gate-failed neutral state). Same layout as the Safe State, but neutral copy,
 // NO Lifeline line (we don't know it's crisis), and a retry option.
 const Held = () => {
   const navigate = useNavigate();
+  // KIOSK: no retry. "Try again" re-runs the confession still sitting in
+  // sessionStorage — on the booth's device that confession belongs to whoever
+  // walked away, and the next person must never be handed a button that
+  // resubmits a stranger's words. Close is the only exit, and it resets.
+  const [kiosk] = useState(() => isKioskSession());
+  const close = () => {
+    // On the way OUT to the gate — the one place the booth is handed on. On a
+    // phone this is a plain navigate, exactly as before.
+    if (kiosk) resetBoothSession();
+    navigate("/");
+  };
 
   return (
     <div
@@ -19,17 +34,19 @@ const Held = () => {
       <div style={{ width: "28px", height: "1px", background: "#3a322c", margin: "28px 0" }} />
 
       {/* Retry (re-runs the confession still held in sessionStorage) */}
-      <button
-        onClick={() => navigate("/receiving")}
-        className="font-mono-light"
-        style={{ color: "#c9bcb1", fontSize: "13px", background: "none", border: "none", cursor: "pointer" }}
-      >
-        Try again
-      </button>
+      {!kiosk && (
+        <button
+          onClick={() => navigate("/receiving")}
+          className="font-mono-light"
+          style={{ color: "#c9bcb1", fontSize: "13px", background: "none", border: "none", cursor: "pointer" }}
+        >
+          Try again
+        </button>
+      )}
 
       {/* Quiet way out */}
       <button
-        onClick={() => navigate("/")}
+        onClick={close}
         className="font-mono-light"
         style={{
           color: "#5f574f",
@@ -42,6 +59,8 @@ const Held = () => {
       >
         Close
       </button>
+
+      <KioskStaffReset />
     </div>
   );
 };

@@ -15,6 +15,21 @@ export function captureSourceFromUrl(search: string = window.location.search): s
   const venueParam = (params.get("venue") || "").trim();
   const testParam = (params.get("test") || "").trim();
   const isTestLink = testParam === "1" || testParam.toLowerCase() === "true";
+  const kioskParam = (params.get("kiosk") || "").trim();
+  const isKioskLink = kioskParam === "1" || kioskParam.toLowerCase() === "true";
+
+  // KIOSK persists like source and venueName — the booth's own device runs one
+  // long session and every screen re-reads this, not the URL. Handled OUTSIDE
+  // the source/venue block below because a kiosk link may carry ?kiosk=1 with
+  // no source at all, and that must still latch. A fresh link that is NOT a
+  // kiosk link clears the flag (a phone scanning the venue's QR must never
+  // inherit kiosk from a previous session); a param-less URL — every repeat
+  // confession — keeps it.
+  if (isKioskLink) {
+    sessionStorage.setItem("kiosk", "1");
+  } else if (sourceParam || venueParam || kioskParam) {
+    sessionStorage.removeItem("kiosk");
+  }
 
   // source and venue are FULLY INDEPENDENT — venue= can NEVER write to the source key.
   if (sourceParam || venueParam) {
@@ -67,6 +82,16 @@ export function getSessionId(): string {
 // Persists across repeat confessions exactly like source.
 export function isTestSession(): boolean {
   return sessionStorage.getItem("is_test") === "1";
+}
+
+// True when this session is running on the BOOTH'S OWN DEVICE (?kiosk=1 — see
+// captureSourceFromUrl). Every kiosk difference in the app gates on this and
+// nothing else, so a phone session's screens stay byte-identical: the QR
+// handoff instead of the share actions, the idle timeouts, the hidden photo
+// flow (the chooser opens the device camera — wrong hardware, wrong person)
+// and Held's hidden retry.
+export function isKioskSession(): boolean {
+  return sessionStorage.getItem("kiosk") === "1";
 }
 
 // Venue config — venues.json is the source of truth for the share-card DISPLAY NAME,

@@ -1,8 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
 import { useState, useEffect, useRef } from "react";
+import QRCode from "qrcode";
 import guiltyWordmark from "@/assets/Guilty_Wordmark_RGB_Orange.svg";
-import { resolveVenueDisplayName, mayStampVenue } from "@/lib/source";
+import { resolveVenueDisplayName, mayStampVenue, isKioskSession } from "@/lib/source";
+import { beginShareResolve, endShareResolve } from "@/lib/reset";
 import {
   logShare,
   logBoothEvent,
@@ -405,6 +408,21 @@ const Verdict = () => {
   // as the url travelling alongside the PNG. Cached so repeat taps don't re-resolve.
   const [shareId, setShareId] = useState<string | null>(null);
 
+  // ── KIOSK. Read once at mount; every kiosk branch below gates on this and
+  // nothing else, so a phone's Verdict screen is untouched.
+  const [kiosk] = useState(() => isKioskSession());
+  // The handoff QR: resolving → resolved → failed. On the booth the uuid is
+  // resolved ON MOUNT rather than on tap, because there is no tap — the QR IS
+  // the action, and it has to be on screen by the time they look up.
+  const [qr, setQr] = useState<
+    { state: "resolving" } | { state: "ready"; dataUrl: string } | { state: "failed" }
+  >({ state: "resolving" });
+  // Idle reset: 90s here against /confess's 60. Longer than the writing screen
+  // on purpose — this is where someone reads the verdict, decides whether they
+  // like it, gets their phone out and lines up the QR. 40s cut people off
+  // mid-scan; the screen is only "abandoned" once it has sat far past that.
+  const idleLeft = useKioskTimeout(90, "verdict");
+
   // ── POST TO STORY photo step. STATE, not a route, deliberately: the flow's
   // core input is a decoded image held in memory — it can't cross a route
   // boundary without persisting it somewhere, and this feature's contract is
@@ -485,6 +503,58 @@ const Verdict = () => {
       if (glitchIntervalRef.current) clearTimeout(glitchIntervalRef.current);
     };
   }, [typedText]);
+
+  // ── KIOSK QR: resolve on mount, draw once. Reuses resolveShareId — the SAME
+  // owner-gated resolver both share paths use; there is deliberately no second
+  // resolver, because a second one would be a second definition of who owns a
+  // confession. The window is marked so an idle reset can't rotate the session
+  // id mid-lookup (see lib/reset).
+  useEffect(() => {
+    if (!kiosk) return;
+    if (!subjectNumber || !verdictResponse || verdictResponse === "Entry withheld") {
+      setQr({ state: "failed" });
+      return;
+    }
+    let cancelled = false;
+    beginShareResolve();
+    (async () => {
+      try {
+        const id = shareId ?? (await resolveShareId(Number(subjectNumber), verdictResponse));
+        if (cancelled) return;
+        if (!id) {
+          setQr({ state: "failed" });
+          return;
+        }
+        if (!shareId) setShareId(id);
+        // ?k= tags the scan as a kiosk handoff at the venue that produced it,
+        // so booth traffic stays separable from phone shares on the same link.
+        const url = `https://theboothrecord.com/v/${id}?k=woolstore`;
+        const dataUrl = await QRCode.toDataURL(url, {
+          width: 320,
+          margin: 1,
+          errorCorrectionLevel: "M",
+          // The booth's own palette: ritual green on the card background. Not
+          // black-on-white — this is signage on a dark screen, and scanners
+          // read contrast, not colour.
+          color: { dark: "#00FF1E", light: "#171513" },
+        });
+        if (cancelled) return;
+        setQr({ state: "ready", dataUrl });
+        // Fired on RENDER, not on resolve: a QR nobody could see was never a
+        // handoff.
+        logBoothEvent("kiosk_qr", rowSource);
+      } catch {
+        if (!cancelled) setQr({ state: "failed" });
+      } finally {
+        endShareResolve();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Mount-only: the verdict for this session never changes under the screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kiosk]);
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -658,39 +728,43 @@ const Verdict = () => {
         };
       };
 
-      // THE GAP SCALE — two steps, not three near-identical values (40/44/40
-      // read as three of the same thing doing different jobs):
-      //   chip bottom  → print top      40
-      //   print bottom → verdict cap    64  (a break: image to text)
-      //   verdict ink  → URL cap        40  (related: verdict and its footer)
-      // Margins: DELIBERATELY UNEVEN — 90 above the header ink, 64 below the
-      // URL's ink. Equal margins were tried first and the text block
-      // FLOATED: far more air below the URL than above the verdict made the
-      // band read as detached from the print. Tightening the BOTTOM pulls
-      // the whole group up toward the image without crowding the verdict
-      // against the print's edge, which is what shrinking the
-      // print-to-verdict gap would have done instead. A mounted print
-      // carries more air above than below, because the lower border holds
-      // the caption and reads heavier. Every reclaimed pixel goes to the
-      // print.
+      // THE STACK: meta bar → print → verdict → URL, all ink-measured.
+      //   meta ink bottom → print top   24
+      //   print bottom    → verdict cap 48  (image to text)
+      //   verdict ink     → URL cap     32  (the verdict and its footer)
+      //
+      // MARGINS ARE CHROME RESERVES, MEASURED — not taste. On a published
+      // Story viewed AS A VIEWER (13 Aug 2026, single handset), Instagram
+      // covers card y 0–165 (top) and y 1809–1920 (bottom). Everything the
+      // card says must live between those lines.
+      // marginTop 172 is the META'S INK TOP (not the print's): it clears
+      // the 165 top reserve with 7px to spare. The meta sits on the card
+      // background above the print — ON BLACK, never on the photo, where
+      // its legibility would depend on what was shot.
+      // marginBottom 170 puts the last ink near 1750 — ~59px clear of the
+      // bottom reserve. THAT 59px IS DELIBERATE TOLERANCE for handsets with
+      // a taller home indicator: do not spend it to grow the print without
+      // re-measuring on a second device.
       const inset = 56;
-      const marginTop = 90; // above the header ink
-      const marginBottom = 64; // below the URL's ink bottom
-      const chipToPrint = 40;
-      const printToVerdict = 64;
-      const verdictToUrl = 40;
+      const marginTop = 172; // meta INK TOP (top reserve is 165)
+      const metaToPrint = 24; // meta ink bottom → print top
+      const marginBottom = 170; // URL ink bottom → card bottom (reserve 111)
+      const printToVerdict = 48;
+      const verdictToUrl = 32;
       const photoW = W - inset * 2; // 968
       const photoPrefH = Math.round(H * 0.65); // step the verdict below this
       const photoGuardH = Math.round(H * 0.55); // absolute floor
 
-      // ── Header: two ends of one row, nothing floating between. Time
-      // flush left at the margin; venue chip flush right, its box edge on
-      // the print's right edge (x=1024), 17px symmetric horizontal padding.
-      // The time's cap-height is CENTRED ON THE CHIP BOX'S vertical centre —
-      // derived from it, not positioned separately — so the two ends share
-      // a midline.
-      const timeFont = "400 26px 'Söhne Mono', monospace";
-      const chipFont = "400 24px 'Söhne Mono', monospace";
+      // ── THE META BAR: time left, venue right, on the card background
+      // above the print. Not a header block, not a chip, not a rule — two
+      // facts on one line at the frame's own margins, so the bar IS the
+      // alignment. Fixed 26px with NO step-down: at this size the two
+      // strings sit ~600px apart on a 1080 row, so nothing can collide and
+      // nothing needs to shrink.
+      // It sits on black rather than on the photo because on-print type
+      // failed twice for the same reason — its legibility depended on
+      // whatever was photographed.
+      const metaFont = "400 26px 'Söhne Mono', monospace";
       // The FILING time, not card-generation time: the card is a record of
       // when the confession happened, and someone can share hours later —
       // render time would misdate the night. filedAt is captured by
@@ -705,57 +779,35 @@ const Verdict = () => {
       const timeText = `${String(filedAt.getHours()).padStart(2, "0")}:${String(
         filedAt.getMinutes(),
       ).padStart(2, "0")}`;
-      const chipText = filedVenue || "LOCATION WITHHELD";
-      const chipPadX = 17;
-      const chipPadY = 14;
-      setLS("2px");
-      ctx.font = chipFont;
-      const chipTextW = Math.round(ctx.measureText(chipText).width);
-      setLS("0px");
-      const chipInk = inkOf(chipFont, chipText);
-      const timeInk = inkOf(timeFont, timeText);
-      const chipBoxH = chipInk.asc + chipInk.desc + chipPadY * 2;
-      const chipBoxTop = marginTop;
-      const chipBoxRight = W - inset; // 1024
-      const chipBoxLeft = chipBoxRight - (chipTextW + chipPadX * 2);
-      const chipCenterY = chipBoxTop + chipBoxH / 2;
-      const headerBottom = chipBoxTop + chipBoxH;
+      // The venue is ALWAYS cut at its first comma — "The StandardX,
+      // Melbourne" → "THE STANDARDX". The city is the droppable half: the
+      // room is what a viewer acts on, and the cut keeps the bar to two
+      // short facts. Unconditional, not a width fallback. (LOCATION
+      // WITHHELD has no comma and passes through whole.)
+      const rawVenue = filedVenue || "LOCATION WITHHELD";
+      const venueText = rawVenue.includes(",")
+        ? rawVenue.slice(0, rawVenue.indexOf(",")).trim()
+        : rawVenue;
 
-      // NEON header — drawNeonStamp for both texts, and the same three-layer
-      // halo on the chip's box (stroke passes mirroring the text treatment,
-      // crisp core stroke last). KNOWN COST, measured: the halo bleeds a few
-      // px beyond the box on all sides, softening the edge that defines the
-      // chip — accepted because the header always sits on the mount's flat
-      // #171513, never on the photo, so the edge never has to fight a busy
-      // background.
-      const strokeNeonRect = (x0: number, y0: number, w0: number, h0: number) => {
-        const layers: [number, string][] = [
-          [2.8, "rgba(52,155,189,0.97)"],
-          [10, "rgba(52,155,189,0.68)"],
-          [26, "rgba(52,155,189,0.47)"],
-        ];
-        ctx.strokeStyle = "rgb(120,205,235)"; // core stays brighter than the halo
-        ctx.lineWidth = 2;
-        for (const [blur, color] of layers) {
-          ctx.shadowColor = color;
-          ctx.shadowBlur = blur;
-          ctx.strokeRect(x0, y0, w0, h0);
-        }
-        ctx.shadowColor = "transparent";
-        ctx.shadowBlur = 0;
-        ctx.strokeRect(x0, y0, w0, h0);
-      };
-      strokeNeonRect(chipBoxLeft, chipBoxTop, chipTextW + chipPadX * 2, chipBoxH);
+      // Draw the bar: ink-positioned at both ends — the time's ink starts
+      // at the inset, the venue's ink ends on the print's right edge, and
+      // the row's ink top is marginTop. Baseline/extents come from the
+      // taller of the two strings so the row reads as one line.
       setLS("2px");
-      ctx.font = chipFont;
+      ctx.font = metaFont;
+      const timeM = ctx.measureText(timeText);
+      const venueM = ctx.measureText(venueText);
+      const metaAsc = Math.max(timeM.actualBoundingBoxAscent, venueM.actualBoundingBoxAscent);
+      const metaDesc = Math.max(timeM.actualBoundingBoxDescent, venueM.actualBoundingBoxDescent);
+      const metaBaseline = marginTop + metaAsc;
+      const metaInkBottom = metaBaseline + metaDesc;
+      drawNeonStamp(timeText, inset + timeM.actualBoundingBoxLeft, metaBaseline);
       drawNeonStamp(
-        chipText,
-        chipBoxLeft + chipPadX,
-        chipBoxTop + chipPadY + chipInk.asc,
+        venueText,
+        W - inset - venueM.actualBoundingBoxRight,
+        metaBaseline,
       );
       setLS("0px");
-      ctx.font = timeFont;
-      drawNeonStamp(timeText, inset, chipCenterY + timeInk.asc / 2);
 
       // ── Print size: the photo takes everything the fixed stack doesn't
       // need — no ceiling; the % is an OUTCOME (reported per render in dev).
@@ -764,7 +816,7 @@ const Verdict = () => {
       // with the confession gone from the band the verdict is ALONE down
       // there, and 54 filled the space rather than sitting in it — 42 gives
       // the band negative space and the print grows into the difference.
-      const photoTop = headerBottom + chipToPrint;
+      const photoTop = metaInkBottom + metaToPrint;
       // The CTA's OWN size — it inherited chipFont (24) in the minimal-card
       // rewrite and lost its constant; the URL is the only route back to the
       // site on an image nobody can tap, and it earns its own scale. Keep
@@ -773,12 +825,12 @@ const Verdict = () => {
       const ctaFont = `400 ${ctaSize}px 'Söhne Mono', monospace`;
       const ctaInk = inkOf(ctaFont, "confess at theboothrecord.com");
       const vSteps: [number, number][] = [
-        [42, 51],
-        [38, 46],
-        [34, 41],
+        [40, 49],
+        [36, 44],
+        [32, 39],
       ];
-      let vSize = 34;
-      let vLH = 41;
+      let vSize = 32;
+      let vLH = 39;
       let vLines: string[] = [];
       let vTopInk = 0;
       let vBottomInk = 0;
@@ -880,16 +932,23 @@ const Verdict = () => {
         vy += vLH;
       }
       const vInkBottom = vy - vLH + vBottomInk;
-      // URL footer — "confess at theboothrecord.com" in NEON ritual green
-      // (drawNeonGreen — the same three-pass structure as the State Blue
-      // neon). It was flat first, and the card's two ends spoke differently:
-      // the header lit, the CTA not. Both lit means they read as one system.
-      // 40px of ink gap: related to the verdict — its footer — where the
-      // 64px above is the image-to-text break.
+      // ── FOOTER: the URL alone, flush left at the inset. The filing
+      // meta moved to the top bar, so there is no second element on this
+      // line and no collision rule — the cascade that used to shrink,
+      // de-time and truncate the meta here is gone with it.
+      // 32px of ink gap above: related to the verdict — its footer — where
+      // the 48px above that is the image-to-text break.
       const ctaBaseline = vInkBottom + verdictToUrl + ctaInk.asc;
+      // FLAT ritual green, no glow: the lit voice on this card is the meta
+      // bar's State Blue, and the URL is the quieter fact.
+      const rootStyle = getComputedStyle(document.documentElement);
+      const ritualGreen = `hsl(${rootStyle.getPropertyValue("--ritual-green").trim()})`;
       setLS("2px");
       ctx.font = ctaFont;
-      drawNeonGreen("confess at theboothrecord.com", inset, ctaBaseline);
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = ritualGreen;
+      ctx.fillText("confess at theboothrecord.com", inset, ctaBaseline);
       setLS("0px");
 
       return await new Promise<Blob>((resolve, reject) => {
@@ -1356,6 +1415,50 @@ const Verdict = () => {
             </div>
           ) : null)}
 
+        {kiosk ? (
+          /* ── KIOSK HANDOFF. The booth's device replaces every action with one
+             QR: SHARE VERDICT, POST TO STORY, CONFESS AGAIN and SEE THE RECORD
+             are all phone actions — they'd hand the venue's hardware to a
+             stranger, open the booth's own camera, or walk the booth away from
+             the gate. The QR is the only way the record leaves the room.
+             All three states reserve the SAME height, so the screen never
+             jumps between resolving and resolved — on a booth the movement is
+             the only thing anyone would notice. */
+          <div className="w-full max-w-xs flex flex-col items-center gap-5">
+            {/* lowercase, deliberately: Söhne Mono is the app's HUMAN voice —
+                caps here read as signage bolted to the machine. The uppercase
+                tier belongs to the filing marks (AS CHARGED, LOCATION
+                WITHHELD), not to an instruction spoken to the person. */}
+            <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
+              take it with you
+            </p>
+            <div className="h-[320px] w-[320px] flex items-center justify-center">
+              {qr.state === "ready" ? (
+                <img
+                  src={qr.dataUrl}
+                  alt="Scan to open this verdict"
+                  className="h-[320px] w-[320px]"
+                />
+              ) : (
+                <p className="text-muted-foreground/60 text-[13px] font-mono-light tracking-wide text-center">
+                  {qr.state === "resolving"
+                    ? "FILING…"
+                    : /* Failed: a FLAT TECHNICAL line and nothing else. No
+                         toast, no retry — a retry button on a booth is a
+                         button the next person inherits. The copy is
+                         deliberately mechanical: the earlier "This one stays
+                         in the booth." read as a judgment on the confession
+                         and sat too close to Blocked's "This one stays off the
+                         record." A failed uuid lookup is a broken link, not a
+                         verdict, and pointing at a human is the only useful
+                         thing the screen can do. */
+                      "Couldn't make the link. Ask at the bar."}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
         {!hasShared ? (
           /* Pre-share: promise line + SHARE VERDICT (boxed, the perishable action) with
              POST TO STORY beneath. The disclosure line IS the consent. */
@@ -1455,7 +1558,11 @@ const Verdict = () => {
             </button>
           </div>
         )}
+          </>
+        )}
       </div>
+      <KioskIdleLine secondsLeft={idleLeft} />
+      <KioskStaffReset />
 
       {/* ── POST TO STORY photo flow (see the story state note). Full-screen
           overlay: choose → crop → preview. skip at the bottom of choose runs
@@ -1471,7 +1578,12 @@ const Verdict = () => {
           indicator once the toolbar minimises. screen-container already does
           both (100dvh + pb-32); this overlay was the one unprotected
           container in the flow. */}
-      {story ? (
+      {/* NEVER in kiosk: the chooser's TAKE A PHOTO opens the BOOTH'S camera,
+          pointed at whatever the booth is pointed at, and "or pick one" opens
+          the booth's library. Both are the wrong device and the wrong person's
+          photos. The kiosk branch above renders no entry point to this flow;
+          this gate is the second layer. */}
+      {story && !kiosk ? (
         <div
           className="fixed inset-0 z-50 bg-background flex flex-col items-center px-6 pt-10 overflow-hidden animate-fade-in"
           style={{

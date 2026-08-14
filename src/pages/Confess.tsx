@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { captureSourceFromUrl, resolvePrompt, DEFAULT_PROMPT } from "@/lib/source";
@@ -14,6 +15,13 @@ const Confess = () => {
   useWakeLock();
   const location = useLocation();
   const { toast } = useToast();
+  // Idle reset, KIOSK ONLY (no-op on a phone): 60s. Writing a confession
+  // includes thinking about it, and someone staring at a blank field is still
+  // using the booth. Typing resets the countdown like any other interaction,
+  // so the timer only runs on a genuinely abandoned screen. Shorter than
+  // /verdict's 90 — an unwritten confession costs nobody anything, an
+  // interrupted scan costs the record.
+  const idleLeft = useKioskTimeout(60, "confess");
   // Resolve the venue from stored session state, NOT the live URL: capture once on
   // arrival (?source= present), then fall back to the stored value on repeat
   // confessions ("go deeper"), whose URL has no ?source=. This keeps BOTH the venue
@@ -381,6 +389,8 @@ const Confess = () => {
           doing the legal work. Passive fine print repeated here was redundant.
           No wordmark footer either — this is the working screen, the one place
           the interface should disappear (the mark lives on Receiving instead). */}
+      <KioskIdleLine secondsLeft={idleLeft} />
+      <KioskStaffReset />
     </div>
   );
 };
