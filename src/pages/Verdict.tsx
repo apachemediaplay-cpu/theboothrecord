@@ -534,15 +534,30 @@ const Verdict = () => {
         // ?k= carries the offer key VerdictShare looks up, and tags the scan as
         // a kiosk handoff. One definition, shared with the round strip's QRs.
         const url = kioskHandoffUrl(id);
-        const dataUrl = await QRCode.toDataURL(url, {
-          width: 320,
-          margin: 1,
+        // BLACK ON WHITE, not the booth's green on its own background. The
+        // green version was palette-first and it cost scans: a phone camera in
+        // a dark room is working at the edge of its exposure, and maximum
+        // contrast is the only thing that makes the first attempt land. The
+        // white field IS the card — margin is in MODULES, and 3 lands the
+        // quiet zone at ~7% of the image on every side, which is what lets a
+        // scanner find the finder patterns against a dark screen. (The ISO
+        // recommendation is 4 modules, ~9%; 3 is the briefed 7%.)
+        //
+        // sRGB, EXPLICITLY: the canvas colour space is set before qrcode takes
+        // its own context, so the exported PNG is tagged. An untagged data URL
+        // is interpreted as Display P3 on iPhone — which is why the old green
+        // read yellow on the booth's own hardware. Black and white are
+        // colour-space-proof anyway; the tag keeps it that way if the palette
+        // ever comes back.
+        const qrCanvas = document.createElement("canvas");
+        qrCanvas.getContext("2d", { colorSpace: "srgb" });
+        await QRCode.toCanvas(qrCanvas, url, {
+          width: 640, // rendered at 2x the on-screen cap — crisp on the tablet
+          margin: 3,
           errorCorrectionLevel: "M",
-          // The booth's own palette: ritual green on the card background. Not
-          // black-on-white — this is signage on a dark screen, and scanners
-          // read contrast, not colour.
-          color: { dark: "#00FF1E", light: "#171513" },
+          color: { dark: "#000000", light: "#FFFFFF" },
         });
+        const dataUrl = qrCanvas.toDataURL("image/png");
         if (cancelled) return;
         setQr({ state: "ready", dataUrl });
         // Fired on RENDER, not on resolve: a QR nobody could see was never a
@@ -1449,12 +1464,20 @@ const Verdict = () => {
             <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
               take it with you
             </p>
-            <div className="h-[320px] w-[320px] flex items-center justify-center">
+            {/* CAPPED AT 40vw. At a fixed 320px the code owned the screen —
+                on the booth it read as the point of the card rather than the
+                way out of it. The box and the image share one size expression
+                so all three states still reserve identical height and nothing
+                jumps between resolving and resolved. */}
+            <div
+              className="flex items-center justify-center"
+              style={{ width: "min(40vw, 320px)", height: "min(40vw, 320px)" }}
+            >
               {qr.state === "ready" ? (
                 <img
                   src={qr.dataUrl}
                   alt="Scan to open this verdict"
-                  className="h-[320px] w-[320px]"
+                  style={{ width: "min(40vw, 320px)", height: "min(40vw, 320px)" }}
                 />
               ) : (
                 <p className="text-muted-foreground/60 text-[13px] font-mono-light tracking-wide text-center">

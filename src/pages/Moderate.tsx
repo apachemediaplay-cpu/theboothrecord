@@ -711,6 +711,13 @@ const VenueOverviewRow = ({
   const [qrError, setQrError] = useState(false);
   // Copy feedback for the booth-tablet URL, local to this row.
   const [kioskCopied, setKioskCopied] = useState(false);
+  // The booth-tablet QR — RITUAL GREEN ON THE DARK PANEL, deliberately the
+  // opposite treatment to the black-on-white printed-card QR above it. The two
+  // codes do opposite things (one starts a confession on a punter's phone, one
+  // converts a device into the booth), they sit inches apart in this panel, and
+  // the only thing stopping someone printing the wrong one is that they cannot
+  // be mistaken for each other at a glance. Screen only — no download.
+  const [kioskQrDataUrl, setKioskQrDataUrl] = useState<string | null>(null);
   const scanUrl = venueScanUrl(row.source, row.display_name);
   const toggleQr = () => {
     const opening = !qrOpen;
@@ -719,6 +726,16 @@ const VenueOverviewRow = ({
       QRCode.toDataURL(scanUrl, { width: 1024, margin: 2, errorCorrectionLevel: "M" })
         .then((url) => setQrDataUrl(url))
         .catch(() => setQrError(true));
+      // Screen-only companion; its own failure is silent — the short URL is
+      // right beside it and remains copyable either way.
+      QRCode.toDataURL(venueKioskUrl(row.source), {
+        width: 512,
+        margin: 2,
+        errorCorrectionLevel: "M",
+        color: { dark: "#00FF1E", light: "#171513" },
+      })
+        .then((url) => setKioskQrDataUrl(url))
+        .catch(() => setKioskQrDataUrl(null));
     }
   };
   return (
@@ -1046,9 +1063,18 @@ const VenueOverviewRow = ({
                       <p className="font-medium text-foreground/80">
                         Booth tablet only — never printed
                       </p>
-                      <p className="max-w-64 break-all select-all">
-                        {venueKioskUrl(row.source)}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        {kioskQrDataUrl ? (
+                          <img
+                            src={kioskQrDataUrl}
+                            alt={`Booth-mode QR for ${row.display_name}`}
+                            className="h-24 w-24 shrink-0"
+                          />
+                        ) : null}
+                        <p className="max-w-56 break-all select-all">
+                          {venueKioskUrl(row.source)}
+                        </p>
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"

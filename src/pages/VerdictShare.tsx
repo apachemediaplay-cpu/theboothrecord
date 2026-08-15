@@ -2,23 +2,28 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { fetchSharedVerdict, logBoothEvent, type SharedVerdict } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
+import firstOffence from "@/assets/first-offence.webp";
 
 // ── THE ?k= OFFER ───────────────────────────────────────────────────────────
-// A kiosk QR carries ?k={key}; this page turns that key into an offer. Keyed
-// per event so each one can carry its own heading and code without a deploy
-// touching anything else — add a row, nothing above changes.
+// A kiosk QR carries ?k={key}; this page turns that key into a discount code.
+// The TABLE HOLDS THE CODE ONLY — the line beside it is fixed copy, because
+// the offer is always the same offer; only the code changes per event.
 //
 // The KEY IS UNTRUSTED (it comes from a URL): it is only ever used as a lookup
 // into this table, never rendered. An unknown or absent key renders NOTHING —
-// no empty box, no "offer expired", no trace that an offer exists at all.
+// no empty row, no "offer expired", no trace that an offer exists at all.
 //
-// TODO: this table is hardcoded for the first event. When a second venue or a
-// second night needs its own code, move it to a table (site_copy-shaped,
-// console-edited) rather than growing this object — the console already owns
-// every other piece of per-venue copy.
-const OFFERS: Record<string, { heading: string; code: string }> = {
-  woolstore: { heading: "First round's on the record.", code: "GUILTY10" },
+// TODO: hardcoded for the first event. When a second venue or a second night
+// needs its own code, move it to a table (site_copy-shaped, console-edited)
+// rather than growing this object — the console already owns every other piece
+// of per-venue copy.
+const OFFER_CODES: Record<string, string> = {
+  woolstore: "GUILTY10",
 };
+
+// The shop's discount link drops the code straight into a pre-filled cart.
+const offerHref = (code: string) =>
+  `https://shop.houseofguilty.com/discount/${encodeURIComponent(code)}?redirect=/cart/52182988423451:1`;
 
 // The Booth mark — STATIC by design: this page is read, not passed through, and
 // YOUR TURN's label already carries the page's only pulse. No glow, no animation
@@ -44,7 +49,7 @@ const BoothMark = ({ marginClass = "mb-8" }: { marginClass?: string }) => (
 const VerdictShare = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const offer = OFFERS[(searchParams.get("k") || "").trim().toLowerCase()] ?? null;
+  const offerCode = OFFER_CODES[(searchParams.get("k") || "").trim().toLowerCase()] ?? null;
   const [status, setStatus] = useState<"loading" | "found" | "notfound">("loading");
   const [row, setRow] = useState<SharedVerdict | null>(null);
 
@@ -161,23 +166,54 @@ const VerdictShare = () => {
           {venue ? `As charged at ${venue}` : "Location withheld"}
         </p>
 
-        {/* THE OFFER — only ever with a known ?k=. ORANGE, and this is the ONE
-            SANCTIONED EXCEPTION to orange-means-confess: it is a buy CTA, and
-            the whole point of the exception is that a buy CTA must not be able
-            to hide inside the app's own voice. The dashed 1px border says
-            coupon, not booth: nothing else in the app is dashed, so it reads as
-            a foreign object stapled to the record — which is exactly what it
-            is. NOT tappable, deliberately: the code is read aloud at a bar, and
-            a link here would compete with YOUR TURN below. */}
-        {offer ? (
-          <div className="mt-8 w-full max-w-xs border border-dashed border-[#FF4800] px-4 py-3">
-            <p className="text-[#FF4800] text-[13px] font-mono-light leading-relaxed">
-              {offer.heading}
-            </p>
-            <p className="text-[#FF4800] text-lg font-mono-light tracking-[0.2em] uppercase mt-1">
-              {offer.code}
-            </p>
-          </div>
+        {/* THE OFFER — only ever with a known ?k=. Rebuilt: the dashed coupon
+            box, the wordmark and the tagline are all GONE. A box drew a border
+            around the one commercial thing on a page about confession and made
+            it louder than the verdict; a hairline and a product shot let it sit
+            in the page's own rhythm and still be unmistakably a different kind
+            of object.
+            ORANGE is the ONE SANCTIONED EXCEPTION to orange-means-confess —
+            this is a buy CTA, and the exception exists so a buy CTA can never
+            hide inside the app's own voice. The GLOW is on the code alone (the
+            thing you carry to the bar), not the line.
+            THE WHOLE ROW IS THE LINK: on a phone, a 64px image and two short
+            lines are one target, and splitting them would give a thumb three
+            small ones. */}
+        {offerCode ? (
+          <a
+            href={offerHref(offerCode)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 w-full max-w-xs flex items-center gap-[14px] border-t pt-5"
+            style={{ borderColor: "rgba(244,240,234,0.18)" }}
+          >
+            <img
+              src={firstOffence}
+              alt=""
+              className="w-16 shrink-0"
+              // Decorative: the line beside it already says what this is, and a
+              // second reading of "first offence" would be noise on a screen
+              // reader.
+              aria-hidden="true"
+            />
+            <span className="min-w-0">
+              <span className="block text-[#F4F0EA] text-[13px] font-mono-light tracking-wide">
+                commit your first offence{" "}
+                <span style={{ opacity: 0.5 }}>→</span>
+              </span>
+              <span
+                className="block text-[15px] font-mono-light mt-1"
+                style={{
+                  color: "#FF6A2E",
+                  letterSpacing: "0.14em",
+                  textShadow:
+                    "0 0 3px rgba(255,150,110,.9), 0 0 9px rgba(255,72,0,.85), 0 0 24px rgba(255,72,0,.55), 0 0 46px rgba(255,72,0,.3)",
+                }}
+              >
+                {offerCode}
+              </span>
+            </span>
+          </a>
         ) : null}
       </div>
 
