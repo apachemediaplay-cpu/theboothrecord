@@ -1332,8 +1332,17 @@ const Verdict = () => {
     "text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide";
 
   return (
-    <div className="screen-container animate-fade-in">
-      <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
+    // KIOSK CENTRING: screen-container's pb-32 exists to clear the phone's
+    // fixed action block, which the booth doesn't have — on a tablet it left
+    // the record 306px from the top and 128px from the bottom, off-centre and
+    // sitting low. In kiosk the bottom padding drops to match the top and the
+    // container centres its children as one block instead of letting the
+    // content stretch. min-h (not h) keeps it safe on a phone: taller content
+    // just grows the container and the page scrolls, never clipping the top.
+    <div className={`screen-container animate-fade-in${kiosk ? " pb-8 justify-center" : ""}`}>
+      <div
+        className={`${kiosk ? "" : "flex-1 "}flex flex-col justify-center items-start text-left pb-10`}
+      >
         {/* System stamp, not a headline — smallest text on the screen. 12px below,
             matching the share page: stamp + confession read as one block. */}
         <p className="text-ritual text-[11px] font-mono-light tracking-[0.2em] mb-3 min-h-[1em] relative">

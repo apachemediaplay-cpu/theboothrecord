@@ -58,12 +58,21 @@ const RoundStrip = () => {
             setQrs((m) => ({ ...m, [i]: null }));
             continue;
           }
-          const dataUrl = await QRCode.toDataURL(kioskHandoffUrl(id), {
-            width: 240,
-            margin: 1,
+          // BLACK ON WHITE, margin 3 (~7% quiet zone), sRGB-tagged canvas —
+          // identical to the solo verdict's QR and for the identical reason:
+          // a phone camera in a dark room is at the edge of its exposure, and
+          // contrast is what makes the first scan land. The green-on-dark
+          // version was palette-first. (An untagged data URL is read as
+          // Display P3 on iPhone; black and white are immune either way.)
+          const qrCanvas = document.createElement("canvas");
+          qrCanvas.getContext("2d", { colorSpace: "srgb" });
+          await QRCode.toCanvas(qrCanvas, kioskHandoffUrl(id), {
+            width: 640,
+            margin: 3,
             errorCorrectionLevel: "M",
-            color: { dark: "#00FF1E", light: "#171513" },
+            color: { dark: "#000000", light: "#FFFFFF" },
           });
+          const dataUrl = qrCanvas.toDataURL("image/png");
           if (cancelled) return;
           setQrs((m) => ({ ...m, [i]: dataUrl }));
           drawn += 1;
@@ -95,12 +104,20 @@ const RoundStrip = () => {
 
   if (!round || round.slots.length === 0) return <Navigate to="/round" replace />;
 
+  // One QR edge length for the whole strip — fewer people, bigger code.
+  const qrBox = round.size <= 2 ? "min(35vw, 300px)" : "min(30vw, 260px)";
+
   return (
     // pb-8 overrides screen-container's pb-32: the strip is a terminal screen
     // with no fixed footer to clear, and five pairs need the room — the strip
     // must NOT scroll at five people on a 375×667 phone.
-    <div className="screen-container animate-fade-in pb-8">
-      <div className="flex-1 flex flex-col justify-center py-8">
+    // KIOSK adds justify-center and drops flex-1 below so the WHOLE block
+    // (count, pairs, GO AGAIN) centres as one unit. With flex-1 the pairs
+    // centred in the upper area while the footer stayed pinned to the bottom,
+    // leaving a 376px void between them on a tablet. min-h (not h) means an
+    // overflowing strip just grows and the page scrolls — no clipped top.
+    <div className={`screen-container animate-fade-in pb-8${kiosk ? " justify-center" : ""}`}>
+      <div className={`${kiosk ? "" : "flex-1 "}flex flex-col justify-center py-8`}>
         {/* Count header in RITUAL GREEN — THE BOOTH NOTICED's exact mono
             treatment and tracking, but NOT its words: the count is what makes
             the strip read as a conclusion rather than one more verdict screen. */}
@@ -128,9 +145,17 @@ const RoundStrip = () => {
                 </p>
               </div>
               {kiosk ? (
-                <div className="h-20 w-20 shrink-0 flex items-center justify-center">
+                // SIZED OFF THE VIEWPORT, not a fixed 80px: at 80 these were
+                // ~10% of a tablet's width and the real failure was scanning,
+                // not layout. Two people get 35vw, three get 30 — the strip
+                // trades page length for scannability, and the px caps only
+                // bind on a desktop-width screen where vw would run away.
+                <div
+                  className="shrink-0 flex items-center justify-center"
+                  style={{ width: qrBox, height: qrBox }}
+                >
                   {qrs[i] ? (
-                    <img src={qrs[i] as string} alt="" className="h-20 w-20" />
+                    <img src={qrs[i] as string} alt="" style={{ width: qrBox, height: qrBox }} />
                   ) : qrs[i] === null ? null : (
                     <span className="text-[9px] font-mono-light text-muted-foreground/50">
                       …
