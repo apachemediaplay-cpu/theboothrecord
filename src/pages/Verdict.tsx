@@ -1340,8 +1340,14 @@ const Verdict = () => {
     // content stretch. min-h (not h) keeps it safe on a phone: taller content
     // just grows the container and the page scrolls, never clipping the top.
     <div className={`screen-container animate-fade-in${kiosk ? " pb-8 justify-center" : ""}`}>
+      {/* pb-8 in kiosk: with the action wrapper's pt-6 also dropped below, the
+          verdict-to-SUBJECT # gap lands at 56px (24 from the verdict's own mb-6
+          + 32 here). It was 88 — the record and the handoff read as two
+          unrelated screens stacked on one. */}
       <div
-        className={`${kiosk ? "" : "flex-1 "}flex flex-col justify-center items-start text-left pb-10`}
+        className={`${kiosk ? "" : "flex-1 "}flex flex-col justify-center items-start text-left ${
+          kiosk ? "pb-8" : "pb-10"
+        }`}
       >
         {/* System stamp, not a headline — smallest text on the screen. 12px below,
             matching the share page: stamp + confession read as one block. */}
@@ -1404,7 +1410,9 @@ const Verdict = () => {
           there it marks where a scrolling feed meets a pinned bar, a real
           boundary — don't remove that one for consistency. The pt-6 is kept:
           it was always the breathing room; the rule only underlined it. */}
-      <div className="shrink-0 w-full pt-6 flex flex-col items-center gap-6">
+      <div
+        className={`shrink-0 w-full ${kiosk ? "pt-0" : "pt-6"} flex flex-col items-center gap-6`}
+      >
         {/* Feature 2 — email capture (currently gated OFF via ENABLE_EMAIL_CAPTURE) */}
         {ENABLE_EMAIL_CAPTURE &&
           (claimState === "claimed" ? (
@@ -1453,7 +1461,12 @@ const Verdict = () => {
              All three states reserve the SAME height, so the screen never
              jumps between resolving and resolved — on a booth the movement is
              the only thing anyone would notice. */
-          <div className="w-full max-w-xs flex flex-col items-center gap-5">
+          /* NO max-w-xs on this group: the QR below is sized as a PERCENTAGE
+             OF THE COLUMN, and a 320px cap here would have quietly made it a
+             percentage of 320 instead of the ~400px the record is set in.
+             gap-4 = the 16px inside the group; the 56px above it comes off the
+             record block's own padding (see the content div's pb). */
+          <div className="w-full flex flex-col items-center gap-4">
             {/* SUBJECT #N — kiosk only, between the verdict and the QR. It is
                 the one piece of the record a person can carry away without a
                 phone: the number they'll look for on the wall later. UPPERCASE
@@ -1466,30 +1479,26 @@ const Verdict = () => {
                 Subject #{subjectNumber}
               </p>
             ) : null}
-            {/* lowercase, deliberately: Söhne Mono is the app's HUMAN voice —
-                caps here read as signage bolted to the machine. The uppercase
-                tier belongs to the filing marks (AS CHARGED, LOCATION
-                WITHHELD), not to an instruction spoken to the person. */}
-            <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
-              take it with you
-            </p>
-            {/* CAPPED AT 40vw. At a fixed 320px the code owned the screen —
-                on the booth it read as the point of the card rather than the
-                way out of it. The box and the image share one size expression
-                so all three states still reserve identical height and nothing
-                jumps between resolving and resolved. */}
+            {/* 55% OF THE COLUMN. min(40vw, 320px) was pinned at 320px on every
+                tablet — 80% of a 400px column, which made the code the largest
+                object on a screen whose subject is a sentence. A percentage of
+                the column lands the same proportion on both devices (220px on
+                the booth, 180px on a phone, where it GROWS from 46%). Height
+                from aspect-ratio, not a percentage: a percentage height would
+                resolve against an auto-height parent. All three states reserve
+                identical space, so nothing jumps as the code resolves. */}
             <div
               className="flex items-center justify-center"
-              style={{ width: "min(40vw, 320px)", height: "min(40vw, 320px)" }}
+              style={{ width: "55%", aspectRatio: "1 / 1" }}
             >
               {qr.state === "ready" ? (
                 <img
                   src={qr.dataUrl}
                   alt="Scan to open this verdict"
-                  style={{ width: "min(40vw, 320px)", height: "min(40vw, 320px)" }}
+                  style={{ width: "100%", height: "100%" }}
                 />
               ) : (
-                <p className="text-muted-foreground/60 text-[13px] font-mono-light tracking-wide text-center">
+                <p className="max-w-xs text-muted-foreground/60 text-[13px] font-mono-light tracking-wide text-center">
                   {qr.state === "resolving"
                     ? "FILING…"
                     : /* Failed: a FLAT TECHNICAL line and nothing else. No
@@ -1505,6 +1514,16 @@ const Verdict = () => {
                 </p>
               )}
             </div>
+            {/* BELOW the code, not above it: the line describes the code, and
+                sitting under SUBJECT #N it read as an instruction about the
+                number — the one thing on this screen you can't take with you.
+                lowercase, deliberately: Söhne Mono is the app's HUMAN voice —
+                caps here read as signage bolted to the machine. The uppercase
+                tier belongs to the filing marks (AS CHARGED, LOCATION
+                WITHHELD), not to an instruction spoken to the person. */}
+            <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
+              take it with you
+            </p>
           </div>
         ) : (
           <>

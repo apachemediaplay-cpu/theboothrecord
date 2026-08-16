@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
+import { isKioskSession } from "@/lib/source";
 import { getRound, roundSettled } from "@/lib/round";
 
 // REVEAL — one verdict per screen, N times. One at a time is what keeps the
@@ -16,6 +17,8 @@ const RoundReveal = () => {
   useWakeLock();
   // 90s: verdicts are read aloud here and the table talks between cards.
   const idleLeft = useKioskTimeout(90, "round_reveal");
+  // Read once at mount, like every other kiosk branch.
+  const [kiosk] = useState(() => isKioskSession());
   const round = getRound();
   const [idx, setIdx] = useState(0);
 
@@ -26,8 +29,15 @@ const RoundReveal = () => {
   const last = idx >= round.slots.length - 1;
 
   return (
-    <div className="screen-container animate-fade-in">
-      <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
+    // KIOSK CENTRING — the same fix already made on the strip and the kiosk
+    // verdict, which this screen was missed out of: flex-1 stretched the card
+    // to fill the space and pinned the footer to the bottom edge, leaving a
+    // 400px void mid-screen between the verdict and the rule. min-h (not h)
+    // means a long verdict just grows the page instead of clipping.
+    <div className={`screen-container animate-fade-in${kiosk ? " pb-8 justify-center" : ""}`}>
+      <div
+        className={`${kiosk ? "" : "flex-1 "}flex flex-col justify-center items-start text-left pb-10`}
+      >
         {/* Stamp + counter on one line — stamp in ritual (the share page's
             treatment), counter in State Blue metadata. */}
         <div className="mb-3 flex w-full items-baseline justify-between">
@@ -41,8 +51,15 @@ const RoundReveal = () => {
         <p className="text-muted-foreground text-base font-mono-light whitespace-pre-wrap mb-8">
           {slot.confession}
         </p>
+        {/* 34px on the booth at tablet width (≥768), against 30 elsewhere: this
+            is the one screen a whole table reads at once, from three different
+            distances. A phone keeps text-2xl — that reader is holding it. */}
         {slot.status === "done" && slot.verdict ? (
-          <p className="font-control font-bold text-[#F4F0EA] text-2xl md:text-3xl leading-tight">
+          <p
+            className={`font-control font-bold text-[#F4F0EA] text-2xl leading-tight ${
+              kiosk ? "md:text-[34px]" : "md:text-3xl"
+            }`}
+          >
             {slot.verdict}
           </p>
         ) : (

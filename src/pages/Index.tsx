@@ -375,7 +375,24 @@ const Index = () => {
             there's more than one of us
           </button>
         )}
-        <p className="max-w-xs text-center text-[9.5px] leading-snug font-mono-light text-muted-foreground/70">
+        {/* CONSENT COPY, KIOSK TIER. 11px at /95 instead of 9.5px at /70: this
+            is the line that does the legal work, and on the booth it is read
+            in a dark room, at arm's length, by someone who did not choose the
+            device. 9.5px at /70 composites to ~0.40 of the way off the
+            background; /95 lands ~0.50. A phone reader holds the screen and
+            keeps the existing tier byte-identical.
+            mt-2 in kiosk ONLY: the fixed block's gap-4 puts 16px between every
+            child, which made the legal line read as governing "there's more
+            than one of us" — the link directly above it — rather than BEGIN.
+            8px more takes it to 24 and re-attaches it to the button. (There is
+            no link at all on a phone, so there is nothing to disambiguate.) */}
+        <p
+          className={`max-w-xs text-center leading-snug font-mono-light ${
+            kioskGate
+              ? "mt-2 text-[11px] text-muted-foreground/95"
+              : "text-[9.5px] text-muted-foreground/70"
+          }`}
+        >
           I agree, by tapping BEGIN, that I'm 18+ and my confession may be published
           anonymously. <LegalLinks />.
         </p>

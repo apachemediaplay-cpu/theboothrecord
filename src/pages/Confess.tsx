@@ -4,7 +4,7 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
 import { ArrowRight, Mic } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { captureSourceFromUrl, resolvePrompt, DEFAULT_PROMPT } from "@/lib/source";
+import { captureSourceFromUrl, resolvePrompt, DEFAULT_PROMPT, isKioskSession } from "@/lib/source";
 import { fetchConfessConfig, getPlaceholderLines, resolveConfessLines } from "@/lib/registers";
 import { roundActive, roundIndex, getRound, submitRoundConfession } from "@/lib/round";
 
@@ -22,6 +22,8 @@ const Confess = () => {
   // /verdict's 90 — an unwritten confession costs nobody anything, an
   // interrupted scan costs the record.
   const idleLeft = useKioskTimeout(60, "confess");
+  // Read once at mount, like every other kiosk branch.
+  const [kiosk] = useState(() => isKioskSession());
   // Resolve the venue from stored session state, NOT the live URL: capture once on
   // arrival (?source= present), then fall back to the stored value on repeat
   // confessions ("go deeper"), whose URL has no ?source=. This keeps BOTH the venue
@@ -298,7 +300,12 @@ const Confess = () => {
   }
 
   return (
-    <div className="screen-container animate-fade-in">
+    // pb-8 in kiosk, matching Verdict, Reveal and Strip: screen-container's
+    // pb-32 reserves 128px for BoothFooter, which this flow never renders —
+    // on the booth it was pulling the centred prompt 96px above true centre
+    // against py-8's 32. The GATE keeps pb-32: its BEGIN block is fixed
+    // bottom-24 and the room is load-bearing there.
+    <div className={`screen-container animate-fade-in${kiosk ? " pb-8" : ""}`}>
       {/* Listening status line — occupies the SAME fixed top slot BoothHeader uses on the
           gate (same top margin + left edge), so the gate's "Location: X" hands off to this
           on /confess. Confess-only: deliberately not on gate, receiving, verdict or the wall. */}
@@ -321,7 +328,20 @@ const Confess = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-start pt-[calc(4rem+10dvh)]">
+      {/* KIOSK CENTRES. The 4rem+10dvh top anchor is a PHONE measurement: it
+          puts the prompt just under the notch and lets the keyboard own the
+          bottom half. The booth has no keyboard coming up and no browser
+          chrome (Guided Access from a home-screen icon has less than these
+          screenshots do), so the same rule left the lower two thirds of the
+          iPad empty — 754px of it. Centred, the prompt sits where every other
+          kiosk screen puts its content. Phones keep the anchor exactly. */}
+      <div
+        className={
+          kiosk
+            ? "flex-1 flex flex-col justify-center"
+            : "flex-1 flex flex-col justify-start pt-[calc(4rem+10dvh)]"
+        }
+      >
         <h2 className="font-control text-3xl md:text-4xl font-bold text-foreground mb-2">
           {prompt.headline}
         </h2>

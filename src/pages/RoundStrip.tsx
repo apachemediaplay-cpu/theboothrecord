@@ -104,8 +104,26 @@ const RoundStrip = () => {
 
   if (!round || round.slots.length === 0) return <Navigate to="/round" replace />;
 
-  // One QR edge length for the whole strip — fewer people, bigger code.
-  const qrBox = round.size <= 2 ? "min(35vw, 300px)" : "min(30vw, 260px)";
+  // One QR edge length for the whole strip, sized against THE COLUMN, not the
+  // viewport: screen-container is a fixed max-w-md with px-6, so the readable
+  // width is ~400px on every tablet — a vw expression was measuring a number
+  // the layout never uses, and both caps were simply pinned at every device
+  // width. Percentages here are percentages of that 400px row.
+  //
+  // AND THE RELATIONSHIP IS INVERTED. Two-up used to get the BIGGER code and
+  // therefore the NARROWER text column (97px, three-word lines) — but the
+  // verdicts are the same length whether two people or three are in the round,
+  // so fewer people should mean a SMALLER code, not a bigger one. Three-up
+  // takes the larger share because its rows are shorter.
+  //
+  // BELOW sm: a flat 132px floor. On a 375px phone the column is only 327px,
+  // so 30% would be 98px — smaller than the 131px these codes are today, and
+  // shrinking a code that already scans is the one thing this pass must not
+  // do. The floor is a breakpoint, NOT a max() against the percentage: as a
+  // max() it won 30% × 400px = 120px on the tablet too, and quietly undid the
+  // inversion. Both sizes land on 132px on a phone; the inversion is a
+  // tablet-width behaviour, which is where the booth lives.
+  const qrBox = round.size <= 2 ? "w-[132px] sm:w-[30%]" : "w-[132px] sm:w-[34%]";
 
   return (
     // pb-8 overrides screen-container's pb-32: the strip is a terminal screen
@@ -133,29 +151,49 @@ const RoundStrip = () => {
             verdict so there is no ambiguity about whose is whose; a slot whose
             uuid can't be resolved simply shows no code rather than a broken
             one. Non-kiosk renders the pairs exactly as before. */}
-        <div className={kiosk ? "space-y-5" : "space-y-3"}>
+        {/* ROW SPACING, KIOSK: 36px on a tablet (sm: and up), 24px below that.
+            The codes are small enough now that the rows read as rows rather
+            than as one dense block, and 20px was pairing each verdict with the
+            code BELOW it as often as its own. 24px on a phone because three
+            rows plus header and footer stop fitting otherwise — and the
+            container is min-h, so if it ever does overflow the page scrolls. */}
+        <div className={kiosk ? "space-y-6 sm:space-y-9" : "space-y-3"}>
           {round.slots.map((slot, i) => (
-            <div key={i} className={kiosk ? "flex items-center gap-4" : "min-w-0"}>
+            // items-START, not center: the text is much shorter than the code
+            // beside it, and centring floated it 93px down the row where it
+            // read as belonging to nothing. Top-aligned, each verdict starts
+            // level with the top edge of its own code.
+            <div key={i} className={kiosk ? "flex items-start gap-4" : "min-w-0"}>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-mono-light text-[10px] text-muted-foreground/80">
+                {/* KIOSK TYPE: this is read at arm's length across a table, not
+                    at phone distance — 10px/12px was a phone's tier applied to
+                    a tablet a metre away. Non-kiosk keeps its own sizes. */}
+                <p
+                  className={`truncate font-mono-light ${
+                    kiosk ? "text-[12px] text-muted-foreground/85" : "text-[10px] text-muted-foreground/80"
+                  }`}
+                >
                   {slot.confession}
                 </p>
-                <p className="font-control font-bold text-foreground text-xs leading-tight">
+                <p
+                  className={`font-control font-bold text-foreground leading-tight ${
+                    kiosk ? "text-[18px]" : "text-xs"
+                  }`}
+                >
                   {slot.status === "done" && slot.verdict ? slot.verdict : "Nothing on record."}
                 </p>
               </div>
               {kiosk ? (
-                // SIZED OFF THE VIEWPORT, not a fixed 80px: at 80 these were
-                // ~10% of a tablet's width and the real failure was scanning,
-                // not layout. Two people get 35vw, three get 30 — the strip
-                // trades page length for scannability, and the px caps only
-                // bind on a desktop-width screen where vw would run away.
+                // Height comes from aspect-ratio, NOT a second copy of qrBox: a
+                // percentage height would resolve against the row's own
+                // (auto) height and collapse. All three states still reserve
+                // identical space, so nothing jumps as the codes resolve.
                 <div
-                  className="shrink-0 flex items-center justify-center"
-                  style={{ width: qrBox, height: qrBox }}
+                  className={`shrink-0 flex items-center justify-center ${qrBox}`}
+                  style={{ aspectRatio: "1 / 1" }}
                 >
                   {qrs[i] ? (
-                    <img src={qrs[i] as string} alt="" style={{ width: qrBox, height: qrBox }} />
+                    <img src={qrs[i] as string} alt="" className="h-full w-full" />
                   ) : qrs[i] === null ? null : (
                     <span className="text-[9px] font-mono-light text-muted-foreground/50">
                       …
