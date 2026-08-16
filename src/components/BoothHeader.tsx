@@ -26,7 +26,7 @@ const BoothHeader = () => {
 
   return (
     <div className="fixed top-0 left-0 right-0 pt-6 pb-4 bg-gradient-to-b from-background via-background to-transparent">
-      <div className="max-w-md mx-auto px-6">
+      <div className="column-cap mx-auto px-6">
         {/* Left-aligned to the same left edge as the "Once you begin…" hero + consent text.
             "AT <VENUE>" — no label, no colon, no bold: the preposition carries it,
             matching the app's other metadata voice (AS CHARGED AT, LOCATION

@@ -139,7 +139,7 @@ const RoundStrip = () => {
         {/* Count header in RITUAL GREEN — THE BOOTH NOTICED's exact mono
             treatment and tracking, but NOT its words: the count is what makes
             the strip read as a conclusion rather than one more verdict screen. */}
-        <p className="text-ritual text-[11px] font-mono-light tracking-[0.2em] uppercase mb-6">
+        <p className="text-ritual type-filing font-mono-light tracking-[0.2em] uppercase mb-6">
           {ROUND_WORDS[round.size] ?? round.size} on record
         </p>
         {/* Pairs are a PREVIEW, not reading matter — everyone has just seen
@@ -220,14 +220,14 @@ const RoundStrip = () => {
         {!kiosk && (
           <button
             disabled
-            className="btn-booth border border-muted-foreground/40 bg-transparent text-[13px] text-muted-foreground/50 hover:bg-transparent disabled:opacity-60"
+            className="btn-booth border border-muted-foreground/40 bg-transparent type-action text-muted-foreground/50 hover:bg-transparent disabled:opacity-60"
           >
             SHARE THE ROUND
           </button>
         )}
         <button
           onClick={() => navigate("/round")}
-          className="text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide"
+          className="type-action text-muted-foreground hover:text-foreground transition-colors tracking-wide"
         >
           GO AGAIN
         </button>

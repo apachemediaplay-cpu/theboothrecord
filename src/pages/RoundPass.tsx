@@ -51,7 +51,7 @@ const RoundPass = () => {
             round module knows the next index; Confess reads it on mount. */}
         <button
           onClick={() => navigate("/confess")}
-          className="btn-booth border border-muted-foreground/40 bg-transparent text-[13px] hover:bg-transparent"
+          className="btn-booth border border-muted-foreground/40 bg-transparent type-action hover:bg-transparent"
         >
           <span className="enter-glow-text text-[hsl(var(--ritual-green))]">I'M NEXT</span>
         </button>

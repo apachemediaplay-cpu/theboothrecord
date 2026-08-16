@@ -313,7 +313,7 @@ const Confess = () => {
         {/* Round counter shares the listening line's row, right-aligned — the
             filing line's State Blue treatment. Solo renders no counter and the
             row is visually unchanged (justify-between with one child). */}
-        <div className="max-w-md mx-auto px-6 flex items-center justify-between">
+        <div className="column-cap mx-auto px-6 flex items-center justify-between">
           <p className="flex items-center gap-2 text-[13px] font-mono-light tracking-wide text-ritual">
             <span className="listen-glow-dot inline-block w-[7px] h-[7px] rounded-full bg-[hsl(var(--ritual-green))]" />
             <span className="listen-glow-text">
@@ -321,7 +321,7 @@ const Confess = () => {
             </span>
           </p>
           {roundInfo && (
-            <p className="text-[hsl(var(--state-blue)/0.75)] text-[11px] font-mono-light tracking-[0.2em] uppercase">
+            <p className="text-[hsl(var(--state-blue)/0.75)] type-filing font-mono-light tracking-[0.2em] uppercase">
               {roundInfo.index + 1} of {roundInfo.size}
             </p>
           )}

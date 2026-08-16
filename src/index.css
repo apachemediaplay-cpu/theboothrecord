@@ -167,9 +167,78 @@
     color: hsl(var(--ritual-green) / 0.5);
   }
 
+  /* ── THE COLUMN ───────────────────────────────────────────────────────────
+     One cap, used by screen-container AND by every FIXED block that has to
+     line up with it — those escape the container (position:fixed spans the
+     viewport) so they can't inherit it; see the gate's BEGIN block. Change the
+     measure here and they all move together.
+
+     FLUID, not a fixed 448px. The cap's job is line length, and a cap that
+     never moves crushes the measure the moment the type starts growing with
+     the screen. 55vw holds at 448 until the viewport passes 815px, then grows,
+     and stops at 640 — about as wide as this type sets before a line becomes
+     work to read. BELOW 815px THE MIN WINS AND THE CAP IS INERT: a phone's
+     column is its own width, exactly as it has always been. */
+  .column-cap {
+    max-width: clamp(448px, 55vw, 640px);
+  }
+
   .screen-container {
     @apply min-h-[100dvh] flex flex-col px-6 py-8 pb-32;
-    @apply max-w-md mx-auto;
+    @apply column-cap mx-auto;
+  }
+
+  /* ── THE FLUID TYPE SCALE ─────────────────────────────────────────────────
+     Four tiers, one per JOB, replacing per-screen px and Tailwind's single
+     md: breakpoint — which is why an iPad Pro rendered identically to an iPad
+     Air: both are "≥768px" and the scale stopped there.
+
+     EVERY FLOOR IS THE SIZE THAT TIER ALREADY WAS ON A PHONE, so nothing
+     shrinks anywhere and a 375px screen renders exactly as it did. The vw term
+     does the growing; the ceiling stops it before a booth becomes signage.
+
+     Size only — line-height stays with the caller (leading-tight,
+     leading-relaxed), so one tier can be reused at different rhythms. */
+
+  /* The machine's answer. The largest thing on any screen it appears on.
+     FLOOR 30, NOT 36: 36 is the size this tier reached at ≥768px, and using it
+     as the floor pushed the phone verdict 30 → 36 and the phone reveal card
+     24 → 36 — a 50% jump on a screen that already worked, to fix a problem the
+     booth has. The booth is an iPad; 5vw passes 36 at 720px and everything at
+     tablet width and above is unchanged by this floor. */
+  .type-verdict {
+    font-size: clamp(30px, 5vw, 52px);
+  }
+
+  /* What the person typed — read once, at length, and never the loudest
+     thing on the screen. */
+  .type-confession {
+    font-size: clamp(16px, 2.2vw, 22px);
+  }
+
+  /* THE BOOTH NOTICED, SUBJECT #N, N ON RECORD, the round counter. Stamps on
+     a record, not sentences: they scale with the screen but stay the smallest
+     voice on it. */
+  .type-filing {
+    font-size: clamp(11px, 1.4vw, 15px);
+  }
+
+  /* Same tier, 12px floor — /v/:id's "As charged at…" line is set a step
+     larger than the 11px marks (it is the only filing mark a stranger reads),
+     and the 11px floor would have shrunk it on a phone. */
+  .type-filing-12 {
+    font-size: clamp(12px, 1.4vw, 15px);
+  }
+
+  /* Controls. Two floors, because the app has two control tiers and the
+     given 13px floor would have SHRUNK the 14px one on a phone — same slope,
+     same ceiling, own floor. */
+  .type-action {
+    font-size: clamp(13px, 1.6vw, 17px);
+  }
+
+  .type-action-14 {
+    font-size: clamp(14px, 1.6vw, 17px);
   }
 
   .guilty-logo {

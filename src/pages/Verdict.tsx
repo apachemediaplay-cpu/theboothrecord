@@ -1323,13 +1323,13 @@ const Verdict = () => {
   // shareSecondary is the underlined text-link treatment shared by POST TO STORY
   // and (post-share) SHARE AGAIN.
   const shareSecondary =
-    "text-[13px] text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
+    "type-action text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide";
   // SEE THE RECORD pre-share — quiet exit, one step above the 11px action scale
   // but still muted and boxless so it never competes with the share action
   // (sharing is the perishable one). Post-share it's promoted to the boxed
   // primary instead, at the same 13px.
   const wallLink =
-    "text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide";
+    "type-action text-muted-foreground hover:text-foreground transition-colors tracking-wide";
 
   return (
     // KIOSK CENTRING: screen-container's pb-32 exists to clear the phone's
@@ -1351,7 +1351,7 @@ const Verdict = () => {
       >
         {/* System stamp, not a headline — smallest text on the screen. 12px below,
             matching the share page: stamp + confession read as one block. */}
-        <p className="text-ritual text-[11px] font-mono-light tracking-[0.2em] mb-3 min-h-[1em] relative">
+        <p className="text-ritual type-filing font-mono-light tracking-[0.2em] mb-3 min-h-[1em] relative">
           <span className="relative inline-block">
             {typedText}
             {showCursor && <span className="animate-pulse">|</span>}
@@ -1391,12 +1391,12 @@ const Verdict = () => {
             the WIDEST break in the block: the gap between what a person typed and
             what the machine said. */}
         {confession && (
-          <p className="text-muted-foreground text-base md:text-lg font-mono-light leading-relaxed tracking-wide mb-8 max-w-[600px] whitespace-pre-line">
+          <p className="text-muted-foreground type-confession font-mono-light leading-relaxed tracking-wide mb-8 max-w-[600px] whitespace-pre-line">
             {confession}
           </p>
         )}
 
-        <div className="font-control text-3xl md:text-4xl font-bold text-foreground mb-6 whitespace-pre-line">
+        <div className="font-control type-verdict font-bold text-foreground mb-6 whitespace-pre-line">
           {verdictResponse}
         </div>
       </div>
@@ -1475,7 +1475,7 @@ const Verdict = () => {
                 NOT headline-sized: it labels the verdict above, it doesn't
                 compete with it. */}
             {subjectNumber ? (
-              <p className="text-[hsl(var(--state-blue))] text-[11px] font-mono-light tracking-[0.2em] uppercase">
+              <p className="text-[hsl(var(--state-blue))] type-filing font-mono-light tracking-[0.2em] uppercase">
                 Subject #{subjectNumber}
               </p>
             ) : null}
@@ -1489,7 +1489,7 @@ const Verdict = () => {
                 identical space, so nothing jumps as the code resolves. */}
             <div
               className="flex items-center justify-center"
-              style={{ width: "55%", aspectRatio: "1 / 1" }}
+              style={{ width: "clamp(180px, 34vw, 400px)", aspectRatio: "1 / 1" }}
             >
               {qr.state === "ready" ? (
                 <img
@@ -1521,7 +1521,7 @@ const Verdict = () => {
                 caps here read as signage bolted to the machine. The uppercase
                 tier belongs to the filing marks (AS CHARGED, LOCATION
                 WITHHELD), not to an instruction spoken to the person. */}
-            <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
+            <p className="text-muted-foreground type-filing font-mono-light tracking-wide text-center">
               take it with you
             </p>
           </div>
@@ -1543,7 +1543,7 @@ const Verdict = () => {
             <button
               onClick={handleShareLink}
               disabled={sharingLink}
-              className="btn-booth border border-muted-foreground/40 bg-transparent text-[13px] hover:bg-transparent disabled:opacity-50"
+              className="btn-booth border border-muted-foreground/40 bg-transparent type-action hover:bg-transparent disabled:opacity-50"
             >
               <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
                 {sharingLink ? "FILING…" : "SHARE VERDICT"}
@@ -1590,7 +1590,7 @@ const Verdict = () => {
                 does. Same handler and confess_again logging as the old link. */}
             <button
               onClick={handleConfessAgain}
-              className="btn-booth border border-muted-foreground/40 bg-transparent text-sm text-center hover:bg-transparent"
+              className="btn-booth border border-muted-foreground/40 bg-transparent type-action-14 text-center hover:bg-transparent"
             >
               <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
                 CONFESS AGAIN

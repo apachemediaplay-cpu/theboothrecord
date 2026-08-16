@@ -106,7 +106,7 @@ const VerdictShare = () => {
       <main className="screen-container animate-fade-in">
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
           <BoothMark marginClass="mb-4" />
-          <p className="text-muted-foreground text-base font-mono-light">This record doesn't exist.</p>
+          <p className="text-muted-foreground type-confession font-mono-light">This record doesn't exist.</p>
         </div>
         {/* THE PRIMARY-ACTION RULE (see index.css) applies here too — same primary
             action, same slot; a dead share link must not surface a button style
@@ -114,10 +114,10 @@ const VerdictShare = () => {
         {/* max-w-md mx-auto: the FIXED block escapes screen-container's column
             (fixed spans the viewport) — same cap as the gate's BEGIN block and
             every action screen, so the button matches the found state's. */}
-        <div className="fixed bottom-32 left-0 right-0 mx-auto max-w-md flex justify-center px-6">
+        <div className="fixed bottom-32 left-0 right-0 mx-auto column-cap flex justify-center px-6">
           <Link
             to="/confess"
-            className="btn-booth border border-muted-foreground/40 bg-transparent text-sm text-center hover:bg-transparent"
+            className="btn-booth border border-muted-foreground/40 bg-transparent type-action-14 text-center hover:bg-transparent"
           >
             <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
               ENTER THE BOOTH →
@@ -136,18 +136,18 @@ const VerdictShare = () => {
             is a stranger arriving cold, and caps read as a document stamp. */}
         {/* Masthead rhythm: 32px above this stamp (the mark is a heading), 12px
             below it (stamp + confession are one block). */}
-        <p className="text-ritual text-[11px] font-mono-light tracking-[0.2em] uppercase mb-3">
+        <p className="text-ritual type-filing font-mono-light tracking-[0.2em] uppercase mb-3">
           The booth noticed.
         </p>
         {row?.confession_text ? (
-          <p className="text-muted-foreground text-base font-mono-light whitespace-pre-wrap mb-8">
+          <p className="text-muted-foreground type-confession font-mono-light whitespace-pre-wrap mb-8">
             {row.confession_text}
           </p>
         ) : null}
         {/* 24px to the venue line below — metadata attached to the verdict, not a
             peer of it; keeps confession → verdict (32px) the widest gap in the
             record. */}
-        <p className="font-control font-bold text-[#F4F0EA] text-2xl md:text-3xl leading-tight mb-6">
+        <p className="font-control type-verdict font-bold text-[#F4F0EA] leading-tight mb-6">
           {row?.verdict_text}
         </p>
         {/* Filing line in State Blue NEON — venue-glow-text, the gate strip's
@@ -162,7 +162,7 @@ const VerdictShare = () => {
             means nothing to them — it doubled the line for no reader. (It
             still travels on the story card and the verdict screen, where the
             confessor it belongs to can see it.) */}
-        <p className="venue-glow-text text-xs font-mono-light tracking-[0.2em] uppercase">
+        <p className="venue-glow-text type-filing-12 font-mono-light tracking-[0.2em] uppercase">
           {venue ? `As charged at ${venue}` : "Location withheld"}
         </p>
 
@@ -237,7 +237,7 @@ const VerdictShare = () => {
             Booth, not to a $55 buy link). */}
         <Link
           to={ctaHref}
-          className="btn-booth border border-muted-foreground/40 bg-transparent text-sm text-center hover:bg-transparent"
+          className="btn-booth border border-muted-foreground/40 bg-transparent type-action-14 text-center hover:bg-transparent"
         >
           <span className="enter-glow-text text-[hsl(var(--ritual-green))]">YOUR TURN →</span>
         </Link>
@@ -250,7 +250,7 @@ const VerdictShare = () => {
         <Link
           to="/thewall"
           onClick={() => logBoothEvent("see_guilty", source, { from: "share" })}
-          className="text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide"
+          className="type-action text-muted-foreground hover:text-foreground transition-colors tracking-wide"
         >
           SEE THE RECORD
         </Link>
