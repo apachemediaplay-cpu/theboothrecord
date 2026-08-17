@@ -162,17 +162,39 @@ const RoundReveal = () => {
         )}
         {/* THE CODE, KIOSK ONLY — centred on the column while the record stays
             left-aligned, exactly as on the solo verdict screen. 56px above the
-            group and 16px inside it, the same rhythm. A card whose uuid can't
-            be resolved simply shows no code (no error, no retry): the verdict
-            has already been read out, and a broken button on a booth is a
-            button the next table inherits. */}
+            group, 18px between the code and each of the two lines that bracket
+            it. A card whose uuid can't be resolved simply shows no code (no
+            error, no retry): the verdict has already been read out, and a
+            broken button on a booth is a button the next table inherits.
+            THE PAIR — CONFESSOR N above, TAKE IT WITH YOU below — is one
+            treatment used twice, deliberately: they are the same voice doing
+            the same job (whose code this is, and what to do with it), and
+            splitting them across two tiers made the code look like it belonged
+            to the verdict above rather than to a person at the table. State
+            Blue on venue-glow-text, the gate strip's static treatment reused
+            rather than duplicated — this is the State's apparatus labelling a
+            record, the same voice as the venue stamp. UPPERCASE at this size,
+            against the solo verdict's lowercase caption: that one is a phone
+            instruction read by the person holding the device, this is signage
+            read across a table, and caps at 22px is what carries. */}
         {kiosk ? (
-          <div className="mt-14 flex w-full flex-col items-center gap-4">
+          <div className="mt-14 flex w-full flex-col items-center gap-[18px]">
             {/* SIZED OFF THE VIEWPORT, NOT THE COLUMN — a code has no line
                 length, so the cap that keeps sentences readable has no business
                 deciding how big a camera target is. Same expression as the solo
                 verdict's code; height from aspect-ratio so all three states
                 reserve identical space and nothing jumps as it resolves. */}
+            {/* CONFESSOR N — the round's own numbering (this card's position),
+                NOT the subject number: at a table of three, "whose code is
+                this?" is answered by the order people took their turn, and the
+                subject number is a filing reference that means nothing to them
+                until they scan. It rides ABOVE the code so the label is read
+                before the thing it labels. */}
+            {qrs[idx] ? (
+              <p className="venue-glow-text type-handoff font-mono-light tracking-[0.18em] uppercase">
+                Confessor {idx + 1}
+              </p>
+            ) : null}
             <div
               className="flex items-center justify-center"
               style={{ width: "clamp(180px, 34vw, 400px)", aspectRatio: "1 / 1" }}
@@ -190,10 +212,8 @@ const RoundReveal = () => {
               )}
             </div>
             {qrs[idx] ? (
-              // lowercase, deliberately: Söhne Mono is the app's HUMAN voice —
-              // caps here read as signage bolted to the machine.
-              <p className="font-mono-light type-filing tracking-wide text-[#F4F0EA]/55">
-                take it with you
+              <p className="venue-glow-text type-handoff font-mono-light tracking-[0.18em] uppercase">
+                Take it with you
               </p>
             ) : null}
           </div>

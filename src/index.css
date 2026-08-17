@@ -230,6 +230,15 @@
     font-size: clamp(12px, 1.4vw, 15px);
   }
 
+  /* THE HANDOFF PAIR — the two lines that bracket the code on a round card
+     (CONFESSOR N above, TAKE IT WITH YOU below). Its own tier, well above the
+     filing marks: these are read across a table by someone deciding whether
+     the code in front of them is theirs, not scanned by the person holding
+     the screen. 2.7vw lands on 22px at the booth's 820px. */
+  .type-handoff {
+    font-size: clamp(16px, 2.7vw, 26px);
+  }
+
   /* Controls. Two floors, because the app has two control tiers and the
      given 13px floor would have SHRUNK the 14px one on a phone — same slope,
      same ceiling, own floor. */
