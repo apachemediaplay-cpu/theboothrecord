@@ -332,8 +332,23 @@ const Index = () => {
       )}
 
       {/* flex-1 flex-col so the hero's flex-1 centring works exactly as it did
-          when these were direct children of screen-container. */}
+          when these were direct children of screen-container.
+          EVERYTHING THE MARK COVERS LIVES IN HERE, including the fixed BEGIN
+          block and the kiosk consent line. They used to be siblings of this
+          wrapper, so the phase switch never reached them: the mark overlay has
+          no background of its own, and BEGIN was painted at full opacity
+          straight through it — 36px of it inside THE BOOTH's wordmark on a
+          553px-tall viewport (an iPhone opening the link from another app,
+          where Safari's banner shortens the page). Being fixed, the block
+          still positions against the viewport from in here; opacity does not
+          create a containing block the way transform does, so nothing moved.
+          INERT while the mark is up, because opacity:0 hides an element
+          without disabling it — BEGIN was still focusable by keyboard and
+          still took a tap through the transparent overlay. inert takes it out
+          of the tab order, out of hit testing and out of the accessibility
+          tree in one attribute, and lifts the moment the phase does. */}
       <div
+        {...(phase !== "gate" ? { inert: "" } : {})}
         className={`flex-1 flex flex-col transition-opacity duration-500 ${
           phase === "gate" ? "opacity-100" : "opacity-0"
         }`}
@@ -395,35 +410,45 @@ const Index = () => {
           costs one tap either way and stops hiding the group flow behind
           copy nobody reads. */}
       {kioskGate && (
-        <div className="mt-16 flex flex-col items-start">
+        <div className="mt-14 flex w-full flex-col items-start">
           {/* Same tier as the headline: this is the machine still speaking,
               not a form label above a control. */}
           <h2 className="font-control text-3xl md:text-6xl font-bold leading-tight text-foreground">
             How many of you?
           </h2>
-          {/* 84px hairline squares, 16px apart — thumb-sized targets on a
-              tablet that lives on a table, in the app's one line language
-              (muted-foreground/40, the divider's rule). The labels take
-              begin-glow-text, BEGIN's exact white curve, because they inherit
-              BEGIN's job: they are the primary action now. No box is
-              "primary" over the others — three equal options, exactly as
-              RoundStart's numbers were. */}
-          <div className="mt-[30px] flex items-center gap-4">
+          {/* AS LARGE AS THE COLUMN ALLOWS: flex-1 each with 16px gaps fills
+              the measure exactly, so the squares are a third of the column at
+              every width (≈123px at the booth's 820, 98 on a phone, 161 on an
+              iPad Pro) instead of a fixed 84 that shrank against the type as
+              the screen grew. aspect-ratio keeps them square off that width.
+              The room they are used in is loud, dark and late; at 84px they
+              were the quietest thing on a screen whose only question they
+              answer.
+              RITUAL GREEN HAIRLINE, NOT A FILL — the line language holds (see
+              index.css): green means LIVE, these are the only live elements
+              on the gate, and the same green is already two lines above on
+              "One verdict. No appeal." The numbers take enter-glow-text, the
+              green curve used on every primary label in the app, replacing
+              BEGIN's white one along with BEGIN itself. No box is "primary"
+              over the others — three equal options, exactly as RoundStart's
+              numbers were. */}
+          <div className="mt-[26px] flex w-full items-center gap-4">
             {[1, 2, 3].map((n) => (
               <button
                 key={n}
                 onClick={() => handlePick(n)}
                 aria-label={n === 1 ? "Just me" : `${n} of us`}
-                className="flex h-[84px] w-[84px] items-center justify-center border border-muted-foreground/40 bg-transparent font-mono-light text-2xl text-foreground transition-colors hover:bg-transparent"
+                className="flex flex-1 items-center justify-center border bg-transparent font-mono-light text-foreground transition-colors hover:bg-transparent"
+                style={{ aspectRatio: "1 / 1", borderColor: "rgba(0, 255, 30, 0.45)" }}
               >
-                <span className="begin-glow-text">{n}</span>
+                <span className="enter-glow-text type-picker text-[hsl(var(--ritual-green))]">
+                  {n}
+                </span>
               </button>
             ))}
           </div>
         </div>
       )}
-      </div>
-      
       </div>
 
       {/* CONSENT. KIOSK: in flow at the BOTTOM of the container and aligned
@@ -470,6 +495,8 @@ const Index = () => {
           </p>
         </div>
       )}
+      </div>
+
     </div>
   );
 };

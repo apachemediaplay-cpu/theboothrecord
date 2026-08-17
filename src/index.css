@@ -239,6 +239,14 @@
     font-size: clamp(16px, 2.7vw, 26px);
   }
 
+  /* THE GATE'S NUMBERS. Sized to fill a square that is itself a third of the
+     column, so it tracks the squares rather than the reading measure: 46px at
+     the booth's 820, 58 at an iPad Pro, and a 30px floor on a phone where the
+     squares are 98px across. */
+  .type-picker {
+    font-size: clamp(30px, 5.6vw, 58px);
+  }
+
   /* Controls. Two floors, because the app has two control tiers and the
      given 13px floor would have SHRUNK the 14px one on a phone — same slope,
      same ceiling, own floor. */
