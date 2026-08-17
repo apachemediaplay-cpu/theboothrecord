@@ -1477,9 +1477,10 @@ const Verdict = () => {
           /* NO max-w-xs on this group: the QR below is sized as a PERCENTAGE
              OF THE COLUMN, and a 320px cap here would have quietly made it a
              percentage of 320 instead of the ~400px the record is set in.
-             gap-4 = the 16px inside the group; the 56px above it comes off the
-             record block's own padding (see the content div's pb). */
-          <div className="w-full flex flex-col items-center gap-4">
+             gap-[18px] = the spacing inside the group, the reveal card's own
+             rhythm; the 56px above it comes off the record block's own padding
+             (see the content div's pb). */
+          <div className="w-full flex flex-col items-center gap-[18px]">
             {/* SUBJECT #N — kiosk only, between the verdict and the QR. It is
                 the one piece of the record a person can carry away without a
                 phone: the number they'll look for on the wall later. UPPERCASE
@@ -1530,12 +1531,21 @@ const Verdict = () => {
             {/* BELOW the code, not above it: the line describes the code, and
                 sitting under SUBJECT #N it read as an instruction about the
                 number — the one thing on this screen you can't take with you.
-                lowercase, deliberately: Söhne Mono is the app's HUMAN voice —
-                caps here read as signage bolted to the machine. The uppercase
-                tier belongs to the filing marks (AS CHARGED, LOCATION
-                WITHHELD), not to an instruction spoken to the person. */}
-            <p className="text-muted-foreground type-filing font-mono-light tracking-wide text-center">
-              take it with you
+                IDENTICAL TO THE REVEAL CARD'S (see RoundReveal): same room,
+                same light, same job — notice the code and take it. It was
+                11.5px lowercase grey here and 22px uppercase State Blue two
+                screens away, which made the solo booth quieter than the group
+                one for no reason anybody in the room could have named. The
+                earlier argument for lowercase — that Söhne Mono is the app's
+                human voice and caps read as signage — loses to the room: this
+                IS signage, read at table distance in the dark, and it is the
+                last thing standing between a verdict and the phone that
+                carries it out.
+                SUBJECT #N above the code KEEPS the filing tier: it is a
+                reference number, not an instruction, and it is not the same
+                object as the reveal card's CONFESSOR N. */}
+            <p className="venue-glow-text type-handoff font-mono-light tracking-[0.18em] uppercase">
+              Take it with you
             </p>
           </div>
         ) : (
