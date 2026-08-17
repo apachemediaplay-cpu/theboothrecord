@@ -717,6 +717,14 @@ const VenueOverviewRow = ({
   // converts a device into the booth), they sit inches apart in this panel, and
   // the only thing stopping someone printing the wrong one is that they cannot
   // be mistaken for each other at a glance. Screen only — no download.
+  //
+  // THE COLOUR NOW CARRIES THAT ALONE. The two codes used to differ in size as
+  // well (144 vs 96), and they no longer do — matched at 150 so neither reads
+  // as a footnote to the other. Do not "tidy" this to black on white for
+  // consistency with the printed code: green-on-dark plus no download is the
+  // entire safeguard, and the failure it prevents is a venue putting /k/ on a
+  // table card, where every punter who scans it turns their own phone into the
+  // booth.
   const [kioskQrDataUrl, setKioskQrDataUrl] = useState<string | null>(null);
   const scanUrl = venueScanUrl(row.source, row.display_name);
   const toggleQr = () => {
@@ -1039,42 +1047,59 @@ const VenueOverviewRow = ({
               {qrError ? (
                 <p className="text-xs text-muted-foreground">Couldn't generate the QR.</p>
               ) : qrDataUrl ? (
-                <>
-                  <img
-                    src={qrDataUrl}
-                    alt={`Scan QR for ${row.display_name}`}
-                    className="h-36 w-36 rounded"
-                  />
-                  <div className="space-y-2 text-[11px] text-muted-foreground">
-                    <p className="font-medium text-foreground/80">
-                      Printed card — punters' own phones
-                    </p>
-                    <p className="max-w-64 break-all">{scanUrl}</p>
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={qrDataUrl} download={`booth-qr-${row.source}.png`}>
-                        Download PNG
-                      </a>
-                    </Button>
-                    {/* The OTHER link. Deliberately text-only, never a QR and
-                        never a button that opens it: opening it HERE would put
-                        the console's own browser into kiosk mode. It is typed
-                        into the venue's tablet once. */}
-                    <div className="border-t border-border/60 pt-2 space-y-1">
+                /* TWO BLOCKS, STACKED, ONE RULE BETWEEN THEM. They were nested
+                   — the tablet code lived inside the printed code's text
+                   column at two-thirds its size — which read as a footnote to
+                   the printed card rather than the other of two equal links.
+                   Same size, same shape, same three parts each (label, URL,
+                   button); the ONLY difference is colour, which is now the
+                   whole of what stops the wrong one being sent to a printer.
+                   See the note on kioskQrDataUrl above. */
+                <div className="w-full space-y-3">
+                  {/* PRINTED CARD — black on white, downloadable. */}
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={qrDataUrl}
+                      alt={`Scan QR for ${row.display_name}`}
+                      className="h-[150px] w-[150px] shrink-0 rounded"
+                    />
+                    <div className="space-y-2 text-[11px] text-muted-foreground">
+                      <p className="font-medium text-foreground/80">
+                        Printed card — punters' own phones
+                      </p>
+                      <p className="max-w-64 break-all">{scanUrl}</p>
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={qrDataUrl} download={`booth-qr-${row.source}.png`}>
+                          Download PNG
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                  {/* BOOTH TABLET — ritual green on the panel's own dark, with a
+                      hairline of the same green so the code reads as a bounded
+                      object at the printed one's size rather than as loose
+                      modules. NO download, deliberately: this link is typed
+                      into the tablet once, and a file on disk is a file that
+                      can be sent to a printer. The URL is text-only and
+                      select-all for the same reason a button that OPENED it
+                      would be wrong — opening it here would put the console's
+                      own browser into kiosk mode. */}
+                  <div className="flex items-start gap-3 border-t border-border/60 pt-3">
+                    {kioskQrDataUrl ? (
+                      <img
+                        src={kioskQrDataUrl}
+                        alt={`Booth-mode QR for ${row.display_name}`}
+                        className="h-[150px] w-[150px] shrink-0"
+                        style={{ border: "1px solid rgba(0, 255, 30, 0.28)" }}
+                      />
+                    ) : null}
+                    <div className="space-y-2 text-[11px] text-muted-foreground">
                       <p className="font-medium text-foreground/80">
                         Booth tablet only — never printed
                       </p>
-                      <div className="flex items-start gap-3">
-                        {kioskQrDataUrl ? (
-                          <img
-                            src={kioskQrDataUrl}
-                            alt={`Booth-mode QR for ${row.display_name}`}
-                            className="h-24 w-24 shrink-0"
-                          />
-                        ) : null}
-                        <p className="max-w-56 break-all select-all">
-                          {venueKioskUrl(row.source)}
-                        </p>
-                      </div>
+                      <p className="max-w-56 break-all select-all">
+                        {venueKioskUrl(row.source)}
+                      </p>
                       <Button
                         size="sm"
                         variant="outline"
@@ -1092,7 +1117,7 @@ const VenueOverviewRow = ({
                       </Button>
                     </div>
                   </div>
-                </>
+                </div>
               ) : (
                 <p className="text-xs text-muted-foreground">Generating…</p>
               )}
