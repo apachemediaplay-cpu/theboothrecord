@@ -1481,16 +1481,21 @@ const Verdict = () => {
              rhythm; the 56px above it comes off the record block's own padding
              (see the content div's pb). */
           <div className="w-full flex flex-col items-center gap-[18px]">
-            {/* SUBJECT #N — kiosk only, between the verdict and the QR. It is
-                the one piece of the record a person can carry away without a
-                phone: the number they'll look for on the wall later. UPPERCASE
-                State Blue mono at the filing-mark tier (11px, wide tracking) —
-                the same voice as AS CHARGED and the wall's stamps, deliberately
-                NOT headline-sized: it labels the verdict above, it doesn't
-                compete with it. */}
+            {/* CONFESSOR #N — kiosk only, between the verdict and the QR, and
+                now in the SAME treatment as the line below the code and as
+                CONFESSOR N on the reveal card: this is a pair that brackets a
+                code in a dark room, not a footnote on a document. It was the
+                11px filing tier, which was the right call while the line under
+                the code was 11px too; with that line at 22px the small one read
+                as leftover rather than as the other half of anything.
+                It keeps the NUMBER because this is the only place a person sees
+                their filing reference — it is what they look for on the wall,
+                where records are labelled "#1121". The # is also what separates
+                it from the reveal card's CONFESSOR N, which counts people in a
+                round rather than records in the register. */}
             {subjectNumber ? (
-              <p className="text-[hsl(var(--state-blue))] type-filing font-mono-light tracking-[0.2em] uppercase">
-                Subject #{subjectNumber}
+              <p className="venue-glow-text type-handoff font-mono-light tracking-[0.18em] uppercase">
+                Confessor #{subjectNumber}
               </p>
             ) : null}
             {/* 55% OF THE COLUMN. min(40vw, 320px) was pinned at 320px on every
