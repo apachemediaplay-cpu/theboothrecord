@@ -8,6 +8,7 @@ import {
   resolveVenueDisplayName,
   mayStampVenue,
   isKioskSession,
+  isPhysicalScan,
   kioskHandoffUrl,
 } from "@/lib/source";
 import { beginShareResolve, endShareResolve } from "@/lib/reset";
@@ -1182,7 +1183,19 @@ const Verdict = () => {
         suppress = !mayStampVenue(row.stamp_venue);
       }
     }
-    return { uuid, filedVenue: await computeFiledVenue(suppress) };
+    // AND NOT IN THE ROOM. "AS CHARGED AT X" is a claim about where something
+    // happened, and a session that arrived by ?source= alone was never at X:
+    // YOUR TURN on a shared card, an Instagram link, any inbound that carries
+    // attribution but not a printed card. isPhysicalScan() is exactly that
+    // distinction and has been recorded per row since the physical-flag
+    // migration — this is the first thing to read it. Applied HERE, after the
+    // fallback block above, because that block reassigns `suppress` from the
+    // refetched row and would overwrite it.
+    // SOURCE IS UNTOUCHED: the venue still gets the scan, the share, the
+    // confession and the next YOUR TURN. It just stops getting the stamp.
+    // (The row-level half of this lives in tag_confession — /v/:id and the OG
+    // image read stamp_venue off the row, not this session.)
+    return { uuid, filedVenue: await computeFiledVenue(suppress || !isPhysicalScan()) };
   };
 
   // The actual handoff to the share sheet (or the desktop download fallback).
