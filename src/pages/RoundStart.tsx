@@ -1,6 +1,7 @@
 import { Navigate, useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
+import { isKioskSession } from "@/lib/source";
 import { getRound, startRound } from "@/lib/round";
 import LegalLinks from "@/components/LegalLinks";
 
@@ -22,6 +23,13 @@ const RoundStart = () => {
   // Forward to the round's current phase instead. A 0-slot round renders the
   // picker normally (backing out to change the count loses nothing), and a
   // REVEALED round does too — that's GO AGAIN's path.
+  // KIOSK NEVER SHOWS THIS SCREEN. The gate asks "How many of you?" now, so a
+  // second picker one tap later is the same question twice — and the booth has
+  // no way to reach this route in normal use (the reveal's GO AGAIN goes to
+  // the gate). The route and the phone's path are untouched: this is a
+  // redirect for a URL nobody on the booth can type, not a deletion.
+  if (isKioskSession()) return <Navigate to="/" replace />;
+
   const existing = getRound();
   if (existing && !existing.revealed && existing.slots.length > 0) {
     return (

@@ -232,10 +232,12 @@ const RoundReveal = () => {
         {/* THE PRIMARY-ACTION RULE (see index.css). The last card's button
             changes job, so it changes label — and the job is now different per
             device: on a phone the round still ends at the strip (SEE THEM ALL),
-            on the booth this IS the end, so it offers the next round. */}
+            on the booth this IS the end, so it offers the next round. GO AGAIN
+            goes to THE GATE, not /round: the gate carries the picker now, and
+            the next table should meet the booth from the top. */}
         <button
           onClick={() =>
-            last ? navigate(kiosk ? "/round" : "/round/strip") : setIdx((i) => i + 1)
+            last ? navigate(kiosk ? "/" : "/round/strip") : setIdx((i) => i + 1)
           }
           className="btn-booth border border-muted-foreground/40 bg-transparent type-action hover:bg-transparent"
         >

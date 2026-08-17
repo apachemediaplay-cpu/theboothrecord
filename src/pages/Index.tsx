@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import LegalLinks from "@/components/LegalLinks";
 import { captureSourceFromUrl, isKioskSession } from "@/lib/source";
+import { getRound, startRound } from "@/lib/round";
 import { logScan } from "@/lib/metrics";
 
 const Index = () => {
@@ -21,6 +22,9 @@ const Index = () => {
   const [glitchTop, setGlitchTop] = useState(30);
   const [glitchTop2, setGlitchTop2] = useState(60);
   const glitchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // KIOSK — read once at mount, like every other kiosk branch. Declared up
+  // here because the typing effect below branches on it.
+  const [kioskGate] = useState(() => isKioskSession());
 
   // Merged gate + threshold copy (the /confidentiality screen is gone — one
   // screen does the job once). Same typing speeds and glitch as always.
@@ -31,9 +35,16 @@ const Index = () => {
   // pulse) → fading (500ms out) → gate at 2700ms, when the content fades in and
   // the typing starts. prefers-reduced-motion starts directly at 'gate' (no
   // mark, no pulse, straight to typing).
+  // KIOSK starts at 'gate' too, for the same reason the typewriter went: the
+  // booth's gate is a screen a queue passes through one person at a time, and
+  // 2.7 seconds of ritual is charged to every one of them. It is an opening,
+  // and the booth is already open. (A tap always skipped it, so nothing is
+  // lost but the wait for anyone who didn't know that.) The mark stays on
+  // personal devices, where it plays once for someone who chose to arrive.
   const [phase, setPhase] = useState<"mark" | "fading" | "gate">(() =>
-    typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    kioskGate ||
+    (typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
       ? "gate"
       : "mark",
   );
@@ -75,6 +86,20 @@ const Index = () => {
     // The typing waits for the opening sequence — it starts the moment the gate
     // content fades in, and runs exactly as it always has from there.
     if (phase !== "gate") return;
+    // KIOSK: BOTH LINES AT ONCE, no cursors. The typewriter costs four seconds
+    // of every single person's visit and nothing on the screen is tappable
+    // until it lands — a queue at the bar pays that over and over, and the
+    // effect is one nobody in the queue is watching twice. It stays on
+    // personal devices, where it is seen once by someone who chose to be
+    // there. (The glitch is unaffected: it keys off the finished second line,
+    // which in kiosk is simply finished immediately.)
+    if (kioskGate) {
+      setText1(fullText1);
+      setText2(fullText2);
+      setShowCursor1(false);
+      setShowCursor2(false);
+      return;
+    }
     let index = 0;
     const typeText1 = setInterval(() => {
       if (index < fullText1.length) {
@@ -112,6 +137,9 @@ const Index = () => {
     }, 50);
 
     return () => clearInterval(typeText1);
+    // kioskGate is read once at mount and never changes — the branch above
+    // cannot need a re-run, and adding it would only re-arm the interval.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   const triggerGlitch = () => {
@@ -155,13 +183,23 @@ const Index = () => {
     };
   }, [text2]);
 
-  // The round link is offered on the BOOTH's device only (see the render).
-  // Read once, like every other kiosk branch.
-  const [kioskGate] = useState(() => isKioskSession());
-  // Straight to the picker — the number tap there is the consent for the
-  // table, exactly as BEGIN's tap is for one person, so this link deliberately
-  // does NOT write consent itself.
-  const handleRound = () => navigate("/round");
+  // KIOSK PICKER — the number IS the entry, so the tap is the consent for
+  // everyone it covers (the line at the bottom says so). 1 is the solo path
+  // BEGIN used to be; 2 and 3 open a round and hand the first person the same
+  // /confess screen. RoundStart's picker is gone from the booth entirely —
+  // this screen is it — so the guard RoundStart carried comes with it: a round
+  // with anything already FILED must not be nuked by a stray tap on a gate
+  // someone backed into. Forward to its current phase instead.
+  const handlePick = (n: number) => {
+    const existing = getRound();
+    if (existing && !existing.revealed && existing.slots.length > 0) {
+      navigate(existing.slots.length < existing.size ? "/confess" : "/round/deliberating");
+      return;
+    }
+    sessionStorage.setItem("consent", "1");
+    if (n > 1) startRound(n);
+    navigate("/confess");
+  };
 
   const handleEnter = () => {
     // Consent IS the tap — the legal line above BEGIN states it, no checkbox.
@@ -173,7 +211,13 @@ const Index = () => {
   };
 
   return (
-    <div className="screen-container animate-fade-in">
+    // pb-8 in kiosk: screen-container's pb-32 exists to clear the FIXED
+    // bottom-24 BEGIN block, and the booth no longer has one — the picker is
+    // in the hero and the consent is in flow. Left at 128px the consent
+    // floated in the middle of the bottom margin instead of sitting at the
+    // foot of the screen. The phone keeps pb-32; its BEGIN block still needs
+    // the room.
+    <div className={`screen-container animate-fade-in${kioskGate ? " pb-8" : ""}`}>
       {/* Opening mark — centred on the gate background, holds 2200ms, fades out
           over 500ms. The dot is a SPAN (not in the SVG) so its glow can use
           box-shadow, centred at 50% / 67.08% of the mark box — the same geometry
@@ -339,66 +383,93 @@ const Index = () => {
             )}
           </span>
         </p>
+      {/* ── THE PICKER — KIOSK ONLY ────────────────────────────────────────
+          Part of the HERO block, not a fixed footer: the count is the first
+          question the booth asks, and it belongs with the sentence that
+          asked it. Left-aligned on the headline's own edge (items-start is
+          the column's default) — a centred row under a left-aligned headline
+          read as a separate screen stapled underneath.
+          It replaces BOTH the BEGIN button and the "there's more than one of
+          us" link. The link was always a compromise: a second, quieter route
+          to a thing half the tables in a bar actually are. Asking outright
+          costs one tap either way and stops hiding the group flow behind
+          copy nobody reads. */}
+      {kioskGate && (
+        <div className="mt-16 flex flex-col items-start">
+          {/* Same tier as the headline: this is the machine still speaking,
+              not a form label above a control. */}
+          <h2 className="font-control text-3xl md:text-6xl font-bold leading-tight text-foreground">
+            How many of you?
+          </h2>
+          {/* 84px hairline squares, 16px apart — thumb-sized targets on a
+              tablet that lives on a table, in the app's one line language
+              (muted-foreground/40, the divider's rule). The labels take
+              begin-glow-text, BEGIN's exact white curve, because they inherit
+              BEGIN's job: they are the primary action now. No box is
+              "primary" over the others — three equal options, exactly as
+              RoundStart's numbers were. */}
+          <div className="mt-[30px] flex items-center gap-4">
+            {[1, 2, 3].map((n) => (
+              <button
+                key={n}
+                onClick={() => handlePick(n)}
+                aria-label={n === 1 ? "Just me" : `${n} of us`}
+                className="flex h-[84px] w-[84px] items-center justify-center border border-muted-foreground/40 bg-transparent font-mono-light text-2xl text-foreground transition-colors hover:bg-transparent"
+              >
+                <span className="begin-glow-text">{n}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       </div>
       
-      {/* max-w-md mx-auto: the FIXED block escapes screen-container's column
-          (fixed spans the viewport), so it re-applies the same cap the headline
-          above already sits in — one column, button and text aligned. Same
-          value as every action screen (screen-container); the wall's 680px is
-          the reading feed's, not an action column. */}
-      <div className="fixed bottom-24 left-0 right-0 mx-auto column-cap flex flex-col items-center gap-4 px-6">
-        {/* Always enabled — the tap IS the consent (see the legal line below). */}
-        {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
-            hairline (muted-foreground/40, the divider's own rule), transparent.
-            The label stays WHITE — BEGIN does not go green; begin-glow-text is
-            the green glows' exact curve in white, which reads softer, and that
-            quieter read is the point: the machine isn't listening yet. */}
-        <button
-          onClick={handleEnter}
-          className="btn-booth border border-muted-foreground/40 bg-transparent hover:bg-transparent"
-        >
-          <span className="begin-glow-text">BEGIN</span>
-        </button>
-        {/* THE ROUND LINK — KIOSK ONLY. On a phone this stays removed: passing
-            your own phone round a table is effort the payoff doesn't justify,
-            and a link on the screen every single person passes through is a
-            distraction (that decision stands — see round.ts). On the BOOTH's
-            device the objection disappears: the tablet is already communal, it
-            is already on the table, and a group arriving together is the case
-            the format was built for. Quiet text under BEGIN, never a second
-            box — one primary action per screen (see index.css). */}
-        {kioskGate && (
-          <button
-            onClick={handleRound}
-            className="text-[13px] text-muted-foreground hover:text-foreground transition-colors tracking-wide"
-          >
-            there's more than one of us
-          </button>
-        )}
-        {/* CONSENT COPY, KIOSK TIER. 11px at /95 instead of 9.5px at /70: this
-            is the line that does the legal work, and on the booth it is read
-            in a dark room, at arm's length, by someone who did not choose the
-            device. 9.5px at /70 composites to ~0.40 of the way off the
-            background; /95 lands ~0.50. A phone reader holds the screen and
-            keeps the existing tier byte-identical.
-            mt-2 in kiosk ONLY: the fixed block's gap-4 puts 16px between every
-            child, which made the legal line read as governing "there's more
-            than one of us" — the link directly above it — rather than BEGIN.
-            8px more takes it to 24 and re-attaches it to the button. (There is
-            no link at all on a phone, so there is nothing to disambiguate.) */}
-        <p
-          className={`max-w-xs text-center leading-snug font-mono-light ${
-            kioskGate
-              ? "mt-2 text-[11px] text-muted-foreground/95"
-              : "text-[9.5px] text-muted-foreground/70"
-          }`}
-        >
-          I agree, by tapping BEGIN, that I'm 18+ and my confession may be published
-          anonymously. <LegalLinks />.
-        </p>
       </div>
 
-      </div>
+      {/* CONSENT. KIOSK: in flow at the BOTTOM of the container and aligned
+          to the same left edge as everything above it — the phone's version
+          is centred under a centred button, which here would have left it
+          floating under the squares as if it only governed them. It governs
+          the tap, whichever number that is, and the copy says so: "for
+          everyone confessing" is the part a phone's line can't carry, because
+          on a phone one tap only ever speaks for one person.
+          11px at /95 instead of 9.5px at /70: this is the line that does the
+          legal work, and on the booth it is read in a dark room, at arm's
+          length, by someone who did not choose the device. 9.5px at /70
+          composites to ~0.40 of the way off the background; /95 lands ~0.50.
+          A phone reader holds the screen and keeps the existing tier
+          byte-identical. */}
+      {kioskGate ? (
+        <p className="max-w-md shrink-0 text-left text-[11px] leading-snug font-mono-light text-muted-foreground/95">
+          By tapping a number you agree, for everyone confessing, that you're 18+ and
+          confessions may be published anonymously. <LegalLinks />.
+        </p>
+      ) : (
+        /* max-w-md mx-auto: the FIXED block escapes screen-container's column
+           (fixed spans the viewport), so it re-applies the same cap the
+           headline above already sits in — one column, button and text
+           aligned. Same value as every action screen (screen-container); the
+           wall's 680px is the reading feed's, not an action column. */
+        <div className="fixed bottom-24 left-0 right-0 mx-auto column-cap flex flex-col items-center gap-4 px-6">
+          {/* Always enabled — the tap IS the consent (see the legal line below). */}
+          {/* THE PRIMARY-ACTION RULE (see index.css): glowing label, 1px grey
+              hairline (muted-foreground/40, the divider's own rule),
+              transparent. The label stays WHITE — BEGIN does not go green;
+              begin-glow-text is the green glows' exact curve in white, which
+              reads softer, and that quieter read is the point: the machine
+              isn't listening yet. */}
+          <button
+            onClick={handleEnter}
+            className="btn-booth border border-muted-foreground/40 bg-transparent hover:bg-transparent"
+          >
+            <span className="begin-glow-text">BEGIN</span>
+          </button>
+          <p className="max-w-xs text-center leading-snug font-mono-light text-[9.5px] text-muted-foreground/70">
+            I agree, by tapping BEGIN, that I'm 18+ and my confession may be published
+            anonymously. <LegalLinks />.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
