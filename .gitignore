@@ -51,3 +51,7 @@ versions/
 backups/
 supabase/.temp/
 *.zip
+
+# Generated: incremental-build state written by `npx tsc -b` (the typecheck).
+tsconfig.app.tsbuildinfo
+tsconfig.node.tsbuildinfo

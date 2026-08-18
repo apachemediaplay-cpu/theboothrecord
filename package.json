@@ -9,6 +9,7 @@
     "build:prod": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
     "deploy:dev": "vite build --mode development && firebase deploy --project theboothrecord",
     "deploy:prod": "vite build --mode production && firebase deploy --project theboothrecord"
