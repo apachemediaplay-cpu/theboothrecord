@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BoothMark from "@/components/BoothMark";
 
 // ── THE UNTITLED SPLASH ─────────────────────────────────────────────────────
 // A collaboration opening for ONE venue: the booth's arch, ×, and UNTITLED.
@@ -54,12 +55,11 @@ const UntitledSplash = ({ fading }: { fading: boolean }) => {
       <style>{`
         .untitled-lockup { display: flex; flex-direction: column; align-items: center; }
 
-        /* Arch: the existing mark's geometry untouched — width : height = 0.85,
-           base 1.2× the arch width — carried by the viewBox, so the only thing
-           set here is the box size. */
+        /* The mark comes from components/BoothMark — one definition, one shape.
+           Only the box size, the fade-in and the glow live here. Height is auto
+           off the viewBox, so setting width alone keeps the proportions. */
         .untitled-arch {
           width: 132px;
-          height: 132px;
           opacity: 0;
           transform: scale(0.94);
           animation: untitledArchIn 600ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
@@ -159,23 +159,14 @@ const UntitledSplash = ({ fading }: { fading: boolean }) => {
         }
 
         @media (min-width: 768px) {
-          .untitled-arch { width: 168px; height: 168px; }
+          .untitled-arch { width: 168px; }
           .untitled-x { margin-top: 28px; font-size: 26px; }
           .untitled-markbox { margin-top: 24px; font-size: 56px; }
         }
       `}</style>
 
       <div className="untitled-lockup">
-        <svg className="untitled-arch" viewBox="0 0 240 240">
-          <path
-            d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
-            fill="none"
-            stroke="hsl(var(--ritual-green))"
-            strokeWidth="31"
-          />
-          <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
-          <circle cx="120" cy="161" r="19" fill="hsl(var(--ritual-green))" />
-        </svg>
+        <BoothMark glow className="untitled-arch text-[hsl(var(--ritual-green))]" />
 
         <span className="untitled-x">×</span>
 

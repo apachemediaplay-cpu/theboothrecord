@@ -9,6 +9,7 @@ import {
 } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
 import StoryFlow from "@/components/StoryFlow";
+import BoothMark from "@/components/BoothMark";
 import firstOffence from "@/assets/first-offence.webp";
 
 // ── THE ?k= OFFER ───────────────────────────────────────────────────────────
@@ -60,21 +61,12 @@ const filedTimeText = (row: SharedVerdict): string | undefined => {
 const OFFER_HREF = "https://houseofguilty.com/contraband";
 
 // The Booth mark — STATIC by design: this page is read, not passed through, and
-// YOUR TURN's label already carries the page's only pulse. No glow, no animation
-// of any kind; the dot stays inside the SVG (no box-shadow), unlike the gate.
+// YOUR TURN's label already carries the page's only pulse. No glow (glow is
+// opt-in on the shared component), no animation of any kind.
 // marginClass: the found state uses the default mb-8 (32px); the notfound state
 // passes mb-4 so its container's gap-4 stacks to the SAME 32px — one number.
-const BoothMark = ({ marginClass = "mb-8" }: { marginClass?: string }) => (
-  <svg viewBox="0 0 240 240" className={`${marginClass} h-10 w-10`} aria-hidden="true">
-    <path
-      d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
-      fill="none"
-      stroke="hsl(var(--ritual-green))"
-      strokeWidth="31"
-    />
-    <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
-    <circle cx="120" cy="161" r="19" fill="hsl(var(--ritual-green))" />
-  </svg>
+const PageMark = ({ marginClass = "mb-8" }: { marginClass?: string }) => (
+  <BoothMark size={40} className={`${marginClass} text-[hsl(var(--ritual-green))]`} />
 );
 
 // Public landing for a shared verdict link (/v/:id). A recipient — not the confessor —
@@ -155,7 +147,7 @@ const VerdictShare = () => {
     return (
       <main className="screen-container animate-fade-in">
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
-          <BoothMark marginClass="mb-4" />
+          <PageMark marginClass="mb-4" />
           <p className="text-muted-foreground type-confession font-mono-light">This record doesn't exist.</p>
         </div>
         {/* THE PRIMARY-ACTION RULE (see index.css) applies here too — same primary
@@ -181,7 +173,7 @@ const VerdictShare = () => {
   return (
     <main className="screen-container animate-fade-in">
       <div className="flex-1 flex flex-col justify-center items-start text-left pb-10">
-        <BoothMark />
+        <PageMark />
         {/* System stamp, not a headline — Verdict's treatment but UPPERCASE: this reader
             is a stranger arriving cold, and caps read as a document stamp. */}
         {/* Masthead rhythm: 32px above this stamp (the mark is a heading), 12px

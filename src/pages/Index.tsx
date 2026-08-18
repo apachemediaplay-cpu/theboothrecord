@@ -5,6 +5,7 @@ import BoothHeader from "@/components/BoothHeader";
 import LegalLinks from "@/components/LegalLinks";
 import { captureSourceFromUrl, isKioskSession } from "@/lib/source";
 import UntitledSplash from "@/components/UntitledSplash";
+import BoothMark from "@/components/BoothMark";
 import { getRound, startRound } from "@/lib/round";
 import { logScan } from "@/lib/metrics";
 
@@ -278,51 +279,56 @@ const Index = () => {
           }`}
         >
           <style>{`
-            .gate-mark { width: 176px; height: 176px; }
-            .gate-mark-dot {
-              width: 27px;
-              height: 27px;
-              background: hsl(var(--ritual-green));
+            /* Height follows the viewBox — width alone sizes the mark. */
+            .gate-mark { width: 176px; }
+            /* THE DOT PULSES, THE ARCH HOLDS STILL. The dot lives inside the
+               shared mark's SVG now, so it is reached by class rather than
+               positioned by hand — the old version placed a separate span at
+               67.08% of the box and re-derived that number from the viewBox.
+               transform-box:fill-box makes scale() pivot on the dot's own
+               centre rather than the SVG's origin.
+               DROP-SHADOW, NOT BOX-SHADOW: box-shadow follows an element's box,
+               which for an SVG child is the whole canvas — the glow would come
+               off a rectangle the size of the mark instead of the dot. */
+            .gate-mark .booth-mark-dot {
+              transform-box: fill-box;
+              transform-origin: center;
               animation: gateDotPulseM 2.2s ease-in-out infinite;
             }
             @keyframes gateDotPulseM {
               0%, 100% {
                 transform: scale(1);
-                box-shadow:
-                  0 0 12px hsl(var(--ritual-green) / 0.90),
-                  0 0 28px hsl(var(--ritual-green) / 0.55),
-                  0 0 60px hsl(var(--ritual-green) / 0.30);
+                filter:
+                  drop-shadow(0 0 12px hsl(var(--ritual-green) / 0.90))
+                  drop-shadow(0 0 28px hsl(var(--ritual-green) / 0.55))
+                  drop-shadow(0 0 60px hsl(var(--ritual-green) / 0.30));
               }
               50% {
                 transform: scale(1.15);
-                box-shadow:
-                  0 0 19px hsl(var(--ritual-green) / 1),
-                  0 0 56px hsl(var(--ritual-green) / 0.88),
-                  0 0 128px hsl(var(--ritual-green) / 0.60);
+                filter:
+                  drop-shadow(0 0 19px hsl(var(--ritual-green) / 1))
+                  drop-shadow(0 0 56px hsl(var(--ritual-green) / 0.88))
+                  drop-shadow(0 0 128px hsl(var(--ritual-green) / 0.60));
               }
             }
             @media (min-width: 768px) {
-              .gate-mark { width: 288px; height: 288px; }
-              .gate-mark-dot {
-                width: 44px;
-                height: 44px;
-                animation-name: gateDotPulseD;
-              }
+              .gate-mark { width: 288px; }
+              .gate-mark .booth-mark-dot { animation-name: gateDotPulseD; }
             }
             @keyframes gateDotPulseD {
               0%, 100% {
                 transform: scale(1);
-                box-shadow:
-                  0 0 19px hsl(var(--ritual-green) / 0.90),
-                  0 0 46px hsl(var(--ritual-green) / 0.55),
-                  0 0 98px hsl(var(--ritual-green) / 0.30);
+                filter:
+                  drop-shadow(0 0 19px hsl(var(--ritual-green) / 0.90))
+                  drop-shadow(0 0 46px hsl(var(--ritual-green) / 0.55))
+                  drop-shadow(0 0 98px hsl(var(--ritual-green) / 0.30));
               }
               50% {
                 transform: scale(1.15);
-                box-shadow:
-                  0 0 31px hsl(var(--ritual-green) / 1),
-                  0 0 91px hsl(var(--ritual-green) / 0.88),
-                  0 0 209px hsl(var(--ritual-green) / 0.60);
+                filter:
+                  drop-shadow(0 0 31px hsl(var(--ritual-green) / 1))
+                  drop-shadow(0 0 91px hsl(var(--ritual-green) / 0.88))
+                  drop-shadow(0 0 209px hsl(var(--ritual-green) / 0.60));
               }
             }
             .gate-wordmark {
@@ -342,32 +348,14 @@ const Index = () => {
               }
             }
             @media (prefers-reduced-motion: reduce) {
-              .gate-mark-dot { animation: none; }
+              .gate-mark .booth-mark-dot { animation: none; }
             }
           `}</style>
           {/* Mark + wordmark are ONE lockup: the flex column centres the combined
               block, so the mark sits slightly higher than it would alone — the
               wordmark's weight is accounted for in the centring. */}
           <div className="flex flex-col items-center">
-            <div className="gate-mark relative">
-              <svg viewBox="0 0 240 240" className="h-full w-full">
-                <path
-                  d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
-                  fill="none"
-                  stroke="hsl(var(--ritual-green))"
-                  strokeWidth="31"
-                />
-                <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
-              </svg>
-              {/* Outer span carries the centring translate; inner span carries the
-                  pulse — the animation's scale() must not fight the positioning. */}
-              <span
-                className="absolute"
-                style={{ left: "50%", top: "67.08%", transform: "translate(-50%, -50%)" }}
-              >
-                <span className="gate-mark-dot block rounded-full" />
-              </span>
-            </div>
+            <BoothMark className="gate-mark text-[hsl(var(--ritual-green))]" />
             <p className="gate-wordmark font-control font-bold uppercase text-foreground">
               THE BOOTH
             </p>

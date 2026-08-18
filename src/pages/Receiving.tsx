@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import BoothMark from "@/components/BoothMark";
 import { supabase } from "@/integrations/supabase/client";
 import { tagConfession, logBoothEvent, recoverVerdict } from "@/lib/metrics";
 
@@ -45,23 +46,11 @@ const VERDICT_TIMED_OUT = Symbol("verdict-timeout");
 // pulls the eye off the green line above it, and green would make the mark
 // read as a SIGNAL — green in this app means live and active, and a static
 // mark sitting still while nothing happens is at odds with that. Dimmed
-// white is a mark rather than a state. STATIC, solid-dot version as on the
-// share page — the typed text is already this screen's one moving element;
-// a second, on a screen whose job is making someone wait, reads busy rather
-// than patient. Same geometry as VerdictShare's mark (240-box arch + base +
-// dot), colours via currentColor so the wrapper class owns the tint.
-const BoothMark = () => (
-  <svg viewBox="0 0 240 240" className="h-14 w-14 text-foreground/80" aria-hidden="true">
-    <path
-      d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="31"
-    />
-    <rect x="32" y="210" width="175" height="18" fill="currentColor" />
-    <circle cx="120" cy="161" r="19" fill="currentColor" />
-  </svg>
-);
+// white is a mark rather than a state. STATIC and unglowing — the typed text
+// is already this screen's one moving element; a second, on a screen whose job
+// is making someone wait, reads busy rather than patient. The shared mark
+// takes currentColor, so the tint below is all this screen has to say.
+const PageMark = () => <BoothMark size={56} className="text-foreground/80" />;
 
 const Receiving = () => {
   const navigate = useNavigate();
@@ -321,7 +310,7 @@ const Receiving = () => {
         // wordmark (1:1); under the 56px mark it read bottom-cramped. 32px
         // keeps the mark anchored without pinning it to the edge.
         <div className="fixed bottom-0 left-0 right-0 flex justify-center pb-8 pt-4">
-          <BoothMark />
+          <PageMark />
         </div>
       )}
     </div>
