@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import { fetchSharedVerdict, logBoothEvent, logShare, type SharedVerdict } from "@/lib/metrics";
+import {
+  fetchSharedVerdict,
+  logBoothEvent,
+  logOffenceTap,
+  logShare,
+  type SharedVerdict,
+} from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
 import StoryFlow from "@/components/StoryFlow";
 import firstOffence from "@/assets/first-offence.webp";
@@ -18,8 +24,13 @@ import firstOffence from "@/assets/first-offence.webp";
 // needs its own code, move it to a table (site_copy-shaped, console-edited)
 // rather than growing this object — the console already owns every other piece
 // of per-venue copy.
+//
+// THE KEY IS THE EVENT, THE VALUE IS THE CODE, and they are not the same thing:
+// 'woolstore' is what the booth's QR carries in ?k= (KIOSK_OFFER_KEY in
+// lib/source), and it is that KEY which has to agree across the two files. The
+// code beside it is read only here, so changing it touches nothing else.
 const OFFER_CODES: Record<string, string> = {
-  woolstore: "GUILTY10",
+  woolstore: "CONTRABAND",
 };
 
 // THE FILING TIME, IN THE ROOM'S OWN CLOCK. created_at is UTC and
@@ -39,9 +50,14 @@ const filedTimeText = (row: SharedVerdict): string | undefined => {
   return `${String(wall.getUTCHours()).padStart(2, "0")}:${String(wall.getUTCMinutes()).padStart(2, "0")}`;
 };
 
-// The shop's discount link drops the code straight into a pre-filled cart.
-const offerHref = (code: string) =>
-  `https://shop.houseofguilty.com/discount/${encodeURIComponent(code)}?redirect=/cart/52182988423451:1`;
+// A PLAIN PAGE LINK. It was a Shopify discount permalink that applied the code
+// and dropped a hardcoded variant id straight into the cart — which made the
+// row a checkout button wearing a code's clothes, and pinned it to one variant
+// that has to stay in stock and keep its id. The code is now something you
+// carry to the page (or to the bar) rather than a URL that spends for you.
+// Constant, not a function of the code: the destination no longer depends on
+// which code is showing.
+const OFFER_HREF = "https://houseofguilty.com/contraband";
 
 // The Booth mark — STATIC by design: this page is read, not passed through, and
 // YOUR TURN's label already carries the page's only pulse. No glow, no animation
@@ -215,9 +231,25 @@ const VerdictShare = () => {
             small ones. */}
         {offerCode ? (
           <a
-            href={offerHref(offerCode)}
+            href={OFFER_HREF}
             target="_blank"
             rel="noopener noreferrer"
+            // THE ONLY COMMERCIAL SIGNAL IN THE APP, and until now it went
+            // unrecorded: log_offence_tap has had its own table since the
+            // offence-tap migration and had never been called from anywhere.
+            // It matters more since the link stopped being a cart permalink —
+            // Shopify no longer sees the referral, so if this doesn't record
+            // the tap, nothing does.
+            //
+            // Keyed on the ROW's source, like every other metric on this page,
+            // so a tap is credited to the venue whose confession was shared —
+            // not to the viewer, who has no venue.
+            //
+            // Fire-and-forget, and safe here BECAUSE the link opens a new tab:
+            // this document is never unloaded, so the request can't be
+            // cancelled out from under itself the way it could on a same-tab
+            // navigation.
+            onClick={() => logOffenceTap(source)}
             className="mt-8 w-full max-w-xs flex items-center gap-[14px] border-t pt-5"
             style={{ borderColor: "rgba(244,240,234,0.18)" }}
           >
