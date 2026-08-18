@@ -27,20 +27,36 @@ const Index = () => {
   // here because the typing effect below branches on it.
   const [kioskGate] = useState(() => isKioskSession());
   // ── THE UNTITLED OPENING — ONE SOURCE, NOWHERE ELSE ─────────────────────────
-  // Read from the URL, not from the stored source: this is an opening, and an
-  // opening belongs to an arrival. A repeat confession loads a param-less URL
-  // and gets the standard gate, which is right — you do not open the same door
-  // twice. Non-kiosk for the same reason the mark is (see the phase note), and
-  // motion-gated because a three-second animation is exactly what
-  // prefers-reduced-motion is asking about.
-  const [untitled] = useState(
-    () =>
-      !kioskGate &&
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("source")?.trim().toLowerCase() ===
-        "untitled" &&
-      !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
-  );
+  // Motion-gated, because a three-second animation is exactly what
+  // prefers-reduced-motion is asking about. Otherwise it runs on EVERY load for
+  // this source, kiosk included — this build is a pitch demo, where the opening
+  // is the point and nobody is queuing behind it.
+  //
+  // WHY THE KIOSK BRANCH READS THE SESSION, NOT THE URL. The booth returns to
+  // the gate by navigate("/") after every idle timeout and staff reset — no
+  // query string at all — so a URL-only rule would fire once when staff set the
+  // tablet up and never again. resetBoothSession deliberately KEEPS `source`
+  // (it describes the device's venue, not the person), so the session is what
+  // still knows this is Untitled's booth an hour later. A phone keeps the URL
+  // rule: there, an opening belongs to an arrival, and a repeat confession
+  // loads a param-less URL that should go straight to the gate.
+  //
+  // EVERY OTHER KIOSK SOURCE IS UNTOUCHED and must stay that way — live on the
+  // first frame, no mark, no typewriter, no splash (see the phase note below).
+  const [untitled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
+    const isUntitled = (v: string | null | undefined) =>
+      (v || "").trim().toLowerCase() === "untitled";
+    if (isKioskSession()) {
+      try {
+        return isUntitled(sessionStorage.getItem("source"));
+      } catch {
+        return false;
+      }
+    }
+    return isUntitled(new URLSearchParams(window.location.search).get("source"));
+  });
 
   // Merged gate + threshold copy (the /confidentiality screen is gone — one
   // screen does the job once). Same typing speeds and glitch as always.
@@ -57,8 +73,11 @@ const Index = () => {
   // and the booth is already open. (A tap always skipped it, so nothing is
   // lost but the wait for anyone who didn't know that.) The mark stays on
   // personal devices, where it plays once for someone who chose to arrive.
+  // `untitled` is the ONE exception to the kiosk rule above: that source opts
+  // the booth back into an opening sequence, so it must not start at "gate" or
+  // there is no sequence to play. Every other kiosk source still does.
   const [phase, setPhase] = useState<"mark" | "fading" | "gate">(() =>
-    kioskGate ||
+    (kioskGate && !untitled) ||
     (typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
       ? "gate"

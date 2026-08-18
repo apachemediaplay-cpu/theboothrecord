@@ -1,171 +1,201 @@
+import { useEffect, useState } from "react";
+
 // ── THE UNTITLED SPLASH ─────────────────────────────────────────────────────
 // A collaboration opening for ONE venue: the booth's arch, ×, and UNTITLED.
 // typing itself out. It REPLACES the standard opening mark for that source
-// rather than queueing behind it — two openings back to back would be 5.5
+// rather than queueing behind it — two openings back to back would be 5.2
 // seconds before anyone can tap anything.
 //
-// WHERE IT RUNS: non-kiosk, ?source=untitled, motion allowed. The booth's own
-// gate reaches "live" on the first frame and must stay that way (the mark and
-// the typewriter were removed there deliberately — a queue pays that cost once
-// per person), so kiosk never mounts this.
+// NOTHING IS EVER PAINTED OVER THE WORDMARK. The glow reaches ~78px past the
+// glyphs on every side; a cover, a clip-path or an overflow:hidden anywhere
+// near it cuts that glow at an edge and the result reads as a frosted
+// rectangle around the type. So the reveal is not a reveal at all — the text
+// is APPENDED A CHARACTER AT A TIME to state on a 60ms interval, the way
+// Index's headline and Receiving's loader already do it. There is no overlay
+// in this component to get wrong.
 //
-// THE REVEAL IS A MOVING COVER, NOT A CLIP. The wordmark's glow reaches ~78px
-// past the glyphs; inside an overflow:hidden or clip-path container that glow
-// is cut at the container edge and reads as a frosted rectangle around the
-// text. So the wordmark is drawn in full, at its finished width, and a
-// background-coloured cover slides off it in steps(9) — one step per character
-// of "UNTITLED." — extending far enough past the text on every side that no
-// unrevealed glow escapes.
-//
-// The cover therefore also passes over the × and the arch above it. Both are
-// lifted above it with z-index rather than the cover being made shorter: a
-// cover short enough to clear the × is a cover that leaks glow.
-//
-// EVERY NUMBER BELOW IS MEASURED, not guessed. Control Upright Bold at
-// letter-spacing -0.02em: cap height 0.75em, baseline 0.125em up from the box
-// bottom at line-height 1, "UNTITLED." 4.607em wide. The caret is sized and
-// seated from those three figures.
-const UntitledSplash = ({ fading }: { fading: boolean }) => (
-  <div
-    aria-hidden="true"
-    className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-500 ${
-      fading ? "opacity-0" : "opacity-100"
-    }`}
-  >
-    <style>{`
-      /* ── The lockup ─────────────────────────────────────────────────────── */
-      .untitled-lockup { display: flex; flex-direction: column; align-items: center; }
+// The container is held at the finished wordmark's width by a hidden sizer,
+// with the live line centred in the same grid cell, so the lockup stays centred
+// under the arch through every frame instead of growing out from the left.
+const WORD = "UNTITLED.";
+const TYPE_MS = 60; // the app's cadence — Index and Receiving both use it
+const START_MS = 1000; // × has landed; the wordmark begins
 
-      /* Arch: the existing mark's geometry untouched — width : height = 0.85,
-         base 1.2× the arch width — carried by the viewBox, so the only thing
-         set here is the box size. z-index lifts it clear of the cover. */
-      .untitled-arch {
-        position: relative;
-        z-index: 2;
-        width: 132px;
-        height: 132px;
-        opacity: 0;
-        transform: scale(0.94);
-        animation: untitledArchIn 600ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
-      }
-      @keyframes untitledArchIn {
-        to { opacity: 1; transform: scale(1); }
-      }
+const UntitledSplash = ({ fading }: { fading: boolean }) => {
+  const [typed, setTyped] = useState("");
+  const [done, setDone] = useState(false);
 
-      /* × — the collaboration mark, not a letter of either name: dimmer than
-         both so it reads as the join rather than a third word. */
-      .untitled-x {
-        position: relative;
-        z-index: 2;
-        margin-top: 22px;
-        font-family: 'Control Upright', sans-serif;
-        font-weight: 700;
-        font-size: 20px;
-        line-height: 1;
-        color: rgba(255, 255, 255, 0.55);
-        opacity: 0;
-        animation: untitledFadeIn 400ms ease-out 800ms forwards;
-      }
-      @keyframes untitledFadeIn { to { opacity: 1; } }
+  useEffect(() => {
+    let interval: number | undefined;
+    const start = window.setTimeout(() => {
+      let i = 0;
+      interval = window.setInterval(() => {
+        i += 1;
+        setTyped(WORD.slice(0, i));
+        if (i >= WORD.length) {
+          window.clearInterval(interval);
+          setDone(true);
+        }
+      }, TYPE_MS);
+    }, START_MS);
+    return () => {
+      window.clearTimeout(start);
+      if (interval !== undefined) window.clearInterval(interval);
+    };
+  }, []);
 
-      /* The wordmark box is FIXED at the finished width (4.607em) so the cover's
-         100% is the end of the text and the caret lands exactly past the full
-         stop. line-height 1 makes the box exactly 1em tall, which is what puts
-         the baseline 0.125em up from its bottom edge. */
-      .untitled-markbox {
-        position: relative;
-        margin-top: 18px;
-        font-family: 'Control Upright', sans-serif;
-        font-weight: 700;
-        font-size: 40px;
-        line-height: 1;
-        letter-spacing: -0.02em;
-        width: 4.607em;
-        height: 1em;
-      }
-      .untitled-word {
-        position: absolute;
-        inset: 0;
-        white-space: nowrap;
-        color: #ffffff;
-        text-shadow:
-          0 0 4px rgba(255, 255, 255, 0.95),
-          0 0 14px rgba(255, 255, 255, 0.7),
-          0 0 38px rgba(220, 235, 255, 0.4),
-          0 0 78px rgba(200, 225, 255, 0.22);
-      }
+  return (
+    <div
+      aria-hidden="true"
+      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-500 ${
+        fading ? "opacity-0" : "opacity-100"
+      }`}
+    >
+      <style>{`
+        .untitled-lockup { display: flex; flex-direction: column; align-items: center; }
 
-      /* THE COVER. Background-coloured, well past the text on all sides (2em ≈
-         80px at this size, past the 78px outer glow), sliding its LEFT edge
-         0 → 100% of the finished wordmark in nine steps. */
-      .untitled-cover {
-        position: absolute;
-        z-index: 1;
-        left: 0;
-        right: -4em;
-        top: -2em;
-        bottom: -2em;
-        background: hsl(var(--background));
-        animation: untitledReveal 540ms steps(9, end) 1000ms forwards;
-      }
-      @keyframes untitledReveal { to { left: 100%; } }
+        /* Arch: the existing mark's geometry untouched — width : height = 0.85,
+           base 1.2× the arch width — carried by the viewBox, so the only thing
+           set here is the box size. */
+        .untitled-arch {
+          width: 132px;
+          height: 132px;
+          opacity: 0;
+          transform: scale(0.94);
+          animation: untitledArchIn 600ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+        }
+        @keyframes untitledArchIn { to { opacity: 1; transform: scale(1); } }
 
-      /* THE CARET — its own element, never the cover's border: as a border it
-         inherited the cover's full height and stood far taller than the type.
-         3px wide, the capital letters' height (0.75em), sitting ON the baseline
-         (0.125em up from the box bottom). Same steps(9) on the same delay, so
-         it rides the cover's edge; blinks once the typing lands. */
-      .untitled-caret {
-        position: absolute;
-        z-index: 3;
-        left: 0;
-        bottom: 0.125em;
-        width: 3px;
-        height: 0.75em;
-        background: #ffffff;
-        opacity: 0;
-        animation:
-          untitledReveal 540ms steps(9, end) 1000ms forwards,
-          untitledCaretOn 1ms linear 1000ms forwards,
-          untitledCaretBlink 1.06s steps(1, end) 1540ms infinite;
-      }
-      @keyframes untitledCaretOn { to { opacity: 1; } }
-      @keyframes untitledCaretBlink {
-        0%, 50% { opacity: 1; }
-        50.01%, 100% { opacity: 0; }
-      }
+        /* × — the collaboration mark, not a letter of either name: dimmer than
+           both so it reads as the join rather than a third word. */
+        .untitled-x {
+          margin-top: 22px;
+          font-family: 'Control Upright', sans-serif;
+          font-weight: 700;
+          font-size: 20px;
+          line-height: 1;
+          color: rgba(255, 255, 255, 0.55);
+          opacity: 0;
+          animation: untitledFadeIn 400ms ease-out 800ms forwards;
+        }
+        @keyframes untitledFadeIn { to { opacity: 1; } }
 
-      @media (min-width: 768px) {
-        .untitled-arch { width: 168px; height: 168px; }
-        .untitled-x { margin-top: 28px; font-size: 26px; }
-        .untitled-markbox { margin-top: 24px; font-size: 56px; }
-      }
-    `}</style>
+        /* WIDTH = the finished wordmark, held by a hidden sizer in the same
+           grid cell rather than a number typed in here: the tracking and the
+           full stop's scale both change that width, and a hardcoded em would
+           quietly stop centring the moment either is touched again.
+           No overflow rule, no clip: the glow spills out of this box on
+           purpose.
+           TRACKING +0.01em, against Control's natural fit. The reference
+           (untitledgroup.com.au) sets its name loose, not tight; at -0.02em
+           ours read as compressed, which is most of what made the full stop
+           look tucked under the D. */
+        .untitled-markbox {
+          margin-top: 18px;
+          display: grid;
+          justify-items: center;
+          text-align: center;
+          font-family: 'Control Upright', sans-serif;
+          font-weight: 700;
+          font-size: 40px;
+          line-height: 1;
+          letter-spacing: 0.01em;
+          color: #ffffff;
+          white-space: nowrap;
+          text-shadow:
+            0 0 4px rgba(255, 255, 255, 0.95),
+            0 0 14px rgba(255, 255, 255, 0.7),
+            0 0 38px rgba(220, 235, 255, 0.4),
+            0 0 78px rgba(200, 225, 255, 0.22);
+        }
 
-    <div className="untitled-lockup">
-      <svg className="untitled-arch" viewBox="0 0 240 240">
-        <path
-          d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
-          fill="none"
-          stroke="hsl(var(--ritual-green))"
-          strokeWidth="31"
-        />
-        <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
-        <circle cx="120" cy="161" r="19" fill="hsl(var(--ritual-green))" />
-      </svg>
+        /* The sizer holds the box open at the finished wordmark's width; the
+           live line sits in the same cell and is centred within it, so the
+           lockup stays centred under the arch as it grows. */
+        .untitled-sizer, .untitled-live {
+          grid-area: 1 / 1;
+        }
+        .untitled-sizer {
+          visibility: hidden;
+          pointer-events: none;
+        }
 
-      <span className="untitled-x">×</span>
+        /* THE FULL STOP, scaled. Control's period is 0.19em of ink against a
+           0.21em stem (measured) — already close to a stem's width, but set
+           small and, at negative tracking, tucked under the D. 1.35em makes it
+           unmistakably a dot rather than a typographic afterthought. It sits on
+           the baseline by construction: a period's ink rests there, and
+           inline-block + vertical-align:baseline keeps the larger box seated
+           the same way. */
+        .untitled-dot {
+          display: inline-block;
+          vertical-align: baseline;
+          font-size: 1.35em;
+          line-height: 0;
+          margin-left: 0.01em;
+        }
 
-      <div className="untitled-markbox">
-        <span className="untitled-word">UNTITLED.</span>
-        {/* Cover before caret in the DOM AND below it in z-index: the caret has
-            to ride on top of the cover's leading edge, which is the whole point
-            of it. */}
-        <span className="untitled-cover" />
-        <span className="untitled-caret" />
+        /* CARET — a separate element after the typed text, in the inline flow
+           exactly like Receiving's .type-caret. 3px wide and the height of the
+           capital letters only (0.75em, measured); vertical-align:baseline is
+           what seats it ON the baseline rather than on the box. It carries no
+           glow of its own — the shadow above is inherited by the box, and a
+           caret with a 78px halo would smear the letter it sits beside. */
+        .untitled-caret {
+          display: inline-block;
+          width: 3px;
+          height: 0.75em;
+          margin-left: 0.04em;
+          vertical-align: baseline;
+          background-color: #ffffff;
+          text-shadow: none;
+        }
+        .untitled-caret[data-blink="true"] {
+          animation: untitledCaretBlink 1.06s steps(1, end) infinite;
+        }
+        @keyframes untitledCaretBlink {
+          0%, 50% { opacity: 1; }
+          50.01%, 100% { opacity: 0; }
+        }
+
+        @media (min-width: 768px) {
+          .untitled-arch { width: 168px; height: 168px; }
+          .untitled-x { margin-top: 28px; font-size: 26px; }
+          .untitled-markbox { margin-top: 24px; font-size: 56px; }
+        }
+      `}</style>
+
+      <div className="untitled-lockup">
+        <svg className="untitled-arch" viewBox="0 0 240 240">
+          <path
+            d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
+            fill="none"
+            stroke="hsl(var(--ritual-green))"
+            strokeWidth="31"
+          />
+          <rect x="32" y="210" width="175" height="18" fill="hsl(var(--ritual-green))" />
+          <circle cx="120" cy="161" r="19" fill="hsl(var(--ritual-green))" />
+        </svg>
+
+        <span className="untitled-x">×</span>
+
+        <div className="untitled-markbox">
+          {/* Hidden, and the only thing that sets the box's width. */}
+          <span className="untitled-sizer">
+            {WORD.slice(0, -1)}
+            <span className="untitled-dot">.</span>
+          </span>
+          <span className="untitled-live">
+            {typed.endsWith(".") ? typed.slice(0, -1) : typed}
+            {typed.endsWith(".") ? <span className="untitled-dot">.</span> : null}
+            {/* Only once there is something to sit beside — a caret alone on an
+                empty line for a second reads as a stalled screen, not a pause. */}
+            {typed ? <span className="untitled-caret" data-blink={done} /> : null}
+          </span>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default UntitledSplash;
