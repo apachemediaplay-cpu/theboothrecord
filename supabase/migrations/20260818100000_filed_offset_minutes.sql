@@ -85,8 +85,21 @@ begin
              else null
            end
          )
+   -- THE SAME SESSION MAY ALWAYS TAG ITS OWN ROW, whichever call lands first.
+   -- This used to be a bare `session_id is null`, which made the tag lose a
+   -- race it runs every single time on the booth: Receiving fires
+   -- tagConfession and then navigates to /verdict, whose kiosk branch resolves
+   -- the handoff uuid ON MOUNT — measured 5ms apart, both in flight, both
+   -- carrying the SAME session id. resolve_share_id claims session_id when it
+   -- lands (it accepts `null or equal`), and the old guard then matched zero
+   -- rows, so physical AND is_test were dropped silently — the call is
+   -- fire-and-forget, so nothing surfaced. A phone never hit it: there the
+   -- uuid is resolved on a tap, minutes later.
+   --
+   -- A DIFFERENT session still cannot touch a claimed row, which is the part
+   -- that matters: this is the same rule resolve_share_id has always used.
    where subject_number = _subject_number
-     and session_id is null;
+     and (session_id is null or session_id = _session_id);
 end;
 $$;
 

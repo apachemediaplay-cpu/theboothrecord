@@ -50,6 +50,13 @@ type Confession = Database["public"]["Tables"]["confessions"]["Row"] & {
   // comment at the render site); only a genuinely different mode gets the
   // quiet badge. Optional because the generated types predate the column.
   mode?: string | null;
+  // WAS THE PERSON IN THE ROOM? Written by tag_confession from
+  // isPhysicalScan(), which is true when the session arrived carrying ?venue= —
+  // a printed table card, or the booth tablet (KioskEntry writes the same key).
+  // False for a shared /v/ link, an Instagram link, and a bare direct visit.
+  // Optional because the generated types predate the column; the DB column is
+  // NOT NULL DEFAULT false, so in practice null never arrives.
+  physical?: boolean | null;
 };
 type Status = "pending" | "approved" | "rejected";
 
@@ -303,6 +310,38 @@ const SourceBadge = ({ source }: { source: string }) => {
       )}
     >
       {source}
+    </span>
+  );
+};
+
+// IN ROOM vs REMOTE — confessions.physical, which has been written on every row
+// since the physical-flag migration and read by nothing until now.
+//
+// NOT "booth vs share": the flag is true for the booth tablet AND for a printed
+// table card scanned on someone's own phone (both carry ?venue=), and false for
+// a shared /v/ link, an Instagram link AND a bare direct visit. "In room" is
+// what the two true cases have in common; "remote" is the only honest word for
+// a false that covers both a share and a stranger typing the URL.
+//
+// Accented for in-room, muted for remote — the same split SourceBadge uses for
+// venue vs direct, so the row reads at a glance without a new colour.
+const ProvenanceBadge = ({ physical }: { physical?: boolean | null }) => {
+  const inRoom = physical === true;
+  return (
+    <span
+      title={
+        inRoom
+          ? "Arrived with a venue card or the booth tablet — the person was at the venue"
+          : "Arrived by link (shared card, Instagram, or direct) — not from a venue card"
+      }
+      className={cn(
+        "rounded px-1.5 py-0.5 text-[11px] font-medium",
+        inRoom
+          ? "bg-ritual/15 text-ritual border border-ritual/30"
+          : "bg-muted text-muted-foreground",
+      )}
+    >
+      {inRoom ? "in room" : "remote"}
     </span>
   );
 };
@@ -4976,6 +5015,7 @@ const Moderate = () => {
                           #{row.subject_number}
                         </span>
                         <SourceBadge source={row.source} />
+                        <ProvenanceBadge physical={row.physical} />
                         <TopicBadge topic={row.topic} />
                         {/* Prompt-mode marker — only for a mode that is NEITHER
                             'default' NOR 'solo': a venue mode, an experiment,
