@@ -3,8 +3,7 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 import { useKioskTimeout, KioskIdleLine, KioskStaffReset } from "@/hooks/useKioskTimeout";
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
-import StoryPhotoCrop from "@/components/StoryPhotoCrop";
-import { renderShareCard } from "@/lib/shareCard";
+import StoryFlow from "@/components/StoryFlow";
 import {
   resolveVenueDisplayName,
   mayStampVenue,
@@ -72,7 +71,6 @@ const Verdict = () => {
   const [claimState, setClaimState] = useState<"idle" | "saving" | "claimed" | "skipped">("idle");
 
   // ON RECORD share flow (single-tap: the disclosure line is the consent)
-  const [sharing, setSharing] = useState(false);
 
   // True once the user taps EITHER share action. Set on tap, not on success: the Web
   // Share API can't reliably confirm completion and SAVE IMAGE gives no iOS callback.
@@ -108,16 +106,9 @@ const Verdict = () => {
   // no verdict behind it. The step sits ON THE PATH of POST TO STORY rather
   // than as a side button: options nobody finds are worth nothing, and the
   // venue benefit (their room in a stranger's story) depends on uptake.
-  const [story, setStory] = useState<
-    | { step: "choose" }
-    | { step: "crop"; img: HTMLImageElement }
-    | { step: "preview"; blob: Blob; url: string }
-    | null
-  >(null);
-  // Object URL for the picked photo + the uuid resolved when the card was
-  // rendered (the preview share needs it for the travelling /v/ link).
-  const storyPhotoUrl = useRef<string | null>(null);
-  const storyUuid = useRef<string | null>(null);
+  // Open/closed only — the step machine, the picked photo and the busy state
+  // all live inside StoryFlow now (see components/StoryFlow).
+  const [storyOpen, setStoryOpen] = useState(false);
 
   const handleClaim = () => {
     const value = email.trim();
@@ -331,7 +322,7 @@ const Verdict = () => {
   // (uuid + stamp gating + venue), generateShareCard, and shareStoryBlob (the
   // share sheet / download). Skip runs them back-to-back — exactly the old
   // handler — so skipping produces the card that existed before this feature.
-  const handlePostToStory = () => setStory({ step: "choose" });
+  const handlePostToStory = () => setStoryOpen(true);
 
   // The card's inputs, gathered from THIS session. Everything the renderer used
   // to read out of sessionStorage itself now arrives here, which is the whole
@@ -381,137 +372,7 @@ const Verdict = () => {
     return { uuid, filedVenue: await computeFiledVenue(suppress || !isPhysicalScan()) };
   };
 
-  // The actual handoff to the share sheet (or the desktop download fallback).
-  // Share-INTENT metrics moved here from the POST TO STORY tap: with the photo
-  // step in between, the tap only opens a chooser — the honest intent moment
-  // is when the sheet opens. logShare keeps the historical series; share_card
-  // alongside it records this was the PNG card (not tappable), splitting
-  // reach-with-a-path from reach without.
-  const shareStoryBlob = async (blob: Blob, uuid: string | null) => {
-    // Reveal the Instagram follow line on tap (SAVE IMAGE gives no completion callback).
-    setHasShared(true);
-    logShare(rowSource);
-    logBoothEvent("share_card", rowSource);
-    const file = new File([blob], "guilty-on-record.png", { type: "image/png" });
 
-    const canShareFiles =
-      typeof navigator !== "undefined" &&
-      !!navigator.canShare &&
-      navigator.canShare({ files: [file] });
-
-    // The url travels WITH the image. It MUST be /v/{uuid}, not the homepage:
-    //   1. VerdictShare's CTA is `/confess?source=<venue>` — so a confession referred by
-    //      a shared Story is CREDITED TO THE VENUE. A homepage link lands as `direct`,
-    //      silently leaking the venue's own UGC referrals out of its own numbers.
-    //   2. The recipient lands on the exact verdict they just saw, not a cold front door.
-    // Homepage only as a fallback if the uuid can't be resolved.
-    const shareUrl = uuid ? `https://theboothrecord.com/v/${uuid}` : "https://theboothrecord.com";
-
-    if (canShareFiles) {
-      await navigator.share({ files: [file], title: "GUILTY", text: shareUrl });
-    } else {
-      // Desktop fallback: download the PNG.
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "guilty-on-record.png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  // Close the photo flow and release every object URL it holds. The photo
-  // lives ONLY behind these URLs and the in-memory canvases — nothing is
-  // uploaded, stored, or sent anywhere, so closing the flow is the end of it.
-  const closeStory = () => {
-    if (storyPhotoUrl.current) {
-      URL.revokeObjectURL(storyPhotoUrl.current);
-      storyPhotoUrl.current = null;
-    }
-    setStory((s) => {
-      if (s?.step === "preview") URL.revokeObjectURL(s.url);
-      return null;
-    });
-  };
-
-  // skip → the old single-tap path, unchanged card, then out.
-  const skipPhoto = async () => {
-    setSharing(true);
-    try {
-      const { uuid, filedVenue } = await resolveCardContext();
-      const blob = await renderShareCard(cardRecord(filedVenue));
-      await shareStoryBlob(blob, uuid);
-    } catch {
-      // User cancelled the share sheet, or generation failed.
-    } finally {
-      setSharing(false);
-      closeStory();
-    }
-  };
-
-  // A photo was picked (camera or library input) — decode it and move to crop.
-  const onStoryFile = async (f: File | null | undefined) => {
-    if (!f) return;
-    try {
-      const url = URL.createObjectURL(f);
-      const img = new Image();
-      // onload/onerror rather than img.decode(): decode() can stall on
-      // detached images in some engines. Listeners attach BEFORE src so a
-      // cached load can't slip past them.
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("unreadable image"));
-        img.src = url;
-      });
-      if (storyPhotoUrl.current) URL.revokeObjectURL(storyPhotoUrl.current);
-      storyPhotoUrl.current = url;
-      setStory({ step: "crop", img });
-    } catch {
-      toast({
-        title: "Couldn't read that photo",
-        description: "Try another one.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Crop confirmed → render the full card once and show it (RETAKE replaces
-  // any framing guide: they judge the result rather than imagining it).
-  const onCropDone = async (photoCanvas: HTMLCanvasElement) => {
-    setSharing(true);
-    try {
-      const { uuid, filedVenue } = await resolveCardContext();
-      storyUuid.current = uuid;
-      const blob = await renderShareCard(cardRecord(filedVenue), photoCanvas);
-      setStory((s) => {
-        if (s?.step === "preview") URL.revokeObjectURL(s.url);
-        return { step: "preview", blob, url: URL.createObjectURL(blob) };
-      });
-    } catch {
-      toast({
-        title: "Couldn't build the card",
-        description: "Give it a second and try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSharing(false);
-    }
-  };
-
-  const shareStoryPreview = async (blob: Blob) => {
-    setSharing(true);
-    try {
-      await shareStoryBlob(blob, storyUuid.current);
-    } catch {
-      // User cancelled the share sheet — stay on the preview so they can retry.
-      return;
-    } finally {
-      setSharing(false);
-    }
-    closeStory();
-  };
 
   // Action-area type rule: 13px is the FUNCTIONAL tier — anything you can press
   // (SHARE VERDICT, SEE THE RECORD, and this underlined pair). 11px is the LABEL
@@ -761,8 +622,8 @@ const Verdict = () => {
               </span>
             </button>
             <div className="flex items-center gap-6">
-              <button onClick={handlePostToStory} disabled={sharing} className={shareSecondary}>
-                {sharing ? "PREPARING…" : "POST TO STORY"}
+              <button onClick={handlePostToStory} disabled={storyOpen} className={shareSecondary}>
+                {storyOpen ? "PREPARING…" : "POST TO STORY"}
               </button>
               <button onClick={handleConfessAgain} className={shareSecondary}>
                 CONFESS AGAIN
@@ -811,8 +672,8 @@ const Verdict = () => {
                 promoted to the box, SHARE VERDICT drops to the row on the same
                 handler the pre-share box uses (repeat shares keep working). */}
             <div className="flex items-center gap-6">
-              <button onClick={handlePostToStory} disabled={sharing} className={shareSecondary}>
-                {sharing ? "PREPARING…" : "POST TO STORY"}
+              <button onClick={handlePostToStory} disabled={storyOpen} className={shareSecondary}>
+                {storyOpen ? "PREPARING…" : "POST TO STORY"}
               </button>
               <button onClick={handleShareLink} disabled={sharingLink} className={shareSecondary}>
                 {sharingLink ? "FILING…" : "SHARE VERDICT"}
@@ -843,118 +704,43 @@ const Verdict = () => {
       <KioskIdleLine secondsLeft={idleLeft} />
       <KioskStaffReset />
 
-      {/* ── POST TO STORY photo flow (see the story state note). Full-screen
-          overlay: choose → crop → preview. skip at the bottom of choose runs
-          the old single-tap path — today's card, byte for byte. */}
-      {/* iOS SAFARI FIX (confirmed on a real phone): with `inset-0` alone
-          the overlay sizes to the LARGE viewport (toolbar hidden), so its
-          bottom controls — chooser's skip, crop's back, preview's RETAKE —
-          sat under Safari's bottom toolbar with no visible way out of the
-          flow. height:100dvh sizes to the DYNAMIC viewport (ends above the
-          toolbar; the top:0 of inset-0 + explicit height wins over bottom:0,
-          and browsers without dvh, pre-2022, ignore the invalid height and
-          fall back to inset-0). The safe-area inset handles the home
-          indicator once the toolbar minimises. screen-container already does
-          both (100dvh + pb-32); this overlay was the one unprotected
-          container in the flow. */}
-      {/* NEVER in kiosk: the chooser's TAKE A PHOTO opens the BOOTH'S camera,
-          pointed at whatever the booth is pointed at, and "or pick one" opens
-          the booth's library. Both are the wrong device and the wrong person's
-          photos. The kiosk branch above renders no entry point to this flow;
-          this gate is the second layer. */}
-      {story && !kiosk ? (
-        <div
-          className="fixed inset-0 z-50 bg-background flex flex-col items-center px-6 pt-10 overflow-hidden animate-fade-in"
-          style={{
-            height: "100dvh",
-            paddingBottom: "calc(2rem + env(safe-area-inset-bottom))",
-          }}
-        >
-          {story.step === "choose" ? (
-            <>
-              <div className="flex-1 w-full max-w-xs flex flex-col items-center justify-center gap-5">
-                {/* Framing caption (THE PRIMARY-ACTION RULE): the evidence
-                    register — the photo is exhibit material, same voice as
-                    AS CHARGED. Replaced "WHERE IT HAPPENED." (a statement
-                    about the place; this is an instruction to the confessor),
-                    which itself replaced "THE ROOM, NOT YOUR DINNER" (assumed
-                    a restaurant, and was framing advice). */}
-                <p className="text-muted-foreground text-[11px] font-mono-light tracking-wide text-center">
-                  GET THE EVIDENCE
-                </p>
-                {/* capture="environment" opens the back camera directly; the
-                    library lives behind the quiet link below (its input has no
-                    capture attribute). */}
-                <label className="btn-booth block w-full border border-muted-foreground/40 bg-transparent text-sm text-center hover:bg-transparent cursor-pointer">
-                  <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
-                    TAKE A PHOTO
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => onStoryFile(e.target.files?.[0])}
-                  />
-                </label>
-                <label className={`${shareSecondary} cursor-pointer`}>
-                  or pick one
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => onStoryFile(e.target.files?.[0])}
-                  />
-                </label>
-              </div>
-              <button onClick={skipPhoto} disabled={sharing} className={shareSecondary}>
-                skip
-              </button>
-            </>
-          ) : story.step === "crop" ? (
-            <StoryPhotoCrop
-              img={story.img}
-              busy={sharing}
-              onUse={onCropDone}
-              onBack={() => setStory({ step: "choose" })}
-            />
-          ) : (
-            <>
-              {/* The finished card IS the framing guide — they judge the
-                  result, not a description of it. */}
-              <div className="flex-1 w-full max-w-md flex flex-col items-center justify-center gap-5">
-                <img
-                  src={story.url}
-                  alt="Your story card"
-                  className="border border-muted-foreground/40"
-                  style={{ width: "min(75vw, 34vh)", aspectRatio: "9 / 16" }}
-                />
-                <button
-                  onClick={() => shareStoryPreview(story.blob)}
-                  disabled={sharing}
-                  className="btn-booth block w-full max-w-xs border border-muted-foreground/40 bg-transparent text-sm text-center hover:bg-transparent"
-                >
-                  <span className="enter-glow-text text-[hsl(var(--ritual-green))]">
-                    {sharing ? "OPENING…" : "POST TO STORY"}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setStory((s) => {
-                      if (s?.step === "preview") URL.revokeObjectURL(s.url);
-                      return { step: "choose" };
-                    });
-                  }}
-                  disabled={sharing}
-                  className={shareSecondary}
-                >
-                  RETAKE
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      ) : null}
+      {/* THE PHOTO FLOW — one component, mounted here and on /v/:id (see
+          components/StoryFlow). NEVER in kiosk: the chooser's TAKE A PHOTO
+          opens the BOOTH'S camera, pointed at whatever the booth is pointed
+          at, and "or pick one" opens the booth's library. Both are the wrong
+          device and the wrong person's photos. The kiosk branch above renders
+          no entry point to this flow; this gate is the second layer. */}
+      <StoryFlow
+        open={storyOpen && !kiosk}
+        onClose={() => setStoryOpen(false)}
+        secondaryClass={shareSecondary}
+        // Resolve the uuid + the venue stamp at the moment of drawing, exactly
+        // as the old handlers did. The venue gate here is the SESSION's
+        // (isPhysicalScan, inside resolveCardContext) — on /v/:id it is the
+        // ROW's stamp_venue instead, which is the same test applied at filing.
+        resolve={async () => {
+          const { uuid, filedVenue } = await resolveCardContext();
+          return {
+            record: cardRecord(filedVenue),
+            // The url travels WITH the image. It MUST be /v/{uuid}, not the
+            // homepage: VerdictShare's CTA is `/confess?source=<venue>`, so a
+            // confession referred by a shared Story is CREDITED TO THE VENUE,
+            // and the recipient lands on the exact verdict rather than a cold
+            // front door. Homepage only if the uuid can't be resolved.
+            shareUrl: uuid ? `https://theboothrecord.com/v/${uuid}` : "https://theboothrecord.com",
+          };
+        }}
+        // Reveal the Instagram follow line on tap (SAVE IMAGE gives no
+        // completion callback). logShare keeps share_events as the unbroken
+        // historical series; share_card alongside it records this was the PNG
+        // card, splitting reach-with-a-path from reach without.
+        onShared={() => {
+          setHasShared(true);
+          logShare(rowSource);
+          logBoothEvent("share_card", rowSource);
+        }}
+      />
+
     </div>
   );
 };

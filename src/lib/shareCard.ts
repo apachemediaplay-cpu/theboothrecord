@@ -29,6 +29,16 @@ export type ShareCardRecord = {
   filedVenue: string;
   /** Filing time, epoch ms. Null/0/NaN falls back to now (photo card's meta bar only). */
   filedAt: number | null;
+  /**
+   * The filing time ALREADY FORMATTED as "HH:MM", for a caller that knows the
+   * venue's wall clock when this device does not. The confessor's own phone
+   * never sets it — there, filedAt was stamped at the venue and the local
+   * getters are correct by construction. /v/:id does set it: it holds
+   * created_at (UTC) plus the FILING device's offset, and a viewer reading that
+   * with their own getters would print their hour as the filing hour.
+   * Photo card only — the no-photo composition draws no time.
+   */
+  filedTimeText?: string;
 };
 
 // ── FILM GRADE for the story card's photo — strength in ONE place. ──────────
@@ -313,9 +323,14 @@ export const renderShareCard = async (
     const filedAt = Number.isFinite(filedAtRaw) && filedAtRaw > 0
       ? new Date(filedAtRaw)
       : new Date();
-    const timeText = `${String(filedAt.getHours()).padStart(2, "0")}:${String(
-      filedAt.getMinutes(),
-    ).padStart(2, "0")}`;
+    // filedTimeText wins when the caller knows the venue's wall clock and this
+    // device doesn't — see the field's note on ShareCardRecord. The confessor's
+    // own phone never sets it, so this line is the unchanged original there.
+    const timeText =
+      record.filedTimeText ??
+      `${String(filedAt.getHours()).padStart(2, "0")}:${String(
+        filedAt.getMinutes(),
+      ).padStart(2, "0")}`;
     // The venue is ALWAYS cut at its first comma — "The StandardX,
     // Melbourne" → "THE STANDARDX". The city is the droppable half: the
     // room is what a viewer acts on, and the cut keeps the bar to two

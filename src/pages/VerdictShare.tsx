@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import { fetchSharedVerdict, logBoothEvent, type SharedVerdict } from "@/lib/metrics";
+import { fetchSharedVerdict, logBoothEvent, logShare, type SharedVerdict } from "@/lib/metrics";
 import { venueDisplayName, mayStampVenue, resolveVenueDisplayName } from "@/lib/source";
+import StoryFlow from "@/components/StoryFlow";
 import firstOffence from "@/assets/first-offence.webp";
 
 // ── THE ?k= OFFER ───────────────────────────────────────────────────────────
@@ -19,6 +20,23 @@ import firstOffence from "@/assets/first-offence.webp";
 // of per-venue copy.
 const OFFER_CODES: Record<string, string> = {
   woolstore: "GUILTY10",
+};
+
+// THE FILING TIME, IN THE ROOM'S OWN CLOCK. created_at is UTC and
+// filed_offset_minutes is the offset of the device that FILED the confession
+// (minutes east of UTC), so created_at + offset read with the UTC getters is
+// the wall clock in the room it happened in — on any viewer's device, anywhere,
+// at any later date. Returns undefined when either is missing (every row
+// predating 20260818100000, or a database where that migration has not been
+// pasted yet) and the card then falls back to its own clock rather than
+// printing a confident wrong hour.
+const filedTimeText = (row: SharedVerdict): string | undefined => {
+  const ms = row.created_at ? Date.parse(row.created_at) : NaN;
+  if (!Number.isFinite(ms)) return undefined;
+  const offset = row.filed_offset_minutes;
+  if (offset == null || !Number.isFinite(offset)) return undefined;
+  const wall = new Date(ms + offset * 60000);
+  return `${String(wall.getUTCHours()).padStart(2, "0")}:${String(wall.getUTCMinutes()).padStart(2, "0")}`;
 };
 
 // The shop's discount link drops the code straight into a pre-filled cart.
@@ -52,6 +70,22 @@ const VerdictShare = () => {
   const offerCode = OFFER_CODES[(searchParams.get("k") || "").trim().toLowerCase()] ?? null;
   const [status, setStatus] = useState<"loading" | "found" | "notfound">("loading");
   const [row, setRow] = useState<SharedVerdict | null>(null);
+  // ── THE PHOTO FLOW, GATED ON ?k= ───────────────────────────────────────────
+  // The booth ends on a web page: the tablet hides the share actions (its
+  // camera is the wrong camera) and the person's own phone only ever sees THIS
+  // page, so without this there is no way for a kiosk confessor to make a card
+  // at all.
+  //
+  // ?k= IS NOT SECURITY and is not treated as such — it survives a forward,
+  // a screenshot of the address bar, a copy-paste. What it does mean is that
+  // this URL came off a booth screen, which is the case the flow is built for.
+  // A public record is not a licence to mint artefacts from it: without the
+  // gate, anyone holding a link could pair THEIR photo with someone else's
+  // confession under a venue's stamp, which is a new thing for this page to
+  // invite. Presence of the key, not a KNOWN key — an unknown key still means
+  // "scanned a code" (see OFFER_CODES above, which needs a known one).
+  const canMakeCard = (searchParams.get("k") || "").trim().length > 0;
+  const [storyOpen, setStoryOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -247,6 +281,18 @@ const VerdictShare = () => {
             SEE THE RECORD (the wall is PUBLIC RECORD now) but the logged event
             type stays see_guilty — it's in the log_booth_event RPC whitelist,
             and renaming it would need a migration for no benefit. */}
+        {/* POST TO STORY — same treatment and same position in the stack as on
+            the verdict screen: a quiet underlined action under the primary box,
+            never a second box (one primary action per screen). */}
+        {canMakeCard && status === "found" ? (
+          <button
+            onClick={() => setStoryOpen(true)}
+            disabled={storyOpen}
+            className="type-action text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
+          >
+            {storyOpen ? "PREPARING…" : "POST TO STORY"}
+          </button>
+        ) : null}
         <Link
           to="/thewall"
           onClick={() => logBoothEvent("see_guilty", source, { from: "share" })}
@@ -255,6 +301,40 @@ const VerdictShare = () => {
           SEE THE RECORD
         </Link>
       </div>
+
+      {/* The SAME component the verdict screen mounts — see StoryFlow. What
+          differs is only what this page can know: a row instead of a session. */}
+      <StoryFlow
+        open={storyOpen}
+        onClose={() => setStoryOpen(false)}
+        secondaryClass="type-action text-foreground/80 underline underline-offset-4 hover:text-foreground transition-colors tracking-wide"
+        resolve={async () => {
+          if (!row) return null;
+          return {
+            record: {
+              confession: row.confession_text || "",
+              verdict: row.verdict_text || "",
+              subjectNumber: row.subject_number != null ? String(row.subject_number) : "",
+              // THE ROW'S FLAG, NEVER isPhysicalScan(). That helper reads the
+              // VIEWING session, which on this page is always "not physical" —
+              // gating on it would strip the venue from a genuine booth
+              // confession. stamp_venue already encodes the physical test,
+              // applied by tag_confession at filing time.
+              filedVenue: mayStampVenue(row.stamp_venue) ? venue.toUpperCase() : "",
+              // Epoch is unused when filedTimeText is supplied; kept null so a
+              // build without the created_at columns falls back to "now"
+              // rather than to a wrong hour.
+              filedAt: null,
+              filedTimeText: filedTimeText(row),
+            },
+            shareUrl: `https://theboothrecord.com/v/${id}`,
+          };
+        }}
+        onShared={() => {
+          logShare(source);
+          logBoothEvent("share_card", source);
+        }}
+      />
     </main>
   );
 };
