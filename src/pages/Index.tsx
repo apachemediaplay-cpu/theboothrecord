@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import BoothHeader from "@/components/BoothHeader";
 import LegalLinks from "@/components/LegalLinks";
 import { captureSourceFromUrl, isKioskSession } from "@/lib/source";
+import UntitledSplash from "@/components/UntitledSplash";
 import { getRound, startRound } from "@/lib/round";
 import { logScan } from "@/lib/metrics";
 
@@ -25,6 +26,21 @@ const Index = () => {
   // KIOSK — read once at mount, like every other kiosk branch. Declared up
   // here because the typing effect below branches on it.
   const [kioskGate] = useState(() => isKioskSession());
+  // ── THE UNTITLED OPENING — ONE SOURCE, NOWHERE ELSE ─────────────────────────
+  // Read from the URL, not from the stored source: this is an opening, and an
+  // opening belongs to an arrival. A repeat confession loads a param-less URL
+  // and gets the standard gate, which is right — you do not open the same door
+  // twice. Non-kiosk for the same reason the mark is (see the phase note), and
+  // motion-gated because a three-second animation is exactly what
+  // prefers-reduced-motion is asking about.
+  const [untitled] = useState(
+    () =>
+      !kioskGate &&
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("source")?.trim().toLowerCase() ===
+        "untitled" &&
+      !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+  );
 
   // Merged gate + threshold copy (the /confidentiality screen is gone — one
   // screen does the job once). Same typing speeds and glitch as always.
@@ -51,11 +67,16 @@ const Index = () => {
 
   useEffect(() => {
     if (phase === "gate") return; // reduced-motion start — nothing to sequence
+    // The untitled opening runs its own clock: arch at 0.0s, × at 0.8s, the
+    // wordmark typing 1.0s → 1.54s, then a beat before the fade. 2.5s door to
+    // door against the standard mark's 2.7.
+    const holdMs = untitled ? 2000 : 2200;
+    const outMs = untitled ? 2500 : 2700;
     const fadeT = window.setTimeout(
       () => setPhase((p) => (p === "mark" ? "fading" : p)),
-      2200,
+      holdMs,
     );
-    const gateT = window.setTimeout(() => setPhase("gate"), 2700);
+    const gateT = window.setTimeout(() => setPhase("gate"), outMs);
     // Any tap or key during the hold skips straight to the gate. The late-firing
     // timers are harmless after a skip: fadeT only downgrades from 'mark', and
     // gateT re-sets 'gate' which React ignores.
@@ -226,7 +247,11 @@ const Index = () => {
           ease-in-out; blur radii scale with the dot) but on a 2.2s cycle, NOT
           the listening line's 2.8s — DELIBERATE: the hold and the breath must be
           the same length, and the two screens are never seen together. */}
-      {phase !== "gate" && (
+      {/* ?source=untitled gets the collaboration opening INSTEAD of this one —
+          not before it. Two openings back to back is 5.2 seconds of animation
+          before a first-time visitor can tap anything. */}
+      {phase !== "gate" && untitled && <UntitledSplash fading={phase === "fading"} />}
+      {phase !== "gate" && !untitled && (
         <div
           aria-hidden="true"
           className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-500 ${
