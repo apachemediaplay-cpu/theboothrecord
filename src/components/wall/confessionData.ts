@@ -1,5 +1,22 @@
 import type { ConfessionEntry } from "./ConfessionCard";
 
+// verdictHidden is the second, longer verdict from the Home page's carousel
+// concept (see Home.tsx, which keeps its own copy of both the type and the
+// data). It rode along into this seed set and the WALL HAS NEVER RENDERED IT —
+// ConfessionCard draws confession + verdict and nothing else. Typed HERE rather
+// than added to ConfessionEntry so the live wall's type stays a description of
+// what the wall actually shows; the copy is kept because it is written material,
+// not because anything reads it.
+type SeedEntry = ConfessionEntry & { verdictHidden?: string };
+
+// The seed rows carry COPY ONLY. Every other field on ConfessionEntry — the id,
+// the confessor number, the timestamp string, createdAtMs and insertedAt — is
+// stamped when a row is loaded, so the literals below must not be forced to
+// invent them. (createdAtMs joined ConfessionEntry when the wall's stamps went
+// relative — "4 MIN AGO" — and this file was never updated; that was the second
+// error hiding behind the verdictHidden one.)
+type SeedShape = Omit<SeedEntry, "id" | "confessorId" | "timestamp" | "createdAtMs" | "insertedAt">;
+
 export const SYSTEM_MESSAGES = [
   "NEW CONFESSION RECORDED",
   "ANOTHER TRUTH LOGGED",
@@ -9,7 +26,7 @@ export const SYSTEM_MESSAGES = [
   "TRUTH CAPTURED",
 ];
 
-export const EXTRA_CONFESSIONS: Omit<ConfessionEntry, "id" | "confessorId" | "timestamp" | "insertedAt">[] = [
+export const EXTRA_CONFESSIONS: SeedShape[] = [
   {
     confession: "I read their journal.\nI never told them.",
     verdict: "Privacy violated.",
@@ -72,7 +89,7 @@ export const EXTRA_CONFESSIONS: Omit<ConfessionEntry, "id" | "confessorId" | "ti
   },
 ];
 
-export const BASE_CONFESSIONS: ConfessionEntry[] = [
+export const BASE_CONFESSIONS: (SeedShape & { id: number; confessorId: string; timestamp: string })[] = [
   {
     id: 1,
     confessorId: "#1842",
