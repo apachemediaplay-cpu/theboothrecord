@@ -23,6 +23,14 @@ function fireAndForget(p: PromiseLike<{ error: unknown }>): void {
 
 // Tag the just-created confession row (by its subject_number) with this session's id
 // and test flag. Called after a successful verdict in Receiving.
+//
+// _offset_minutes is THIS DEVICE'S UTC offset at the moment of filing, minutes
+// EAST of UTC (getTimezoneOffset() reports the opposite sign, hence the minus).
+// The device is at the venue — on the booth it IS the venue's tablet — so this
+// is the room's own wall clock, and it is the only way a card built later or
+// somewhere else (i.e. on /v/:id) can print the hour a confession was actually
+// filed rather than the hour where the reader happens to be standing. The
+// server clamps it and sets it once; see 20260818100000.
 export function tagConfession(subjectNumber: number): void {
   fireAndForget(
     rpc("tag_confession", {
@@ -30,6 +38,7 @@ export function tagConfession(subjectNumber: number): void {
       _session_id: getSessionId(),
       _is_test: isTestSession(),
       _physical: isPhysicalScan(),
+      _offset_minutes: -new Date().getTimezoneOffset(),
     }),
   );
 }
@@ -292,6 +301,14 @@ export type SharedVerdict = {
   // From get_share_verdict. false = suppress the venue name (show the withheld fallback);
   // absent/true = show the venue as normal.
   stamp_venue?: boolean;
+  // The filing time, for a card built on this page rather than on the
+  // confessor's own phone. created_at is UTC; filed_offset_minutes is the
+  // FILING device's offset east of UTC, so created_at + offset is the wall
+  // clock in the room it happened in. Both optional: a null offset (every row
+  // predating 20260818100000) means fall back to rendering created_at in the
+  // viewer's own zone — right in the room, no worse than today anywhere else.
+  created_at?: string;
+  filed_offset_minutes?: number | null;
 };
 export async function fetchSharedVerdict(id: string | undefined): Promise<SharedVerdict | null> {
   if (!id) return null;
