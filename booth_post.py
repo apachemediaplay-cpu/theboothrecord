@@ -42,9 +42,31 @@ COUNTER = REPO / ".subject_counter"
 
 # ── cover geometry, locked ───────────────────────────────────
 W, H = 1080, 1920
-MARGIN, TEXT_TOP = 90, 460
-MARK_H, MARK_BOTTOM = 78, 1619
-TEXT_CEIL = MARK_BOTTOM - MARK_H - 80
+MARGIN = 90
+
+# THE GRID CROP IS THE REAL FRAME. A cover is met first as a 4:5 tile in the
+# profile grid — the crop CHOOSE.png shows — and anything outside it is missing
+# at exactly the moment someone decides whether to tap. So the block is sized
+# against the crop, not against the 1920 frame.
+#
+# The old band (TEXT_TOP 460 → TEXT_CEIL 1461) was this same idea with the
+# GUILTY wordmark holding the bottom: 1001px of room, its centre already on the
+# frame's centre. With the wordmark gone the ceiling it implied goes too, and
+# the block gets the crop's full safe height instead — 1170px, 169 more, which
+# is why more confessions now hold 132px.
+GRID_H     = W * 5 // 4                 # 1350 — the 4:5 tile
+GRID_TOP   = (H - GRID_H) // 2          # 285
+TEXT_SAFE  = MARGIN                     # keep the block off the crop's edges
+TEXT_MAX_H = GRID_H - 2 * TEXT_SAFE     # 1170
+
+# The same optical lift the reel's tail card uses: a block centred
+# arithmetically reads low, and 4% of the frame is the correction. Both pieces
+# of the brand now sit their type on the same centre (883 of 1920).
+TEXT_LIFT  = round(H * 0.04)            # 77
+# …but never so high that a tall block climbs out of the crop. Past this the
+# block stops rising and simply grows downward into the room below it.
+TEXT_FLOOR = GRID_TOP + TEXT_SAFE       # 375
+
 LABEL_SZ, MAX_CONF, MIN_CONF = 58, 132, 104
 
 # Words that promise something after them — cutting here leaves a gap.
@@ -62,10 +84,6 @@ COVER_HTML = """
     <p class="text-ritual font-mono-light"
        style="font-size:%(conf)dpx;line-height:1.25;letter-spacing:-0.015em;margin:0;">%(text)s<span>|</span></p>
   </div>
-  <img id="mark" src="/covermark/wordmark-reverse.svg"
-       onerror="this.src='/src/assets/Guilty_Wordmark_RGB_Orange.svg';this.style.filter='grayscale(1) brightness(3)';"
-       style="position:absolute;left:50%%;transform:translateX(-50%%);
-              top:%(mt)dpx;height:%(mh)dpx;width:auto;opacity:0.9;" />
 </div>
 """
 
@@ -128,17 +146,18 @@ def render_covers(texts, outdir, label, port):
             size = MAX_CONF
             while True:
                 pg.evaluate("(h)=>{document.body.innerHTML=h;}", COVER_HTML % dict(
-                    m=MARGIN, lab=LABEL_SZ, label=label, conf=size, text=txt,
-                    mt=MARK_BOTTOM - MARK_H, mh=MARK_H))
+                    m=MARGIN, lab=LABEL_SZ, label=label, conf=size, text=txt))
                 pg.wait_for_timeout(90)
                 h = pg.evaluate("()=>document.querySelector('#blk').getBoundingClientRect().height")
-                if h <= TEXT_CEIL - TEXT_TOP or size <= MIN_CONF:
+                if h <= TEXT_MAX_H or size <= MIN_CONF:
                     break
                 size -= 4
+            # Centred on the frame, lifted, then floored so a long block can
+            # never climb out of the grid crop.
             pg.evaluate("""(a)=>{const b=document.querySelector('#blk');
                 const h=b.getBoundingClientRect().height;
-                b.style.top=Math.round(a[0]+(a[1]-a[0]-h)/2)+'px';}""",
-                [TEXT_TOP, TEXT_CEIL])
+                b.style.top=Math.round(Math.max(a[2], (a[0]-h)/2 - a[1]))+'px';}""",
+                [H, TEXT_LIFT, TEXT_FLOOR])
             pg.wait_for_timeout(110)
             p = outdir / f"cover_{i:02d}.png"
             pg.screenshot(path=str(p))

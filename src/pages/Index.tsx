@@ -87,11 +87,14 @@ const Index = () => {
 
   useEffect(() => {
     if (phase === "gate") return; // reduced-motion start — nothing to sequence
-    // The untitled opening runs its own clock: arch at 0.0s, × at 0.8s, the
-    // wordmark typing 1.0s → 1.54s, then a beat before the fade. 2.5s door to
-    // door against the standard mark's 2.7.
-    const holdMs = untitled ? 2000 : 2200;
-    const outMs = untitled ? 2500 : 2700;
+    // The untitled opening runs its own clock: arch at 0.0s, × at 0.4s, the
+    // wordmark typing 0.7s → 1.74s, then an 0.8s HOLD on the finished lockup —
+    // the beat where the full stop stops being a cursor and is just their name
+    // — and a 0.4s fade. 2.94s door to door against the standard mark's 2.7.
+    // These two numbers are half of that budget; the other half is in
+    // UntitledSplash, which comments the whole sequence. Move one, move both.
+    const holdMs = untitled ? 2540 : 2200;
+    const outMs = untitled ? 2940 : 2700;
     const fadeT = window.setTimeout(
       () => setPhase((p) => (p === "mark" ? "fading" : p)),
       holdMs,

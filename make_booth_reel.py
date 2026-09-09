@@ -31,21 +31,95 @@ REQUIRES
     playwright, ffmpeg, booth_reel_audio.py
 """
 
-import argparse, json, math, shutil, subprocess, sys
+import argparse, json, math, re, shutil, subprocess, sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+
+# ── THE BOOTH MARK, READ FROM THE APP ────────────────────────
+# NOT retyped here. It was, and it went stale: this file kept the pre-2026
+# mark (240-box, 12.9% stroke, square ends, a base bar, a 7.9% dot) for long
+# enough that the reel was shipping a logo the app had stopped drawing. A
+# hand-copied path has no way to know it is out of date.
+#
+# So the geometry is parsed out of src/components/BoothMark.tsx — the single
+# definition every screen already renders. Change the mark there and the reel
+# follows on its next run. If the parse fails the script STOPS rather than
+# falling back to a copy: a wrong mark that renders is worse than no render,
+# because nobody checks a logo they have already seen a hundred times.
+BOOTH_MARK_TSX = Path(__file__).resolve().parent / "src" / "components" / "BoothMark.tsx"
+
+
+def booth_mark():
+    """(viewBox, aspect, svg_children) lifted from the app's BoothMark."""
+    try:
+        src = BOOTH_MARK_TSX.read_text()
+    except OSError as e:
+        sys.exit(f"! cannot read {BOOTH_MARK_TSX}: {e}")
+
+    def grab(pattern, what):
+        m = re.search(pattern, src)
+        if not m:
+            sys.exit(f"! {BOOTH_MARK_TSX.name}: could not find {what}.\n"
+                     f"  The mark's markup changed shape — update booth_mark() to match.")
+        return m.group(1)
+
+    view_box = grab(r'viewBox="([^"]+)"', "the viewBox")
+    d        = grab(r'booth-mark-arch"\s*\n\s*d="([^"]+)"', "the arch path (d=)")
+    width    = grab(r'strokeWidth="([^"]+)"', "strokeWidth")
+    cap      = grab(r'strokeLinecap="([^"]+)"', "strokeLinecap")
+    cx       = grab(r'booth-mark-dot"\s+cx="([^"]+)"', "the dot's cx")
+    cy       = grab(r'cx="[^"]+"\s+cy="([^"]+)"', "the dot's cy")
+    r        = grab(r'cy="[^"]+"\s+r="([^"]+)"', "the dot's r")
+
+    vb = [float(n) for n in view_box.replace(",", " ").split()]
+    aspect = vb[3] / vb[2]      # height per unit width — 117/100 today
+    green = "hsl(var(--ritual-green))"
+    children = (f'<path d="{d}" fill="none" stroke="{green}" '
+                f'stroke-width="{width}" stroke-linecap="{cap}"/>'
+                f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{green}"/>')
+    return view_box, aspect, children
+
+
+MARK_VIEWBOX, MARK_ASPECT, MARK_CHILDREN = booth_mark()
 
 # ─────────────────────────────────────────────────────────────
 # LOCKED GRID  (1080 x 1920)
 # ─────────────────────────────────────────────────────────────
 W, H, FPS = 1080, 1920, 30
 
-MARK_PX, MARK_TOP = 400, 480
+# MARK_PX is the mark's WIDTH; the height follows the viewBox (117 per 100
+# wide), so the box is 400 x 468 rather than the old square 400 x 400.
+#
+# The ink runs to the very bottom of that box (the arch's round cap ends at
+# y=117 of 117) where the old mark stopped at 228 of 240, so the name's gap is
+# measured from MARK_INK_BOTTOM below rather than from a typed number.
+MARK_PX = 400
+MARK_H = round(MARK_PX * MARK_ASPECT)
+
+# THE LOCKUP IS CENTRED, NOT PLACED. It used to be pinned to a hardcoded ink
+# bottom of 860, chosen when the GUILTY wordmark sat at 1392 and held the
+# bottom of the frame. With the wordmark gone the card is mark + name and
+# nothing else, and that pinning left ~700px of dead space beneath them: the
+# card read as unfinished rather than composed.
+#
+# So the block is centred on the 1920 grid and then LIFTED. A block centred
+# arithmetically reads low, because the eye puts the centre of a frame above
+# its true middle; 4% of the frame is the standard correction and it lands the
+# lockup where it looks settled. Everything below follows from MARK_TOP, so
+# changing MARK_PX or the name size re-centres the card instead of breaking it.
+NAME_SZ = 58                   # caps run wider; 58 keeps it inside the mark
+NAME_GAP = 76                  # mark ink bottom → name top
+COPY_GAP = 84                  # name bottom → first copy line
+LOCKUP_H = MARK_H + NAME_GAP + NAME_SZ
+LOCKUP_LIFT = round(H * 0.04)  # optical centre sits above the true middle
+
+MARK_TOP = (H - LOCKUP_H) // 2 - LOCKUP_LIFT
+MARK_INK_BOTTOM = MARK_TOP + MARK_H
 NAME_TRACK = "0.10em"      # caps want a touch more air than mixed case
 NAME_TEXT = "THE BOOTH"
-NAME_SZ, NAME_TOP = 58, 936   # caps run wider; 58 keeps it inside the mark
-LINE_SZ, LINE_TOP, LINE_STEP = 44, 1078, 74
-WM_W, WM_BOTTOM = 265, 1480
+NAME_TOP = MARK_INK_BOTTOM + NAME_GAP
+LINE_SZ, LINE_STEP = 44, 74
+LINE_TOP = NAME_TOP + NAME_SZ + COPY_GAP
 
 # Glow. One breath, matching the app's listen-glow.
 CYCLE_S = 2.8
@@ -96,21 +170,25 @@ T_GAP12     = 0.20
 T_GAP23     = 0.50
 T_HOLD      = 1.00      # after the green line finishes
 T_FADE      = 0.50
-T_TAIL_HOLD = 1.60
+# THE END HOLD. Was the wordmark's 0.50 fade-in plus a 1.60 hold beneath it.
+# With nothing left to fade in the two fold into ONE hold on mark + name, which
+# keeps the file at the same 9.98s — the copy still clears at 7.88 and the card
+# is simply held from there instead of being handed to a logo.
+T_END_HOLD = 0.50 + 1.60
 TAIL_S, LOOP_S = 1.60, CYCLE_S
 
 # ─────────────────────────────────────────────────────────────
 
-WORDMARK = '''<g> <path  d="M235.4,193.2h30v12.4c-5.1,2.8-11.5,3.9-20.1,3.9-20.9,0-33.6-14.2-33.6-37.1s15.4-38.9,40.9-38.9,39.3,8.7,48.8,19.1v-40.3c-13.6-7.9-28.4-12.8-49.4-12.8-48.8,0-79.2,29-79.2,72.7s28,71.5,71.9,71.5,46.6-9.3,58-22.3v-60.4h-67.3v32.2Z"/> <path  d="M398.1,119.8v65.1c0,13.8-7.7,23.5-22.7,23.5s-22.9-9.7-22.9-23.5v-82.3h-37.3v83.5c0,36.3,21.7,57.6,60.2,57.6s60-21.3,60-57.6v-83.5h-37.3v17.2Z"/> <polygon  points="449.8 119.8 449.8 223.6 449.8 240.8 487.1 240.8 487.1 223.6 487.1 119.8 487.1 102.6 449.8 102.6 449.8 119.8"/> <polygon  points="541.1 205.7 541.1 119.8 541.1 102.6 503.8 102.6 503.8 119.8 503.8 223.6 503.8 240.8 592.3 240.8 592.3 205.7 557.9 205.7 541.1 205.7"/> <polygon  points="793.1 102.6 751 102.6 739.8 122.4 725.2 147.8 711.9 124.7 699.3 102.6 688 102.6 657 102.6 567.2 102.6 567.2 137.2 594.1 137.2 608.9 137.2 608.9 221.5 608.9 240.8 646.2 240.8 646.2 223.6 646.2 137.2 661 137.2 677.5 137.2 706.4 185.9 706.4 221.5 706.4 240.8 743.7 240.8 743.7 223.6 743.7 185.9 781 122.9 788 111.2 794.6 111.2 798.2 111.2 798.2 132.2 798.2 137.1 807.5 137.1 807.5 132.8 807.5 111.2 811.2 111.2 818 111.2 818 102.6 793.1 102.6 793.1 102.6"/> <polygon  points="851.5 102.6 841 117.9 830.4 102.6 822.2 102.6 822.2 106.9 822.2 132.8 822.2 137.1 830.9 137.1 830.9 132.8 830.9 117.8 841 132.9 850.9 117.7 850.9 132.2 850.9 137.1 859.7 137.1 859.7 132.8 859.7 106.9 859.7 102.6 851.5 102.6"/> </g> <path  d="M500,335.5c-130.4,0-253.2-15.8-345.8-44.5C53.3,259.8,0,217.2,0,167.8S53.3,75.7,154.2,44.5C246.8,15.8,369.6,0,500,0s253.2,15.8,345.8,44.5c100.9,31.2,154.2,73.9,154.2,123.3s-53.3,92.1-154.2,123.3c-92.6,28.7-215.5,44.5-345.8,44.5ZM500,37.6c-126.7,0-245.6,15.2-334.7,42.8-41.6,12.9-75.3,28.3-97.6,44.6-13.7,10.1-30.1,25.6-30.1,42.8s16.4,32.8,30.1,42.8c22.2,16.3,56,31.7,97.6,44.6,89.1,27.6,208,42.8,334.7,42.8s245.6-15.2,334.7-42.8c41.6-12.9,75.3-28.3,97.6-44.6,13.7-10.1,30.1-25.6,30.1-42.8s-16.4-32.8-30.1-42.8c-22.2-16.3-56-31.7-97.6-44.6-89.1-27.6-208-42.8-334.7-42.8Z"/>'''
 
 PAGE = """
 <div id="stage" style="position:fixed;inset:0;background:hsl(var(--background));overflow:hidden;">
-  <svg id="mark" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg"
-       style="position:absolute;left:%(mx)dpx;top:%(mt)dpx;width:%(mw)dpx;height:%(mw)dpx;">
-    <path d="M58.5 210 L58.5 109 A61.5 61.5 0 0 1 181.5 109 L181.5 210"
-          fill="none" stroke="hsl(var(--ritual-green))" stroke-width="31"/>
-    <rect x="32" y="210" width="176" height="18" fill="hsl(var(--ritual-green))"/>
-    <circle cx="120" cy="161" r="19" fill="hsl(var(--ritual-green))"/>
+  <!-- Geometry from src/components/BoothMark.tsx — see booth_mark(). Nothing
+       about the shape is written here. overflow:visible because an <svg> is
+       overflow:hidden by UA default, which clips the glow into a hard
+       rectangle the shape of the viewBox; the app's component sets the same. -->
+  <svg id="mark" viewBox="%(mvb)s" xmlns="http://www.w3.org/2000/svg"
+       style="position:absolute;left:%(mx)dpx;top:%(mt)dpx;width:%(mw)dpx;height:%(mh)dpx;overflow:visible;">
+    %(mark)s
   </svg>
 
   <div id="name" class="font-control font-bold text-foreground"
@@ -123,9 +201,6 @@ PAGE = """
     <div id="l3" class="font-mono-light text-ritual"     style="font-size:%(ls)dpx;height:%(lh)dpx;line-height:%(lh)dpx;white-space:pre;"></div>
   </div>
 
-  <div id="wm" style="position:absolute;left:0;right:0;top:%(wt)dpx;text-align:center;opacity:0;">
-    <svg viewBox="0 0 1000 335.5" style="display:block;margin:0 auto;width:%(ww)dpx;height:auto;" fill="hsl(var(--foreground))">%(word)s</svg>
-  </div>
 </div>
 """
 
@@ -139,7 +214,6 @@ SET_STATE = """(s) => {
   document.getElementById('l2').textContent = s.l2;
   document.getElementById('l3').textContent = s.l3;
   document.getElementById('l3').style.filter = s.l3glow;
-  document.getElementById('wm').style.opacity = s.wm;
 }"""
 
 
@@ -167,8 +241,10 @@ def timeline():
     t_l3 = t_l2_end + T_GAP23
     t_l3_end = t_l3 + len(L3) * MS_GREEN / 1000
     t_out = t_l3_end + T_HOLD
-    t_wm = t_out + T_FADE
-    dur = t_wm + T_FADE + T_TAIL_HOLD
+    # The copy has fully cleared here and the card is mark + name. It used to
+    # be the wordmark's cue; it is now just the top of the hold.
+    t_settled = t_out + T_FADE
+    dur = t_settled + T_END_HOLD
 
     keys = [T_L1 + i * MS_WHITE / 1000 for i in range(len(L1))]
     keys += [t_l2 + i * MS_WHITE / 1000 for i in range(len(L2))]
@@ -207,18 +283,17 @@ def timeline():
             "name":   round(fade(T_NAME_IN, T_NAME_IN + T_NAME_DUR), 4),
             "copy":   round(1 - fade(t_out, t_out + T_FADE), 4),
             "l1": l1, "l2": l2, "l3": l3,
-            "wm":     round(fade(t_wm, t_wm + T_FADE), 4),
             "nametext": NAME_TEXT,
         })
     return states, keys, reply, t_l3, dur
 
 
-def still_states(n, name=1.0, copy=0.0, wm=0.0, l3=""):
+def still_states(n, name=1.0, copy=0.0, l3=""):
     """A held frame with the glow still breathing. Used for tail and loop."""
     return [{
         "glow": glow_css((i / FPS / CYCLE_S) % 1.0),
         "l3glow": glow_css((i / FPS / CYCLE_S) % 1.0, scale=0.35),
-        "name": name, "copy": copy, "l1": "", "l2": "", "l3": l3, "wm": wm,
+        "name": name, "copy": copy, "l1": "", "l2": "", "l3": l3,
         "nametext": NAME_TEXT,
     } for i in range(n)]
 
@@ -342,11 +417,10 @@ def main():
     work = Path(".frames_brand"); shutil.rmtree(work, ignore_errors=True)
 
     html = PAGE % dict(
-        mx=(W - MARK_PX)//2, mt=MARK_TOP, mw=MARK_PX,
+        mx=(W - MARK_PX)//2, mt=MARK_TOP, mw=MARK_PX, mh=MARK_H,
+        mvb=MARK_VIEWBOX, mark=MARK_CHILDREN,
         nt=NAME_TOP, ns=NAME_SZ, ntr=NAME_TRACK,
-        lt=LINE_TOP, ls=LINE_SZ, lh=LINE_STEP,
-        wt=WM_BOTTOM - int(WM_W*335.5/1000), ww=WM_W,
-        word=WORDMARK)
+        lt=LINE_TOP, ls=LINE_SZ, lh=LINE_STEP)
 
     seq_states, keys, reply, verdict_s, dur = timeline()
 
@@ -354,14 +428,19 @@ def main():
     if args.only in (None, "reel"):
         # copy starts at T_L1 and clears over T_FADE after the last hold
         t_out = verdict_s + len(L3) * MS_GREEN / 1000 + T_HOLD
-        t_wm = t_out + T_FADE
+        # KEYPOINT KEPT, NOT DELETED. The neon ducks under the typing and comes
+        # back up when the copy clears; that release used to coincide with the
+        # wordmark's fade-in. Dropping the keypoint with the wordmark would
+        # leave the hum ducked through the whole hold — the last two seconds
+        # would sound like the reel had stalled rather than landed.
+        t_settled = t_out + T_FADE
         k = NEON_SLEW
         neon_gate = [(0, 1.0), (T_L1 - k, 1.0), (T_L1, NEON_DUCK),
-                     (t_out, NEON_DUCK), (t_wm, 1.0), (dur, 1.0)]
+                     (t_out, NEON_DUCK), (t_settled, 1.0), (dur, 1.0)]
         jobs.append(("booth_reel", seq_states, dur, keys, reply, verdict_s, neon_gate))
     if args.only in (None, "tail"):
         n = int(round(TAIL_S * FPS))
-        jobs.append(("booth_tail", still_states(n, wm=1.0), TAIL_S, (), (), None, None))
+        jobs.append(("booth_tail", still_states(n), TAIL_S, (), (), None, None))
     if args.only in (None, "loop"):
         n = int(round(LOOP_S * FPS))
         jobs.append(("booth_loop", still_states(n), LOOP_S, (), (), None, None))
@@ -386,7 +465,7 @@ def main():
 
         # Tailwind sets svg{display:block}, which silently defeats
         # text-align:center. Assert both centred elements really are.
-        for el in ("name", "wm"):
+        for el in ("name",):
             box = page.evaluate(
                 "(id) => { const r = document.getElementById(id)"
                 ".getBoundingClientRect(); return [r.left, r.right]; }", el)

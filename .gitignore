@@ -55,3 +55,7 @@ supabase/.temp/
 # Generated: incremental-build state written by `npx tsc -b` (the typecheck).
 tsconfig.app.tsbuildinfo
 tsconfig.node.tsbuildinfo
+__pycache__/
+*.bak
+__pycache__/
+*.bak
