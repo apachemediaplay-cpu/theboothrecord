@@ -36,57 +36,23 @@ playwright install chromium
 
 **3. The watcher, on login**
 
-The LaunchAgent plist is not in the repo. It lives at
-`~/Library/LaunchAgents/com.guilty.boothwatch.plist`. If it's missing,
-recreate it with these values:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.guilty.boothwatch</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/Users/nara/Desktop/The Booth/new confessional/guiltyconfess/.venv/bin/python</string>
-    <string>booth_watch.py</string>
-  </array>
-  <key>WorkingDirectory</key>
-  <string>/Users/nara/Desktop/The Booth/new confessional/guiltyconfess</string>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>PATH</key>
-    <string>/Users/nara/.npm-global/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-    <key>HOME</key>
-    <string>/Users/nara</string>
-  </dict>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>KeepAlive</key>
-  <true/>
-  <key>ThrottleInterval</key>
-  <integer>10</integer>
-  <key>StandardOutPath</key>
-  <string>/tmp/booth_watch.log</string>
-  <key>StandardErrorPath</key>
-  <string>/tmp/booth_watch.err</string>
-</dict>
-</plist>
-```
-
-The explicit PATH is required: launchd doesn't inherit the shell's PATH,
-and without `/usr/local/bin` the watcher can't find `npx`, so the dev
-server silently never starts. Then:
+The LaunchAgent plist is in the repo at
+`launchagents/com.guilty.boothwatch.plist`. Copy it into place and load it:
 
 ```bash
-launchctl load ~/Library/LaunchAgents/com.guilty.boothwatch.plist
+cp launchagents/com.guilty.boothwatch.plist ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.guilty.boothwatch.plist
 launchctl list | grep boothwatch
 ```
 
 That last line should print a row. From now on the watcher starts with
 your Mac.
+
+It hardcodes this repo's absolute path and `/Users/nara`. On another
+machine or user, edit those first. The explicit PATH in it is required:
+launchd doesn't inherit the shell's PATH, and without `/usr/local/bin` the
+watcher can't find `npx`, so the dev server silently never starts. After
+editing the repo copy, re-copy it and reload (`bootout`, then `bootstrap`).
 
 ---
 
@@ -153,7 +119,7 @@ tracked in the repo; restore it with `git checkout booth_reel_audio.py`.
 ## Turning it off
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.guilty.boothwatch.plist
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.guilty.boothwatch.plist
 ```
 
 ---

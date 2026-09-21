@@ -199,7 +199,8 @@ state updates only after the server confirms.
 Playwright so the fonts and colour tokens are genuine, screenshots every state, then
 assembles video with an audio bed from `booth_reel_audio.py`. Requires
 `source .venv/bin/activate` and a dev server on port 8080. Read `CONSOLE_REELS.md`
-before touching any of it, which has the install steps and the LaunchAgent plist.
+before touching any of it, which has the install steps. The LaunchAgent plist is
+`launchagents/com.guilty.boothwatch.plist`.
 
 Finished reels land in `posts/<slug>/`, one folder per confession —
 `reel_reach.mp4` (the one to post, 1080x1920), `reel_anchor.mp4`,
