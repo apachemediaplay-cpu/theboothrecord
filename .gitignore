@@ -40,14 +40,11 @@ functions/venues.json
 functions/index.html
 .venv/
 
-# Reel production output
+# Reel production output. versions/ is NOT here: it holds the cut specs
+# (reach.json, anchor.json) that booth_post.py builds from, and they are tracked.
 captures/
 outputs/
-versions/
 posts/
-captures/
-outputs/
-versions/
 backups/
 supabase/.temp/
 *.zip

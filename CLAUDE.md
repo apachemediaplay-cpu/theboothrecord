@@ -210,8 +210,8 @@ and `post.md` (the caption). `outputs/` holds the assembled cuts that
 `captures/<slug>/` holds the screenshots `booth_assemble.py` reads, and
 `versions/reach.json` / `versions/anchor.json` are the cut specs
 `booth_post.py` uses by default — the pipeline cannot assemble without
-them. All four are gitignored, so those two spec files exist only on this
-machine. Back them up.
+them. `captures/`, `outputs/` and `posts/` are gitignored; `versions/` is
+tracked, because those two specs used to exist only on one machine.
 
 `booth_watch.py` runs as a macOS LaunchAgent, `com.guilty.boothwatch`,
 not from `.zshrc`. It logs to /tmp/booth_watch.log and
