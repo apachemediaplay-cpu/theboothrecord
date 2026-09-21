@@ -199,7 +199,7 @@ state updates only after the server confirms.
 Playwright so the fonts and colour tokens are genuine, screenshots every state, then
 assembles video with an audio bed from `booth_reel_audio.py`. Requires
 `source .venv/bin/activate` and a dev server on port 8080. Read `CONSOLE_REELS.md`
-before touching any of it; its paths still reference an older folder name.
+before touching any of it, which has the install steps and the LaunchAgent plist.
 
 Finished reels land in `posts/<slug>/`, one folder per confession —
 `reel_reach.mp4` (the one to post, 1080x1920), `reel_anchor.mp4`,

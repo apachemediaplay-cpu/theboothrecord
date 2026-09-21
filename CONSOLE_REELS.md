@@ -3,21 +3,20 @@
 Tick confessions in the console, press build, walk away. Folders appear
 with the reels, the covers and the notes.
 
-Everything lives in `~/Desktop/new confessional/guiltyconfess`.
+Everything lives in `~/Desktop/The Booth/new confessional/guiltyconfess`.
+Moving the repo breaks the venv and the LaunchAgent, which both hardcode
+that path.
 
 ---
 
 ## Install, once
 
-**1. The scripts**
-
-```bash
-cd "$HOME/Desktop/new confessional/guiltyconfess"
-cp ~/Downloads/booth_post.py ~/Downloads/booth_watch.py .
-cp ~/Downloads/booth_reels.tsx src/components/
-```
-
-Check they landed:
+**1. The scripts and the console buttons are already in the repo.**
+`booth_capture.py`, `booth_assemble.py`, `booth_post.py`, `booth_watch.py`,
+`booth_reel_audio.py`, `make_booth_reel.py`, the cut specs in `versions/`,
+and `src/components/booth_reels.tsx`, already wired into `Moderate.tsx`
+(`ReelAction` per row, `ReelBulkAction` in the bulk bar). Nothing to copy
+in. Sanity check:
 
 ```bash
 grep -c "^def add_tail_neon" booth_assemble.py   # want 1
@@ -25,33 +24,63 @@ grep "^NEON_GAIN" make_booth_reel.py             # want 1.00
 grep -c "^MARKER" booth_watch.py                 # want 1
 ```
 
-**2. The console**
+**2. The venv**
 
-In `Moderate.tsx`:
-
-```tsx
-import { ReelAction, ReelBulkAction } from "@/components/booth_reels";
+```bash
+cd "$HOME/Desktop/The Booth/new confessional/guiltyconfess"
+python3 -m venv .venv --clear
+source .venv/bin/activate
+pip install -r requirements.txt
+playwright install chromium
 ```
-
-Per row, beside the Feature button:
-
-```tsx
-<ReelAction row={row} />
-```
-
-In the bulk bar, beside Approve all and Reject all:
-
-```tsx
-<ReelBulkAction rows={selectedRows} />
-```
-
-`selectedRows` is whatever your existing checkbox selection already
-gives you. Nothing new to track.
 
 **3. The watcher, on login**
 
+The LaunchAgent plist is not in the repo. It lives at
+`~/Library/LaunchAgents/com.guilty.boothwatch.plist`. If it's missing,
+recreate it with these values:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.guilty.boothwatch</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/nara/Desktop/The Booth/new confessional/guiltyconfess/.venv/bin/python</string>
+    <string>booth_watch.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/nara/Desktop/The Booth/new confessional/guiltyconfess</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/nara/.npm-global/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HOME</key>
+    <string>/Users/nara</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>/tmp/booth_watch.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/booth_watch.err</string>
+</dict>
+</plist>
+```
+
+The explicit PATH is required: launchd doesn't inherit the shell's PATH,
+and without `/usr/local/bin` the watcher can't find `npx`, so the dev
+server silently never starts. Then:
+
 ```bash
-cp ~/Downloads/com.guilty.boothwatch.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.guilty.boothwatch.plist
 launchctl list | grep boothwatch
 ```
@@ -104,7 +133,7 @@ would be a weak one.
 blocking clipboard access:
 
 ```bash
-tail -f .watch.log
+tail -f /tmp/booth_watch.log /tmp/booth_watch.err
 ```
 
 The payload stays on the clipboard, so starting the watcher afterwards
@@ -116,8 +145,8 @@ still picks it up.
 **Capture times out on a button** — the gate changed. Check
 `GATE_BEGIN_TEXT`, also at the top of `booth_capture.py`.
 
-**Silent video** — `booth_reel_audio.py` isn't in the folder. It cannot
-be rebuilt from scratch. Keep a copy.
+**Silent video** — `booth_reel_audio.py` is missing or broken. It's
+tracked in the repo; restore it with `git checkout booth_reel_audio.py`.
 
 ---
 
