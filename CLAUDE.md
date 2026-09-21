@@ -201,7 +201,27 @@ assembles video with an audio bed from `booth_reel_audio.py`. Requires
 `source .venv/bin/activate` and a dev server on port 8080. Read `CONSOLE_REELS.md`
 before touching any of it; its paths still reference an older folder name.
 
-Output directories (`captures/`, `outputs/`, `posts/`, `versions/`) are gitignored.
+Finished reels land in `posts/<slug>/`, one folder per confession —
+`reel_reach.mp4` (the one to post, 1080x1920), `reel_anchor.mp4`,
+`cover_01`–`cover_04.png`, `CHOOSE.png` (the four covers side by side)
+and `post.md` (the caption). `outputs/` holds the assembled cuts that
+`booth_post.py` copies into `posts/`, plus the brand reels from
+`make_booth_reel.py` (`booth_reel.mp4`, `booth_tail.mp4`, `booth_loop.mp4`).
+`captures/<slug>/` holds the screenshots `booth_assemble.py` reads, and
+`versions/reach.json` / `versions/anchor.json` are the cut specs
+`booth_post.py` uses by default — the pipeline cannot assemble without
+them. All four are gitignored, so those two spec files exist only on this
+machine. Back them up.
+
+`booth_watch.py` runs as a macOS LaunchAgent, `com.guilty.boothwatch`,
+not from `.zshrc`. It logs to /tmp/booth_watch.log and
+/tmp/booth_watch.err. The plist must set an explicit PATH that includes
+/usr/local/bin: launchd does not inherit the shell PATH, so without it
+`npx` is not found and the dev server silently never starts.
+
+The venv cannot be moved. It hardcodes its own absolute path, so
+relocating the repo breaks every script inside it — rebuild with
+`python3 -m venv .venv --clear` and `pip install -r requirements.txt`.
 
 ## Conventions
 
