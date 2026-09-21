@@ -11,7 +11,7 @@ const Privacy = () => (
       </Link>
 
       <h1 className="font-control text-3xl font-bold mt-8 mb-1">The Booth — Privacy</h1>
-      <p className="text-muted-foreground text-sm mb-8">Effective: 10 July 2026</p>
+      <p className="text-muted-foreground text-sm mb-8">Effective: 21 September 2026</p>
 
       <p className="mb-6">
         The Booth is run by Stabl Nutrition Pty Ltd (ABN 31 674 471 553), trading as House of Guilty
@@ -52,6 +52,10 @@ const Privacy = () => (
         </li>
         <li>We store data with our database provider (Supabase).</li>
         <li>These providers may store or process data overseas, including in the United States.</li>
+        <li>
+          The venue where you confessed can see and re-publish confessions from their own venue that we've
+          approved. They never see anything we haven't published.
+        </li>
         <li>We don't sell your data.</li>
       </ul>
 
@@ -61,7 +65,8 @@ const Privacy = () => (
         <Link to="/thewall" className="text-foreground underline underline-offset-4">
           theboothrecord.com/thewall
         </Link>
-        , and may appear on our social channels. Publishing isn't automatic: we review every confession by
+        , and may appear on our social channels, or on the channels of the venue where you confessed,
+        including as paid or promoted posts. Publishing isn't automatic: we review every confession by
         hand before it can appear, and most are never published. By confessing, you agree your anonymised
         confession and its verdict may be shown publicly this way. We don't attach your name — because we
         never had it. You also get a shareable card; whether that goes anywhere is your choice.
@@ -98,9 +103,10 @@ const Privacy = () => (
           contact@houseofguilty.com
         </a>{" "}
         and quote the subject number printed on your verdict card (e.g. "SUBJECT #21"), and we'll delete it
-        — whether or not it was ever published. Because The Booth is anonymous, if you didn't save your card
-        and left no subject number, we may not be able to find a single confession among the rest — that's
-        the anonymity working as intended.
+        — whether or not it was ever published. If a venue has already re-published it on their own
+        channels, we'll ask them to take it down, but we can't promise they will. Because The Booth is
+        anonymous, if you didn't save your card and left no subject number, we may not be able to find a
+        single confession among the rest — that's the anonymity working as intended.
       </p>
 
       <h2 className="font-control text-lg font-bold mt-8 mb-2">Changes</h2>

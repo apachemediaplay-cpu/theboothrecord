@@ -11,7 +11,7 @@ const Terms = () => (
       </Link>
 
       <h1 className="font-control text-3xl font-bold mt-8 mb-1">The Booth — the short version</h1>
-      <p className="text-muted-foreground text-sm mb-8">Effective: 10 July 2026</p>
+      <p className="text-muted-foreground text-sm mb-8">Effective: 21 September 2026</p>
 
       <ul className="list-disc pl-5 space-y-4 text-muted-foreground">
         <li>You must be 18 or over to use The Booth.</li>
@@ -20,8 +20,12 @@ const Terms = () => (
           or businesses.
         </li>
         <li>
-          Your confession may be published — anonymously — on our public wall. We check every one first, and
-          most aren't published. You also get a card to share yourself, if you want.
+          Your confession may be published — anonymously — on our public wall, on our social channels, and
+          by the venue where you confessed, on theirs. We check every one first, and most aren't published.
+          You also get a card to share yourself, if you want.
+        </li>
+        <li>
+          Once something is published we can take it off our channels. We can't take it off someone else's.
         </li>
         <li>Your verdict is for entertainment. The Booth is not advice.</li>
         <li>
