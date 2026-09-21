@@ -49,11 +49,14 @@ function confessionSize(text) {
 // canvas renderer in src/pages/Verdict.tsx (generateShareCard, POST TO STORY)
 // draw the same card independently — a change to one needs the same change in
 // the other, or they drift. They have drifted twice already (footer handle,
-// both times). The footers are now ALIGNED — handle over theboothrecord.com,
-// one step dimmer — and must stay so: the story card is the MORE untappable
-// of the two (it lands in an Instagram Story with no link, no preview, no way
-// to act on it — the address is the only route back; this card at least sits
-// on a link someone has already tapped).
+// both times). Both footers now end on @theboothrecord ALONE and must stay
+// so: theboothrecord.com was dropped from BOTH verdict cards (Sep 2026) as
+// the same word twice, stacked. The URL survives only on the PHOTO card,
+// where it is phrased as an instruction ("confess at …") and is a call to
+// action rather than a credit. "Aligned" here means content and treatment,
+// not position — this card is a link preview and pins its footer 96px off
+// the bottom, while the story card holds its lowest ink at H - 270 to clear
+// Instagram's bottom safe zone (see shareCard.ts).
 function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri }) {
   const vSize = verdictSize(verdict);
   const cSize = confessionSize(confession);
@@ -115,19 +118,16 @@ function ShareCard({ confession, verdict, venue, subjectNumber, wordmarkDataUri 
       // exception — the AS CHARGED stamp above is State Blue neon. The stamp
       // is what the venue is sold on, and it receded too far in white for a
       // venue looking at their own card to feel seen. Everything else here
-      // (SUBJECT #, handle, URL) STAYS white — do not extend the blue.
-      // Handle and URL are near-repetition on purpose: the handle goes to
-      // Instagram, the URL goes to the Booth — different destinations.
+      // (SUBJECT #, handle) STAYS white — do not extend the blue.
+      //
+      // The handle is the LAST child, so the container's paddingBottom pins
+      // it exactly where theboothrecord.com used to sit — the same move the
+      // story card makes by hand (both baselines down 40px, shareCard.ts).
+      // Nothing else in this footer shifts: SUBJECT #'s marginBottom holds
+      // the pair's spacing, as the canvas holds its 60px baseline gap.
       h("div", { key: "hg", style: {
         fontSize: 28, color: "rgba(255,255,255,0.4)",
       } }, "@theboothrecord"),
-      // An image can't be tapped — the address is the only way someone who
-      // sees the card can act on it. (The canvas story card carries it too,
-      // for the same reason — see the renderer-pair note above.)
-      // Same treatment as the handle, one step dimmer (the SUBJECT# alpha).
-      h("div", { key: "url", style: {
-        marginTop: 12, fontSize: 28, color: "rgba(255,255,255,0.28)",
-      } }, "theboothrecord.com"),
     ]),
   ]);
 }
