@@ -503,6 +503,23 @@ export const renderShareCard = async (
     ctx.fillText("confess at theboothrecord.com", inset, ctaBaseline);
     setLS("0px");
 
+    // SUBJECT # — right-aligned on the CTA's OWN baseline, so it costs no
+    // vertical space and cannot disturb the photo-height budget computed
+    // above. It has to be on this card: the privacy policy tells people to
+    // quote the subject number to have a confession deleted, and before this
+    // a photo card gave them no number to quote. Deliberately subordinate to
+    // the CTA — 20px against the CTA's 28, white at 0.28 against flat ritual
+    // green. A reference number, not a second call to action.
+    if (subjectNumber) {
+      ctx.textAlign = "right";
+      ctx.font = "400 20px 'Söhne Mono', monospace";
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      setLS("2px");
+      ctx.fillText(`SUBJECT #${subjectNumber}`, W - inset, ctaBaseline);
+      setLS("0px");
+      ctx.textAlign = "left";
+    }
+
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
         (b) => (b ? resolve(b) : reject(new Error("Failed to render image"))),
@@ -609,32 +626,35 @@ export const renderShareCard = async (
   drawNeonStamp(chargeLine2, cx, charge1Y + chargeLH);
   setLS("0px");
 
-  // Group 2 — footer pinned to the bottom: SUBJECT # then @theboothrecord
-  // then theboothrecord.com. The footer sits ABOVE Instagram's bottom safe
-  // zone — Meta reserves the bottom 250px of a 1080×1920 story (from y=1670)
-  // for the reply box / send / swipe UI, and the handle and address are the
-  // only things telling a viewer where the card came from. Lowest ink lands
-  // at ~1649 (address baseline H - 270), 20px above the band. This is a
-  // DELIBERATE geometry difference from the OG card, which is a link
-  // preview with no safe zone — the pair-note's "aligned" means content and
-  // treatment, not position. Do not push this footer back down.
+  // Group 2 — footer pinned to the bottom: SUBJECT # then @theboothrecord.
+  // The footer sits ABOVE Instagram's bottom safe zone — Meta reserves the
+  // bottom 250px of a 1080×1920 story (from y=1670) for the reply box / send
+  // / swipe UI, and the handle is the only thing telling a viewer where the
+  // card came from. Lowest ink lands at ~1649 (handle baseline H - 270),
+  // 20px above the band. This is a DELIBERATE geometry difference from the
+  // OG card, which is a link preview with no safe zone — the pair-note's
+  // "aligned" means content and treatment, not position. Do not push this
+  // footer back down.
+  //
+  // theboothrecord.com was REMOVED here (Sep 2026). The handle and the URL
+  // are the same word twice, stacked, and on a story image neither is
+  // tappable — the handle at least gets searched by someone already inside
+  // Instagram, so it is the one that survives. The URL keeps its place on
+  // the PHOTO card, where it is phrased as an instruction ("confess at …")
+  // and so does different work: that one is a call to action, this one was
+  // a credit. Both baselines shifted down 40px to keep the lowest ink at
+  // H - 270, exactly where the address used to sit.
   if (subjectNumber) {
     setLS("4px");
     ctx.fillStyle = "rgba(255,255,255,0.28)";
     ctx.font = "400 24px 'Söhne Mono', monospace";
-    ctx.fillText(`SUBJECT #${subjectNumber}`, cx, H - 370);
+    ctx.fillText(`SUBJECT #${subjectNumber}`, cx, H - 330);
     setLS("0px");
   }
 
   ctx.fillStyle = "rgba(255,255,255,0.4)";
   ctx.font = "400 28px 'Söhne Mono', monospace";
-  ctx.fillText("@theboothrecord", cx, H - 310);
-
-  // theboothrecord.com — one step dimmer than the handle (the SUBJECT #
-  // alpha), the OG card's treatment. Handle and URL are near-repetition on
-  // purpose: the handle goes to Instagram, the URL goes to the Booth.
-  ctx.fillStyle = "rgba(255,255,255,0.28)";
-  ctx.fillText("theboothrecord.com", cx, H - 270);
+  ctx.fillText("@theboothrecord", cx, H - 270);
   ctx.textAlign = "left";
 
   return await new Promise<Blob>((resolve, reject) => {
