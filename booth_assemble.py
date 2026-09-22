@@ -39,6 +39,18 @@ NEON_PHASE = 0.22      # a 1.6s tail can't hold a full 2.8s breath, so
                        # start part-way up and let it swell through
 NEON_IN    = 0.35
 NEON_LP_DARK, NEON_LP_LIT = 320, 900
+
+# ── Venue reels: the verdict screen, shortened ───────────────
+# When the share card follows (a --venue capture, share_card in the spec),
+# the card repeats the verdict, so a long hold makes the viewer read the
+# same line twice. The WHOLE verdict screen — land + the typed reply line +
+# the settled hold — is capped at this. The typing keeps its speed; only
+# verdict_hold shrinks to fill what's left (about 1.0s in reach, 0.9s in
+# anchor at today's specs). That is close to the floor for SHARE VERDICT /
+# POST TO STORY to register, so don't tune this down to hit target_max_s.
+# No card → the spec's own verdict_hold, untouched. An explicit
+# --override verdict_hold=N still wins over this.
+VENUE_VERDICT_SCREEN_MS = 2500
 NEON_PARTIALS = [(1,1.00),(2,0.78),(3,0.62),(4,0.66),(5,0.40),
                  (6,0.48),(7,0.16),(8,0.30),(9,0.08),(10,0.14)]
 
@@ -91,6 +103,11 @@ def build_timeline(manifest, version, overrides=None, drops=None):
     verdict_land_ms = None
     t = 0.0
 
+    # Does the share card actually play in this build? See
+    # VENUE_VERDICT_SCREEN_MS.
+    card_follows = "share_card" in sections and "share_card" not in drops and any(
+        s["id"] == "share_card" for s in version["sections"])
+
     for step in version["sections"]:
         sid = step["id"]
         if sid in drops:
@@ -114,6 +131,9 @@ def build_timeline(manifest, version, overrides=None, drops=None):
 
         if sec["kind"] == "hold":
             ms = float(overrides.get(sid, step.get("ms", sec.get("real_ms", 1000))))
+            if (sid == "verdict_hold" and card_follows and sid not in overrides
+                    and verdict_land_ms is not None):
+                ms = max(0.0, VENUE_VERDICT_SCREEN_MS - (t - verdict_land_ms))
             timeline.append((frames[-1], t, t + ms))
             t += ms
 

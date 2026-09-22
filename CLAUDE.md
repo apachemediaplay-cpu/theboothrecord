@@ -219,7 +219,10 @@ reel: it captures as a printed-card scan of that venue (`?source=` +
 `?venue=`, the slug must be in `venues.json`), then taps POST TO STORY →
 skip and saves the real share card as `share_card.png`. Both specs carry
 a `share_card` step (2s, before the tail card) marked `"optional": true`,
-so unstamped captures skip it and assemble byte-identically. A venue
+so unstamped captures skip it and assemble byte-identically. When the
+card plays, the whole verdict screen is capped at
+`VENUE_VERDICT_SCREEN_MS` (2.5s, in `booth_assemble.py`) because the
+card repeats the verdict; `verdict_hold` absorbs the cut. A venue
 reel also gets `cover_05.png`, the share card, in `CHOOSE.png`. The
 console's reel buttons (`booth_watch.py`) don't pass `--venue` yet.
 
