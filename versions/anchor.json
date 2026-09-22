@@ -50,6 +50,11 @@
     {
       "id": "verdict_hold",
       "ms": 3000
+    },
+    {
+      "id": "share_card",
+      "ms": 2000,
+      "optional": true
     }
   ]
 }

@@ -214,6 +214,15 @@ and `post.md` (the caption). `outputs/` holds the assembled cuts that
 them. `captures/`, `outputs/` and `posts/` are gitignored; `versions/` is
 tracked, because those two specs used to exist only on one machine.
 
+`--venue <slug>` on `booth_post.py` / `booth_capture.py` makes a venue
+reel: it captures as a printed-card scan of that venue (`?source=` +
+`?venue=`, the slug must be in `venues.json`), then taps POST TO STORY →
+skip and saves the real share card as `share_card.png`. Both specs carry
+a `share_card` step (2s, before the tail card) marked `"optional": true`,
+so unstamped captures skip it and assemble byte-identically. A venue
+reel also gets `cover_05.png`, the share card, in `CHOOSE.png`. The
+console's reel buttons (`booth_watch.py`) don't pass `--venue` yet.
+
 `booth_watch.py` runs as a macOS LaunchAgent, `com.guilty.boothwatch`,
 not from `.zshrc`. It logs to /tmp/booth_watch.log and
 /tmp/booth_watch.err. The plist must set an explicit PATH that includes

@@ -25,28 +25,44 @@ USAGE
     python booth_capture.py --slug tiles ... --venue gigiprahran
 
 --venue <slug>
-    Captures as that venue: ?source=<slug> on the gate URL, so the gate
-    shows "AT <NAME>" (BoothHeader) — the only place a venue name appears
-    in the captured frames — and stampVenue is left 'true' on the verdict
-    page. That flag is only read when POST TO STORY draws the share card,
-    which this script never taps, so it changes no frame today; it is set
-    so the session matches a real stamped venue confession. The slug must be in
-    src/data/venues.json — the app resolves names from that file only
-    (the DB fallback is blocked here, see below), and an unknown slug
-    fails closed to no name at all, so this refuses it rather than
-    capturing a silently unstamped reel.
-    No flag = the instagram register with the stamp off, as before.
+    Captures as that venue, as if from its printed card:
+      ?source=<slug>&venue=<name> on the gate URL, so the gate shows
+      "AT <NAME>" (BoothHeader);
+      stampVenue 'true' AND venueName on the verdict page. venueName is
+      what isPhysicalScan() reads, and the share card only prints the
+      venue for a physical scan. It has to be set in the verdict page's
+      init script, not just carried from the gate URL: the verdict page is
+      a new tab, and sessionStorage does not cross tabs;
+      then, after verdict_hold, it taps POST TO STORY -> skip and saves the
+      real share card as share_card.png, a 2s hold section (share_card)
+      that the cut specs place before the tail card.
+    The slug must be in src/data/venues.json. The app resolves names from
+    that file only (the DB fallback is blocked here, see below), and an
+    unknown slug fails closed to no name at all, so this refuses it rather
+    than capturing a silently unstamped reel. The capture also fails if
+    the card's canvas didn't draw "AT <NAME>".
+    No flag = the instagram register with the stamp off, byte-identical to
+    before: no ?venue=, no tap, no share_card section.
 
-    ?venue= is deliberately NOT added to the URL. It only feeds
-    isPhysicalScan(), which touches two things: metric writes (blocked
-    here) and the POST TO STORY card's "AS CHARGED AT" line (never drawn
-    here). No captured screen changes with it.
+THE SHARE CARD IS A DOWNLOAD, NOT A SCREENSHOT.
+    On the skip path the app never shows the card. It renders the PNG and
+    hands it to navigator.share, or downloads it where files can't be
+    shared. canShare is forced false so it always downloads, and the
+    download IS the card: 1080x1920, the exact bytes a confessor posts.
 
 NOTHING REACHES THE DATABASE.
 Supabase REST calls are answered with an empty array; the verdict edge
 function is left to hang. That hang is what lets the three receiving
 beats play out on their real timers — exactly what the app does on a
 slow network.
+
+The POST TO STORY tap adds no new endpoint. resolve_share_id,
+get_share_verdict, log_share and log_booth_event are all supabase-js RPCs
+under /rest/v1/rpc/, so the same block answers them (resolve_share_id gets
+[] -> no uuid -> the card's link falls back to the homepage, which the PNG
+doesn't show). On the --venue path a catch-all route also aborts any
+request to a host that isn't the dev server or Google Fonts, and lists
+what it stopped, so a new call site can't reach production unnoticed.
 """
 
 import argparse, json, random, shutil, time
@@ -60,6 +76,13 @@ from playwright.sync_api import sync_playwright
 BASE_URL = "http://127.0.0.1:8080"
 SOURCE   = "instagram"          # default source; --venue <slug> replaces it
 VENUES_JSON = Path(__file__).parent / "src" / "data" / "venues.json"
+
+# --venue only. The card holds long enough to read AS CHARGED AT <VENUE>.
+SHARE_CARD_MS  = 2000
+STORY_TEXT     = "POST TO STORY"
+STORY_SKIP     = "skip"
+ALLOWED_HOSTS  = {"127.0.0.1", "localhost",
+                  "fonts.googleapis.com", "fonts.gstatic.com"}
 
 VIEWPORT = {"width": 432, "height": 768}    # x DSF 2.5 = 1080 x 1920
 DSF      = 2.5
@@ -165,7 +188,7 @@ def main():
     args = ap.parse_args()
 
     # No --venue → exactly the old behaviour: instagram, stamp off.
-    source, stamp = SOURCE, "false"
+    source, stamp, venue_name = SOURCE, "false", None
     if args.venue:
         venues = json.loads(VENUES_JSON.read_text())
         if args.venue not in venues:
@@ -173,6 +196,7 @@ def main():
                 f"--venue {args.venue!r} is not in {VENUES_JSON.relative_to(Path(__file__).parent)}; "
                 f"it would render no venue name.\n  known: {', '.join(sorted(venues))}")
         source, stamp = args.venue, "true"
+        venue_name = venues[args.venue]["displayName"]
 
     root = Path(args.out) / args.slug
     if root.exists():
@@ -182,7 +206,22 @@ def main():
     rng = random.Random(hash(args.slug) % 10_000)
     sections = {}
 
+    stopped = []    # --venue only: off-list requests the catch-all aborted
+
+    def guard(route):
+        from urllib.parse import urlparse
+        if urlparse(route.request.url).hostname in ALLOWED_HOSTS:
+            route.fallback()
+        else:
+            stopped.append(route.request.url)
+            route.abort()
+
     def block(page):
+        # --venue: catch-all FIRST. Playwright runs matching routes newest
+        # first, so the two specific blocks below still answer Supabase and
+        # this only sees what they don't.
+        if args.venue:
+            page.route("**/*", guard)
         # Empty array, not an abort — the app handles a null result
         # gracefully but can throw on a dead socket.
         page.route("**/rest/v1/**", lambda r: r.fulfill(
@@ -205,7 +244,11 @@ def main():
         # /confess without consent bounces to /. Landing there with
         # ?source= keeps the register attached through the flow.
         print("gate...")
-        page.goto(f"{BASE_URL}/confess?source={source}", wait_until="domcontentloaded")
+        url = f"{BASE_URL}/confess?source={source}"
+        if venue_name:
+            from urllib.parse import quote
+            url += f"&venue={quote(venue_name)}"
+        page.goto(url, wait_until="domcontentloaded")
         page.wait_for_timeout(300)
 
         sections["gate_splash"] = {
@@ -315,6 +358,13 @@ def main():
             f"sessionStorage.setItem('verdictSource','{source}');"
             f"sessionStorage.setItem('stampVenue','{stamp}');"
         )
+        if venue_name:
+            init += (
+                f"sessionStorage.setItem('venueName',{json.dumps(venue_name)});"
+                # Always the download path — see the docstring.
+                "Object.defineProperty(navigator,'canShare',"
+                "{value:()=>false,configurable:true});"
+            )
         ctx.add_init_script(init)
         page = ctx.new_page()
         block(page)
@@ -361,7 +411,52 @@ def main():
             "kind": "hold", "frames": rel(rframes[-1:], root), "real_ms": 3000,
         }
 
+        # ── SHARE CARD (--venue only) ──────────────────────────
+        if venue_name:
+            print("share card...")
+            # Record every string drawn on a canvas, so the stamp can be
+            # checked in the text itself rather than trusted from the pixels.
+            page.evaluate("""() => {
+                window.__drawn = [];
+                const f = CanvasRenderingContext2D.prototype.fillText;
+                CanvasRenderingContext2D.prototype.fillText = function (t, ...a) {
+                    window.__drawn.push(String(t)); return f.call(this, t, ...a);
+                };
+            }""")
+            story = page.locator(f"button:has-text('{STORY_TEXT}'):visible").first
+            if story.count() == 0:
+                raise SystemExit(f"no '{STORY_TEXT}' button on /verdict. "
+                                 "Update STORY_TEXT at the top of this file.")
+            story.click()
+            skip = page.get_by_role("button", name=STORY_SKIP, exact=True)
+            skip.wait_for(state="visible", timeout=5000)
+            with page.expect_download(timeout=15000) as dl:
+                skip.click()
+            card = root / "share_card.png"
+            dl.value.save_as(str(card))
+
+            drawn = page.evaluate("() => window.__drawn")
+            # The stamp line carries the FULL name (only the photo card's
+            # bottom bar cuts at the comma) — see chargeLine2 in shareCard.ts.
+            want = f"AT {venue_name.upper()}"
+            if want not in drawn:
+                raise SystemExit(
+                    f"share card did not draw '{want}'.\n  drew: {drawn}")
+            if any("WITHHELD" in t for t in drawn):
+                raise SystemExit(f"share card drew LOCATION WITHHELD.\n  drew: {drawn}")
+            print(f"  card drew {want!r}")
+
+            sections["share_card"] = {
+                "kind": "hold", "frames": rel([card], root),
+                "real_ms": SHARE_CARD_MS,
+            }
+
         browser.close()
+
+    if stopped:
+        print("\n  ! aborted off-list requests (nothing reached them):")
+        for u in stopped:
+            print(f"    {u}")
 
     manifest = {
         "slug": args.slug, "confession": args.confession,

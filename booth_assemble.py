@@ -95,6 +95,11 @@ def build_timeline(manifest, version, overrides=None, drops=None):
         sid = step["id"]
         if sid in drops:
             continue
+        # "optional": a step only some captures have (share_card exists
+        # only for --venue captures). Absent → skipped, so one spec builds
+        # both and an unstamped reel is unchanged.
+        if step.get("optional") and sid not in sections:
+            continue
         if sid not in sections:
             sys.exit(f"section '{sid}' is not in this capture.\n"
                      f"available: {', '.join(sections)}")

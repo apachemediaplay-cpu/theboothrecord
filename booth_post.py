@@ -18,9 +18,16 @@ USAGE
       --type vote \
       --needle "who on that train were you dressing for?"
 
+    # a venue reel: stamped, with the share card before the tail card
+    python booth_post.py --confession "..." --verdict "..." --venue gigiprahran
+
 Writes posts/<slug>/ containing:
     reel.mp4          the finished reel
     cover_01..NN.png  ranked cover options, full size
+    cover_05.png      --venue only: the share card itself (AS CHARGED AT
+                      <VENUE>), the best cover for a venue reel. Always 05,
+                      even with fewer text covers, so the number means the
+                      same thing post to post.
     CHOOSE.png        contact sheet at grid size — pick a number
     post.md           caption, first comment, story instructions, checklist
 
@@ -127,7 +134,7 @@ def cut_options(text, limit=3):
     return res
 
 
-def render_covers(texts, outdir, label, port):
+def render_covers(texts, outdir, label, port, card=None):
     from playwright.sync_api import sync_playwright
     from PIL import Image, ImageDraw, ImageFont
     paths = []
@@ -165,26 +172,35 @@ def render_covers(texts, outdir, label, port):
             print(f"  cover {i}  {size}px  {txt}")
         b.close()
 
+    # The share card is already a finished 1080x1920 frame from the capture;
+    # it is copied, not re-rendered, so the cover is the card the reel shows.
+    sheet_items = [(p, f"{i+1}") for i, (p, _, _) in enumerate(paths)]
+    if card:
+        dst = outdir / "cover_05.png"
+        shutil.copy(card, dst)
+        sheet_items.append((dst, "5"))
+        print("  cover 5  share card")
+
     # contact sheet at the size the grid actually shows
     T, PAD, HDR = 210, 12, 30
     TH = int(T * 1.25)
-    cols = min(4, len(paths))
-    rows = (len(paths) + cols - 1) // cols
+    cols = min(4, len(sheet_items))
+    rows = (len(sheet_items) + cols - 1) // cols
     sheet = Image.new("RGB", (cols*(T+PAD)+PAD, rows*(TH+HDR+PAD)+PAD), (18,18,18))
     d = ImageDraw.Draw(sheet)
     try:
         f = ImageFont.truetype(str(REPO / "So_hneMono-Kra_ftig.otf"), 16)
     except Exception:
         f = ImageFont.load_default()
-    for i, (p, sz, _) in enumerate(paths):
+    for i, (p, num) in enumerate(sheet_items):
         x = PAD + (i % cols)*(T+PAD); y = PAD + (i//cols)*(TH+HDR+PAD)
         sheet.paste(Image.open(p).crop((0,285,1080,1635)).resize((T,TH)), (x,y))
-        d.text((x, y+TH+6), f"{i+1}", font=f, fill=(230,230,230))
+        d.text((x, y+TH+6), num, font=f, fill=(230,230,230))
     sheet.save(outdir / "CHOOSE.png")
     return paths
 
 
-def post_md(slug, confession, verdict, subject, kind, needle, covers, built):
+def post_md(slug, confession, verdict, subject, kind, needle, covers, built, venue=None):
     if kind:
         ask_block = ("```\nthe booth lays the charge.\n\n"
                      + ("guilty or not guilty?" if kind == "vote"
@@ -196,6 +212,8 @@ def post_md(slug, confession, verdict, subject, kind, needle, covers, built):
                      "```\nthe booth lays the charge.\n\nsend this to the one it's about.\n```")
     needle_txt = needle or "TODO"
     opts = "\n".join(f"{i+1}. {t}" for i, (_, _, t) in enumerate(covers))
+    if venue:
+        opts += f"\n5. the share card, AS CHARGED AT {venue.upper()} — the pick for a venue reel"
     built_list = ", ".join(f"`reel_{b}.mp4`" for b in built)
     return f"""# {slug} · subject #{subject}
 
@@ -276,6 +294,8 @@ def main():
                     default=["versions/reach.json", "versions/anchor.json"],
                     help="capture once, assemble each of these")
     ap.add_argument("--label", default="No one is innocent.")
+    ap.add_argument("--venue", metavar="SLUG",
+                    help="stamp the reel with this venue (see booth_capture.py)")
     args = ap.parse_args()
 
     slug = args.slug or slugify(args.confession)
@@ -289,7 +309,9 @@ def main():
     print("capturing...")
     subprocess.run([sys.executable, "booth_capture.py", "--slug", slug,
                     "--confession", args.confession, "--verdict", args.verdict,
-                    "--subject", str(subject)], cwd=REPO, check=True)
+                    "--subject", str(subject)]
+                   + (["--venue", args.venue] if args.venue else []),
+                   cwd=REPO, check=True)
 
     built = []
     for vpath in args.versions:
@@ -303,11 +325,15 @@ def main():
 
     print("\ncovers...")
     texts = [args.cut] if args.cut else [args.confession] + cut_options(args.confession)
-    covers = render_covers(texts, out, args.label, args.port)
+    card = REPO / "captures" / slug / "share_card.png" if args.venue else None
+    covers = render_covers(texts, out, args.label, args.port, card)
+    venue_name = None
+    if args.venue:
+        venue_name = json.loads((REPO / "src/data/venues.json").read_text())[args.venue]["displayName"]
 
     (out / "post.md").write_text(
         post_md(slug, args.confession, args.verdict, subject, args.type,
-                args.needle, covers, built))
+                args.needle, covers, built, venue_name))
 
     print(f"\n-> {out}")
     if not args.needle:
