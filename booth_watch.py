@@ -24,16 +24,50 @@ WHY DATA AND NOT A COMMAND
 
     It only reacts to a payload starting with the exact marker below,
     and clears the clipboard afterwards so it can't fire twice.
+
+VENUE REELS
+    The console sends each confession's own source, stamp_venue and
+    is_test. A reel is stamped (booth_post --venue <slug>) only when ALL
+    of these hold, and every "no" is logged with its reason:
+      - source is a real venue slug (not empty, direct or instagram);
+      - stamp_venue is exactly true — the row's own flag, which is
+        stamp_venue AND physical since 20260817100000, so it already means
+        "the app prints this venue on the confessor's card": a printed-card
+        scan, not flagged by the classifier, not hidden in the console. A
+        reel never names a venue the confession's own card wouldn't;
+      - is_test is not true — a test confession is staff at the venue, and
+        a stamped reel of it would claim a real customer said it there.
+        It still gets a reel, unstamped;
+      - the slug is in src/data/venues.json. booth_capture --venue refuses
+        any other slug, so a console-added venue that never made it into
+        the file gets an unstamped reel here instead of a failure.
+    Anything else falls through to exactly today's unstamped reel.
+
+VERSION SKEW
+    The console is deployed; this runs on one Mac. They drift. So every
+    venue field is optional (an old console sends none of them → no venue,
+    today's reel), and keys this build doesn't know are dropped with a log
+    line rather than rejecting the payload, so a newer console can't stop
+    an older watcher from building. The only keys ever used are the ones
+    named in ALLOWED, and they still go to subprocess as a list.
+    One case this can't fix retroactively: watchers from before this
+    change REJECT unknown keys. The running watcher must be restarted on
+    this code before a console that sends source is deployed.
 """
 
-import json, socket, subprocess, sys, time, hashlib
+import json, re, socket, subprocess, sys, time, hashlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent
 MARKER = "BOOTH_REEL "
 POLL_S = 1.0
 
-ALLOWED = {"confession", "verdict", "type", "subject", "slug", "needle"}
+ALLOWED = {"confession", "verdict", "type", "subject", "slug", "needle",
+           "source", "stamp_venue", "is_test"}
+VENUES_JSON = REPO / "src" / "data" / "venues.json"
+# Sources that are traffic, not a room. Never stamped.
+NOT_A_VENUE = {"", "direct", "instagram"}
+SLUG_RE = re.compile(r"^[a-z0-9_-]{1,100}$")
 PORT = 8080
 _vite = None
 
@@ -83,7 +117,9 @@ def validate_one(data):
         raise ValueError("entry is not an object")
     extra = set(data) - ALLOWED
     if extra:
-        raise ValueError(f"unexpected keys: {', '.join(sorted(extra))}")
+        # Newer console than watcher. Drop, don't reject — see VERSION SKEW.
+        print(f"  (ignoring keys this watcher doesn't know: {', '.join(sorted(extra))})")
+        data = {k: v for k, v in data.items() if k in ALLOWED}
     for k in ("confession", "verdict"):
         if not isinstance(data.get(k), str) or not data[k].strip():
             raise ValueError(f"missing or empty '{k}'")
@@ -110,7 +146,37 @@ def validate(raw):
     return [validate_one(d) for d in items]
 
 
+def venue_for(data):
+    """
+    The slug to stamp, or None. Always returns a reason for the log.
+    Never raises: a malformed venue field means an unstamped reel, not a
+    lost one.
+    """
+    src = data.get("source")
+    if src is None:
+        return None, "no source in payload (older console?) — unstamped"
+    if not isinstance(src, str) or not SLUG_RE.match(src.strip().lower()):
+        return None, f"source {src!r} is not a slug — unstamped"
+    src = src.strip().lower()
+    if src in NOT_A_VENUE:
+        return None, f"source '{src}' is not a venue — unstamped"
+    if data.get("is_test") is True:
+        return None, f"test confession at '{src}' — unstamped"
+    if data.get("stamp_venue") is not True:
+        return None, (f"'{src}' but stamp_venue is {data.get('stamp_venue')!r} "
+                      "(not a printed-card scan, or hidden) — unstamped")
+    try:
+        venues = json.loads(VENUES_JSON.read_text())
+    except Exception as e:
+        return None, f"couldn't read venues.json ({e}) — unstamped"
+    if src not in venues:
+        return None, f"'{src}' is not in venues.json — unstamped"
+    return src, f"stamped: {venues[src]['displayName']} ({src})"
+
+
 def run(data):
+    venue, why = venue_for(data)
+    print(f"      venue: {why}")
     cmd = [sys.executable, "booth_post.py",
            "--confession", data["confession"],
            "--verdict", data["verdict"],
@@ -118,11 +184,18 @@ def run(data):
     for flag in ("subject", "slug", "needle"):
         if data.get(flag):
             cmd += [f"--{flag}", str(data[flag])]
+    if venue:
+        cmd += ["--venue", venue]
     # list args, no shell — nothing here can be interpreted as a command
     return subprocess.run(cmd, cwd=REPO).returncode
 
 
 def main():
+    # Under launchd stdout is a file, so Python block-buffers it and these
+    # lines reached /tmp/booth_watch.log late — after booth_post's own
+    # output, or not until exit. Line-buffer so the venue decision lands
+    # in the log above the build it explains.
+    sys.stdout.reconfigure(line_buffering=True)
     print("watching the clipboard. press BUILD in the console.")
     print("the dev server starts itself when needed. ctrl-c to stop.\n")
     seen = None

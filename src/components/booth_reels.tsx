@@ -6,6 +6,17 @@
 //
 // Works on any tab — approval is not required. The checkbox and the
 // Approve button are independent.
+//
+// VENUE REELS: each entry also carries the row's own source, stamp_venue
+// and is_test, as facts, not a decision. booth_watch.py decides whether to
+// stamp (see its VENUE REELS note) because it is the side that can see
+// venues.json as it stands on the Mac that builds. Keys are only included
+// when the row has a value, so a row without them produces exactly the
+// old payload.
+//
+// SKEW: watchers from before this change REJECT unknown keys. Restart the
+// boothwatch LaunchAgent on the new booth_watch.py BEFORE deploying this,
+// or every reel is ignored ("unexpected keys") until it is.
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +33,9 @@ export type ReelRow = {
   text?: string | null;
   confession?: string | null;
   confession_text?: string | null;
+  source?: string | null;
+  stamp_venue?: boolean | null;
+  is_test?: boolean | null;
 };
 
 const confessionOf = (r: ReelRow) =>
@@ -35,25 +49,37 @@ const confessionOf = (r: ReelRow) =>
  *  CLIPBOARD WRITE FAILED. The write used to be un-caught: a throw was
  *  swallowed by the caller's `if (await buildReels(...))` and the button
  *  still showed "Queued" over an empty clipboard. */
-export async function buildReels(rows: ReelRow[]): Promise<number | null> {
+/** The exact clipboard text for these rows, or null when none is usable.
+ *  Pure — split out of buildReels so the payload can be checked without a
+ *  click or a clipboard. */
+export function reelPayload(rows: ReelRow[]): { text: string; count: number } | null {
   const usable = rows.filter(
     (r) => r.verdict_text && r.verdict_text.trim() && confessionOf(r)
   );
-  if (!usable.length) return 0;
+  if (!usable.length) return null;
   const payload = usable.map((r) => ({
     confession: confessionOf(r),
     verdict: (r.verdict_text as string).trim(),
     ...(r.subject_number ? { subject: r.subject_number } : {}),
+    ...(r.source ? { source: r.source } : {}),
+    ...(typeof r.stamp_venue === "boolean" ? { stamp_venue: r.stamp_venue } : {}),
+    ...(typeof r.is_test === "boolean" ? { is_test: r.is_test } : {}),
   }));
+  return { text: REEL_MARKER + JSON.stringify(payload), count: usable.length };
+}
+
+export async function buildReels(rows: ReelRow[]): Promise<number | null> {
+  const payload = reelPayload(rows);
+  if (!payload) return 0;
   try {
-    await navigator.clipboard.writeText(REEL_MARKER + JSON.stringify(payload));
+    await navigator.clipboard.writeText(payload.text);
   } catch (e) {
     // Surface the real browser error (permissions, insecure context, focus)
     // so the next failure is diagnosable instead of costing twenty minutes.
     console.error("Reel clipboard write failed:", e);
     return null;
   }
-  return usable.length;
+  return payload.count;
 }
 
 // ── per row, beside ☆ Feature ────────────────────────────────

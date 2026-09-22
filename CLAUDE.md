@@ -223,8 +223,19 @@ so unstamped captures skip it and assemble byte-identically. When the
 card plays, the whole verdict screen is capped at
 `VENUE_VERDICT_SCREEN_MS` (2.5s, in `booth_assemble.py`) because the
 card repeats the verdict; `verdict_hold` absorbs the cut. A venue
-reel also gets `cover_05.png`, the share card, in `CHOOSE.png`. The
-console's reel buttons (`booth_watch.py`) don't pass `--venue` yet.
+reel also gets `cover_05.png`, the share card, in `CHOOSE.png`.
+
+The console's reel buttons send each row's `source`, `stamp_venue` and
+`is_test`, and `booth_watch.py` decides: stamped only for a venue slug
+with `stamp_venue = true` (i.e. the app's own card prints it), not
+`is_test`, and present in `venues.json`; everything else builds
+unstamped, with the reason in /tmp/booth_watch.log. The watcher drops
+payload keys it doesn't know and treats missing ones as "no venue", but
+watchers older than this REJECT unknown keys — so after changing
+`booth_watch.py`, restart the agent
+(`launchctl kickstart -k gui/$(id -u)/com.guilty.boothwatch`) before
+deploying a console that sends new keys. Restarting it also stops any
+dev server it started.
 
 `booth_watch.py` runs as a macOS LaunchAgent, `com.guilty.boothwatch`,
 not from `.zshrc`. It logs to /tmp/booth_watch.log and
