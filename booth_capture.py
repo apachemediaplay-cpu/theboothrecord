@@ -21,6 +21,27 @@ USAGE
         --verdict "Charged with turning your ceiling tiles into a to-do list." \
         --subject 887
 
+    # stamped with a venue instead of the instagram register
+    python booth_capture.py --slug tiles ... --venue gigiprahran
+
+--venue <slug>
+    Captures as that venue: ?source=<slug> on the gate URL, so the gate
+    shows "AT <NAME>" (BoothHeader) — the only place a venue name appears
+    in the captured frames — and stampVenue is left 'true' on the verdict
+    page. That flag is only read when POST TO STORY draws the share card,
+    which this script never taps, so it changes no frame today; it is set
+    so the session matches a real stamped venue confession. The slug must be in
+    src/data/venues.json — the app resolves names from that file only
+    (the DB fallback is blocked here, see below), and an unknown slug
+    fails closed to no name at all, so this refuses it rather than
+    capturing a silently unstamped reel.
+    No flag = the instagram register with the stamp off, as before.
+
+    ?venue= is deliberately NOT added to the URL. It only feeds
+    isPhysicalScan(), which touches two things: metric writes (blocked
+    here) and the POST TO STORY card's "AS CHARGED AT" line (never drawn
+    here). No captured screen changes with it.
+
 NOTHING REACHES THE DATABASE.
 Supabase REST calls are answered with an empty array; the verdict edge
 function is left to hang. That hang is what lets the three receiving
@@ -37,7 +58,8 @@ from playwright.sync_api import sync_playwright
 # ─────────────────────────────────────────────────────────────
 
 BASE_URL = "http://127.0.0.1:8080"
-SOURCE   = "instagram"          # drives headline + placeholder register
+SOURCE   = "instagram"          # default source; --venue <slug> replaces it
+VENUES_JSON = Path(__file__).parent / "src" / "data" / "venues.json"
 
 VIEWPORT = {"width": 432, "height": 768}    # x DSF 2.5 = 1080 x 1920
 DSF      = 2.5
@@ -138,7 +160,19 @@ def main():
     ap.add_argument("--verdict", required=True)
     ap.add_argument("--subject", type=int, default=1)
     ap.add_argument("--out", default="captures")
+    ap.add_argument("--venue", metavar="SLUG",
+                    help="capture as this venue (a slug in src/data/venues.json), stamp on")
     args = ap.parse_args()
+
+    # No --venue → exactly the old behaviour: instagram, stamp off.
+    source, stamp = SOURCE, "false"
+    if args.venue:
+        venues = json.loads(VENUES_JSON.read_text())
+        if args.venue not in venues:
+            raise SystemExit(
+                f"--venue {args.venue!r} is not in {VENUES_JSON.relative_to(Path(__file__).parent)}; "
+                f"it would render no venue name.\n  known: {', '.join(sorted(venues))}")
+        source, stamp = args.venue, "true"
 
     root = Path(args.out) / args.slug
     if root.exists():
@@ -171,7 +205,7 @@ def main():
         # /confess without consent bounces to /. Landing there with
         # ?source= keeps the register attached through the flow.
         print("gate...")
-        page.goto(f"{BASE_URL}/confess?source={SOURCE}", wait_until="domcontentloaded")
+        page.goto(f"{BASE_URL}/confess?source={source}", wait_until="domcontentloaded")
         page.wait_for_timeout(300)
 
         sections["gate_splash"] = {
@@ -278,8 +312,8 @@ def main():
             f"sessionStorage.setItem('confession',{args.confession!r});"
             f"sessionStorage.setItem('verdictResponse',{args.verdict!r});"
             f"sessionStorage.setItem('subjectNumber','{args.subject}');"
-            f"sessionStorage.setItem('verdictSource','{SOURCE}');"
-            "sessionStorage.setItem('stampVenue','false');"
+            f"sessionStorage.setItem('verdictSource','{source}');"
+            f"sessionStorage.setItem('stampVenue','{stamp}');"
         )
         ctx.add_init_script(init)
         page = ctx.new_page()
@@ -332,7 +366,7 @@ def main():
     manifest = {
         "slug": args.slug, "confession": args.confession,
         "verdict": args.verdict, "subject_number": args.subject,
-        "source": SOURCE, "fps": FPS, "viewport": VIEWPORT, "dsf": DSF,
+        "source": source, "fps": FPS, "viewport": VIEWPORT, "dsf": DSF,
         "captured_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "sections": sections,
     }
