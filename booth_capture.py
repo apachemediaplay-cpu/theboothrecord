@@ -63,6 +63,19 @@ under /rest/v1/rpc/, so the same block answers them (resolve_share_id gets
 doesn't show). On the --venue path a catch-all route also aborts any
 request to a host that isn't the dev server or Google Fonts, and lists
 what it stopped, so a new call site can't reach production unnoticed.
+
+ONE READ IS LET THROUGH, ON --venue ONLY: get_confess_config.
+    The confess screen's headline, guidance and placeholder lines come
+    from that one RPC (registers.ts fetchConfessConfig). Answered with []
+    it counts as a failure, and the screen falls back to the hardcoded
+    DEFAULT_PROMPT and DTC lines — so every venue reel showed "No one is
+    innocent." instead of the venue's own copy. It is an anon read of
+    public config, the same call any guest's phone makes, and it writes
+    nothing. Only that exact path passes (CONFIG_RPC); every other
+    /rest/v1/ call, and generate-verdict, stays blocked. Each pass is
+    printed with what came back. A venue with no custom copy gets
+    site_copy's live default, which is what a guest there sees.
+    The default (instagram) path still answers it with [] — unchanged.
 """
 
 import argparse, json, random, shutil, time
@@ -83,6 +96,8 @@ STORY_TEXT     = "POST TO STORY"
 STORY_SKIP     = "skip"
 ALLOWED_HOSTS  = {"127.0.0.1", "localhost",
                   "fonts.googleapis.com", "fonts.gstatic.com"}
+# The one Supabase call allowed to reach production — see the docstring.
+CONFIG_RPC     = "**/rest/v1/rpc/get_confess_config"
 
 VIEWPORT = {"width": 432, "height": 768}    # x DSF 2.5 = 1080 x 1920
 DSF      = 2.5
@@ -216,6 +231,26 @@ def main():
             stopped.append(route.request.url)
             route.abort()
 
+    passed = []     # --venue only: config reads let through to Supabase
+    blocked = []    # --venue only: Supabase calls answered with []
+
+    def config_read(route):
+        # Real request, real response, logged. route.fetch() goes straight
+        # to the network, past the blocks registered before this.
+        req = route.request
+        resp = route.fetch()
+        note = f"{req.method} {resp.status}"
+        if req.method == "POST":
+            try:
+                row = (resp.json() or [{}])[0]
+                note += (f"  _source={json.loads(req.post_data or '{}').get('_source')!r}"
+                         f"  headline={row.get('headline')!r}"
+                         f"  register={row.get('register')!r}")
+            except Exception:
+                note += "  (unreadable body)"
+        passed.append(note)
+        route.fulfill(response=resp)
+
     def block(page):
         # --venue: catch-all FIRST. Playwright runs matching routes newest
         # first, so the two specific blocks below still answer Supabase and
@@ -227,8 +262,21 @@ def main():
         page.route("**/rest/v1/**", lambda r: r.fulfill(
             status=200, content_type="application/json", body="[]",
             headers={"access-control-allow-origin": "*"}))
+        # --venue: note each call the block above answers, so the run
+        # shows what stayed blocked beside what was let through. Newer
+        # than the block, so it sees the call first and hands it on.
+        if args.venue:
+            def note_block(route):
+                if route.request.method != "OPTIONS":
+                    blocked.append(route.request.url.split("/rest/v1/")[-1].split("?")[0])
+                route.fallback()
+            page.route("**/rest/v1/**", note_block)
         # Left hanging on purpose. This is what plays the receiving beats.
         page.route("**/functions/v1/generate-verdict", lambda r: None)
+        # --venue: registered LAST so it wins over the [] block above, for
+        # this one path only.
+        if args.venue:
+            page.route(CONFIG_RPC, config_read)
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(args=["--no-sandbox"])
@@ -453,6 +501,15 @@ def main():
 
         browser.close()
 
+    if passed:
+        print("\n  let through to Supabase (get_confess_config only):")
+        for n in passed:
+            print(f"    {n}")
+    if blocked:
+        from collections import Counter
+        print("  answered with [] (blocked):")
+        for name, k in Counter(blocked).items():
+            print(f"    {name}  x{k}")
     if stopped:
         print("\n  ! aborted off-list requests (nothing reached them):")
         for u in stopped:
