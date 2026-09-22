@@ -217,12 +217,15 @@ tracked, because those two specs used to exist only on one machine.
 `--venue <slug>` on `booth_post.py` / `booth_capture.py` makes a venue
 reel: it captures as a printed-card scan of that venue (`?source=` +
 `?venue=`, the slug must be in `venues.json`), then taps POST TO STORY →
-skip and saves the real share card as `share_card.png`. It also lets
-exactly one Supabase call through to production — the anon
-`get_confess_config` read (`CONFIG_RPC`), so the confess screen shows the
-venue's own headline, guidance and placeholder lines instead of the
-hardcoded fallback; every other call stays blocked, and the run prints
-both lists. The default (instagram) path still blocks it. Both specs carry
+skip and saves the real share card as `share_card.png`.
+
+Every capture, venue or not, lets exactly one Supabase call through to
+production — the anon `get_confess_config` read (`CONFIG_RPC`) — so the
+confess screen shows the live headline, guidance and placeholder lines a
+real visitor sees, not the hardcoded fallback. The rule is that a reel
+records the real app. Every other call stays blocked, and each run prints
+both lists. Default reels captured before 23 Sep 2026 show the old
+hardcoded copy ("Confess.", DTC lines). Both cut specs carry
 a `share_card` step (2s, before the tail card) marked `"optional": true`,
 so unstamped captures skip it and assemble byte-identically. When the
 card plays, the whole verdict screen is capped at

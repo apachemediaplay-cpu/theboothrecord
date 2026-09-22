@@ -41,8 +41,9 @@ USAGE
     unknown slug fails closed to no name at all, so this refuses it rather
     than capturing a silently unstamped reel. The capture also fails if
     the card's canvas didn't draw "AT <NAME>".
-    No flag = the instagram register with the stamp off, byte-identical to
-    before: no ?venue=, no tap, no share_card section.
+    No flag = the instagram register with the stamp off: no ?venue=, no
+    tap, no share_card section. Network rules are the same either way
+    (see ONE READ IS LET THROUGH below).
 
 THE SHARE CARD IS A DOWNLOAD, NOT A SCREENSHOT.
     On the skip path the app never shows the card. It renders the PNG and
@@ -60,22 +61,26 @@ The POST TO STORY tap adds no new endpoint. resolve_share_id,
 get_share_verdict, log_share and log_booth_event are all supabase-js RPCs
 under /rest/v1/rpc/, so the same block answers them (resolve_share_id gets
 [] -> no uuid -> the card's link falls back to the homepage, which the PNG
-doesn't show). On the --venue path a catch-all route also aborts any
-request to a host that isn't the dev server or Google Fonts, and lists
-what it stopped, so a new call site can't reach production unnoticed.
+doesn't show). A catch-all route also aborts any request to a host that
+isn't the dev server or Google Fonts, and lists what it stopped, so a
+new call site can't reach production unnoticed.
 
-ONE READ IS LET THROUGH, ON --venue ONLY: get_confess_config.
+ONE READ IS LET THROUGH: get_confess_config. Same rule on both paths —
+the reel shows what a real visitor sees.
     The confess screen's headline, guidance and placeholder lines come
     from that one RPC (registers.ts fetchConfessConfig). Answered with []
     it counts as a failure, and the screen falls back to the hardcoded
     DEFAULT_PROMPT and DTC lines — so every venue reel showed "No one is
-    innocent." instead of the venue's own copy. It is an anon read of
+    innocent." instead of the venue's own copy, and every default reel
+    showed the DTC lines and "Confess." instead of instagram's live edgy
+    lines and site_copy's lowercase "confess.". It is an anon read of
     public config, the same call any guest's phone makes, and it writes
     nothing. Only that exact path passes (CONFIG_RPC); every other
     /rest/v1/ call, and generate-verdict, stays blocked. Each pass is
     printed with what came back. A venue with no custom copy gets
     site_copy's live default, which is what a guest there sees.
-    The default (instagram) path still answers it with [] — unchanged.
+    Reels captured before this (default ones before 23 Sep 2026) show
+    the hardcoded copy, so they won't match reels captured after it.
 """
 
 import argparse, json, random, shutil, time
@@ -221,7 +226,7 @@ def main():
     rng = random.Random(hash(args.slug) % 10_000)
     sections = {}
 
-    stopped = []    # --venue only: off-list requests the catch-all aborted
+    stopped = []    # off-list requests the catch-all aborted
 
     def guard(route):
         from urllib.parse import urlparse
@@ -231,8 +236,8 @@ def main():
             stopped.append(route.request.url)
             route.abort()
 
-    passed = []     # --venue only: config reads let through to Supabase
-    blocked = []    # --venue only: Supabase calls answered with []
+    passed = []     # config reads let through to Supabase
+    blocked = []    # Supabase calls answered with []
 
     def config_read(route):
         # Real request, real response, logged. route.fetch() goes straight
@@ -252,31 +257,28 @@ def main():
         route.fulfill(response=resp)
 
     def block(page):
-        # --venue: catch-all FIRST. Playwright runs matching routes newest
-        # first, so the two specific blocks below still answer Supabase and
-        # this only sees what they don't.
-        if args.venue:
-            page.route("**/*", guard)
+        # Catch-all FIRST. Playwright runs matching routes newest first, so
+        # the specific blocks below still answer Supabase and this only
+        # sees what they don't.
+        page.route("**/*", guard)
         # Empty array, not an abort — the app handles a null result
         # gracefully but can throw on a dead socket.
         page.route("**/rest/v1/**", lambda r: r.fulfill(
             status=200, content_type="application/json", body="[]",
             headers={"access-control-allow-origin": "*"}))
-        # --venue: note each call the block above answers, so the run
-        # shows what stayed blocked beside what was let through. Newer
-        # than the block, so it sees the call first and hands it on.
-        if args.venue:
-            def note_block(route):
-                if route.request.method != "OPTIONS":
-                    blocked.append(route.request.url.split("/rest/v1/")[-1].split("?")[0])
-                route.fallback()
-            page.route("**/rest/v1/**", note_block)
+        # Note each call the block above answers, so the run shows what
+        # stayed blocked beside what was let through. Newer than the block,
+        # so it sees the call first and hands it on.
+        def note_block(route):
+            if route.request.method != "OPTIONS":
+                blocked.append(route.request.url.split("/rest/v1/")[-1].split("?")[0])
+            route.fallback()
+        page.route("**/rest/v1/**", note_block)
         # Left hanging on purpose. This is what plays the receiving beats.
         page.route("**/functions/v1/generate-verdict", lambda r: None)
-        # --venue: registered LAST so it wins over the [] block above, for
-        # this one path only.
-        if args.venue:
-            page.route(CONFIG_RPC, config_read)
+        # Registered LAST so it wins over the [] block above, for this one
+        # path only.
+        page.route(CONFIG_RPC, config_read)
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(args=["--no-sandbox"])
